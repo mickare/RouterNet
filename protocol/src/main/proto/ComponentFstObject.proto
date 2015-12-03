@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package de.rennschnitzel.backbone.net.protocol;
+
+message FstObject {
+
+	int32 type = 1;
+	bytes data = 2;
+	
+}

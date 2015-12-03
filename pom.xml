@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>de.rennschnitzel.backbone</groupId>
+	<artifactId>parent</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>pom</packaging>
+
+	<name>RS-Backbone-parent</name>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<jdk.version>1.8</jdk.version>
+	</properties>
+
+	<modules>
+		<module>protocol</module>
+		<module>api</module>
+		<module>client</module>
+		<module>router</module>
+	</modules>
+
+	<distributionManagement>
+		<repository>
+			<id>rs-private</id>
+			<name>Internal Releases</name>
+			<url>http://repo.rennschnitzel.de:8081/nexus/content/repositories/rs-public/</url>
+		</repository>
+		<snapshotRepository>
+			<id>rs-private</id>
+			<name>Internal Releases</name>
+			<url>http://repo.rennschnitzel.de:8081/nexus/content/repositories/rs-public/</url>
+		</snapshotRepository>
+	</distributionManagement>
+
+</project>

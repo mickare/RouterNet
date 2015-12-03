@@ -1,0 +1,146 @@
+package de.rennschnitzel.backbone.client;
+
+import java.util.UUID;
+
+import com.google.common.base.Preconditions;
+
+import de.rennschnitzel.backbone.api.Connection;
+import de.rennschnitzel.backbone.api.RouterInfo;
+import de.rennschnitzel.backbone.client.util.UUIDContainer;
+import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthChallenge;
+import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthResponse;
+import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthSuccess;
+import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.Login;
+import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.Connected;
+import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.Disconnected;
+import de.rennschnitzel.backbone.net.protocol.TransportProtocol.CloseMessage;
+import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ErrorMessage;
+import de.rennschnitzel.backbone.net.protocol.TransportProtocol.Message;
+import de.rennschnitzel.backbone.netty.PacketHandler;
+import de.rennschnitzel.backbone.netty.PacketUtil;
+import de.rennschnitzel.backbone.netty.exception.HandshakeException;
+import de.rennschnitzel.backbone.netty.exception.NotConnectedException;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
+public class RouterConnection extends PacketHandler implements Connection {
+
+  @NonNull
+  private final AuthSuccess auth;
+
+  @Getter
+  @NonNull
+  private final Client client;
+  @Getter
+  @NonNull
+  private final RouterInfo router;
+  private ChannelHandlerContext ctx = null;
+
+
+  @Override
+  public UUID getRouterUUID() {
+    return UUIDContainer.of(auth.getRouter().getId());
+  }
+
+
+
+  @Override
+  public UUID getClientUUID() {
+    return UUIDContainer.of(auth.getClient().getId());
+  }
+
+
+  @Override
+  public synchronized void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+    Preconditions.checkState(this.ctx == null, "Already used handler!");
+    this.ctx = ctx;
+  }
+
+  @Override
+  protected void handle(ChannelHandlerContext ctx, ErrorMessage error) throws Exception {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
+  protected void handle(ChannelHandlerContext ctx, Login login) throws Exception {
+    throw new HandshakeException("Invalid or unknown packet!");
+  }
+
+  @Override
+  protected void handle(ChannelHandlerContext ctx, AuthChallenge authChallenge) throws Exception {
+    throw new HandshakeException("Invalid or unknown packet!");
+  }
+
+  @Override
+  protected void handle(ChannelHandlerContext ctx, AuthResponse authResponse) throws Exception {
+    throw new HandshakeException("Invalid or unknown packet!");
+  }
+
+  @Override
+  protected void handle(ChannelHandlerContext ctx, AuthSuccess authSuccess) throws Exception {
+    throw new HandshakeException("Invalid or unknown packet!");
+  }
+
+  @Override
+  protected void handle(ChannelHandlerContext ctx, Connected connected) throws Exception {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
+  protected void handle(ChannelHandlerContext ctx, Disconnected disconnected) throws Exception {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
+  protected void handle(ChannelHandlerContext ctx, Message message) throws Exception {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
+  public boolean isOpen() {
+    return ctx.channel().isOpen();
+  }
+
+  @Override
+  public boolean isActive() {
+    return ctx.channel().isActive();
+  }
+
+  @Override
+  public ChannelFuture close() {
+    return this.close(CloseMessage.newBuilder().setNormal("no reason").build());
+  }
+
+  @Override
+  public ChannelFuture close(CloseMessage packet) {
+    if (isActive()) {
+      PacketUtil.writeAndFlush(ctx, packet);
+    }
+    return ctx.close();
+  }
+
+  @Override
+  public void send(ErrorMessage packet) throws NotConnectedException {
+    if (packet.getFatal()) {
+      close(CloseMessage.newBuilder().setError(packet).build());
+    } else {
+      PacketUtil.writeAndFlush(ctx, packet);
+    }
+  }
+
+  @Override
+  public void send(Message packet) throws NotConnectedException {
+    PacketUtil.writeAndFlush(ctx, packet);
+  }
+
+
+
+}

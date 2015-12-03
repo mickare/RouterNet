@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package de.rennschnitzel.backbone.net.protocol;
+
+import "NetworkProtocol.proto";
+import "HandshakeProtocol.proto";
+import "ComponentUUID.proto";
+import "ComponentFstObject.proto";
+import "google/protobuf/any.proto";
+
+
+message ErrorMessage {
+	enum Type {
+		UNDEFINED = 0;
+		SERVER_ERROR = 1;
+		PROTOCOL_ERROR = 2;
+		UNAVAILABLE = 3;
+		HANDSHAKE = 4;
+	}
+	Type type = 1;
+	bool fatal = 2;
+	string message = 3;
+}
+
+message CloseMessage {
+	oneof reason {
+		ErrorMessage error = 1;
+		string normal = 2;
+		bool shutdown = 3;
+	}
+}
+
+message Target {
+	bool all = 1;
+	repeated UUID servers = 2;
+	repeated string namespaces = 3;
+}
+
+message Packet {
+	oneof value {
+		ErrorMessage error = 1;
+		CloseMessage close = 2;
+		Login login = 10;
+		AuthChallenge authChallenge = 11;
+		AuthResponse authResponse = 12;
+		AuthSuccess authSuccess = 13;
+		Connected connected = 20;
+		Disconnected disconnected = 21;
+		ServerUpdate update = 22;
+		Message message = 30;
+	}
+}
+
+message Message {
+	Target target = 1;
+	UUID sender = 3;
+	oneof content {
+		ErrorMessage error = 10;
+		ByteContent bytes = 20;
+		FstObject objectValue = 21;
+		google.protobuf.Any protoValue = 22;
+		QueryRequest request = 30;
+		QueryResponse response = 31;
+	}
+}
+
+message ByteContent {
+	int32 type = 1;
+	bytes data = 2;
+}
+
+message Query {
+	int32 service = 1;
+	int32 id = 2;
+	int64 timestamp = 3;
+}
+
+message QueryRequest {
+	Query query = 1;	
+	oneof data {
+		bytes bytes = 20;
+		FstObject objectValue = 21;
+		google.protobuf.Any protoValue = 22;
+	}
+}
+
+message QueryResponse {
+	Query query = 1;
+	bool success = 2;
+	bool cancelled = 3;
+	oneof data {
+		ErrorMessage error = 10;
+		bytes bytes = 20;
+		FstObject objectValue = 21;
+		google.protobuf.Any protoValue = 22;
+	}
+}

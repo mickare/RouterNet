@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package de.rennschnitzel.backbone.net.protocol;
+
+import "ComponentUUID.proto";
+import "NetworkProtocol.proto";
+
+message Login {
+	int32 protocolVersion = 1;
+	oneof login {
+		FirstLogin first = 2;
+		SecondLogin second = 3;
+	}
+}
+
+message FirstLogin {
+	repeated string namespaces = 1;
+	Server.Type type = 2;
+}
+
+message SecondLogin {
+	UUID id = 1;
+	repeated string namespaces = 2;
+	Server.Type type = 3;		
+}
+
+message AuthChallenge {
+	bytes token = 1;
+}
+
+message AuthResponse {
+	bytes token = 1;
+}
+
+message AuthSuccess {
+	Server client = 1;
+	Router router = 2;
+	NetworkTopology network = 3;
+}
