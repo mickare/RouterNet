@@ -59,39 +59,43 @@ message Message {
 		ByteContent bytes = 20;
 		FstObject objectValue = 21;
 		google.protobuf.Any protoValue = 22;
-		QueryRequest request = 30;
-		QueryResponse response = 31;
+		ProcedureContent procedure = 30;
 	}
 }
 
 message ByteContent {
-	int32 type = 1;
+	string key = 1;
 	bytes data = 2;
 }
 
-message Query {
-	int32 service = 1;
-	int32 id = 2;
-	int64 timestamp = 3;
+message ProcedureContent {
+	oneof content {
+		ProcedureCall call = 1;
+		ProcedureResponse response = 2;
+	}
 }
 
-message QueryRequest {
-	Query query = 1;	
+message ProcedureCall {
+	Procedure procedure = 1;
+	int32 id = 2;
+	int64 timestamp = 3;
 	oneof data {
 		bytes bytes = 20;
-		FstObject objectValue = 21;
+		bytes objectValue = 21;
 		google.protobuf.Any protoValue = 22;
 	}
 }
 
-message QueryResponse {
-	Query query = 1;
-	bool success = 2;
-	bool cancelled = 3;
+message ProcedureResponse {
+	Procedure procedure = 1;
+	int32 id = 2;
+	int64 timestamp = 3;
+	bool success = 4;
+	bool cancelled = 5;
 	oneof data {
 		ErrorMessage error = 10;
 		bytes bytes = 20;
-		FstObject objectValue = 21;
+		bytes objectValue = 21;
 		google.protobuf.Any protoValue = 22;
 	}
 }

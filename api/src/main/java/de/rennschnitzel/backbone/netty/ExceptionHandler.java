@@ -38,10 +38,10 @@ public class ExceptionHandler extends ChannelHandlerAdapter {
       }
       ErrorMessage.Builder error = ErrorMessage.newBuilder().setType(type).setMessage(text);
       if (fatal) {
-        ChannelFuture f = PacketUtil.writeAndFlush(ctx, CloseMessage.newBuilder().setError(error));
+        ChannelFuture f = PacketUtil.writeAndFlush(ctx.channel(), CloseMessage.newBuilder().setError(error));
         f.addListener(ChannelFutureListener.CLOSE);
       } else {
-        PacketUtil.writeAndFlush(ctx, error);
+        PacketUtil.writeAndFlush(ctx.channel(), error);
       }
 
     } catch (final Exception ex) {

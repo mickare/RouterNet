@@ -4,7 +4,7 @@ import java.util.UUID;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
-import de.rennschnitzel.backbone.api.Connection;
+import de.rennschnitzel.backbone.api.network.Connection;
 import de.rennschnitzel.backbone.net.protocol.ComponentUUID;
 import de.rennschnitzel.backbone.util.FutureContainer;
 

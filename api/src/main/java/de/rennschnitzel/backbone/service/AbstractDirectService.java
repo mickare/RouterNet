@@ -4,14 +4,14 @@ import com.google.common.util.concurrent.AbstractService;
 
 public abstract class AbstractDirectService extends AbstractService {
 
-  protected abstract void onStart() throws Exception;
+  protected abstract void startUp() throws Exception;
 
-  protected abstract void onStop() throws Exception;
+  protected abstract void shutDown() throws Exception;
 
   @Override
   protected void doStart() {
     try {
-      onStart();
+      startUp();
       notifyStarted();
     } catch (Throwable t) {
       notifyFailed(t);
@@ -21,7 +21,7 @@ public abstract class AbstractDirectService extends AbstractService {
   @Override
   protected void doStop() {
     try {
-      onStop();
+      shutDown();
       notifyStopped();
     } catch (Throwable t) {
       notifyFailed(t);

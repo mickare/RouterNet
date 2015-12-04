@@ -2,7 +2,7 @@ package de.rennschnitzel.backbone.router;
 
 import java.util.UUID;
 
-import de.rennschnitzel.backbone.api.Connection;
+import de.rennschnitzel.backbone.api.network.Connection;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.Message;

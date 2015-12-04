@@ -9,9 +9,9 @@ import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.AbstractFuture;
 
 import de.rennschnitzel.backbone.Protocol;
-import de.rennschnitzel.backbone.api.Connection;
-import de.rennschnitzel.backbone.api.ConnectionFuture;
-import de.rennschnitzel.backbone.api.RouterInfo;
+import de.rennschnitzel.backbone.api.network.Connection;
+import de.rennschnitzel.backbone.api.network.ConnectionFuture;
+import de.rennschnitzel.backbone.api.network.RouterInfo;
 import de.rennschnitzel.backbone.net.protocol.ComponentUUID;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthChallenge;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthResponse;
@@ -209,8 +209,8 @@ public abstract class ClientHandshake extends AbstractFuture<Connection>
         firstLogin = true;
 
         FirstLogin.Builder b = FirstLogin.newBuilder();
-        b.addAllNamespaces(client.getContext().getNamespaces());
-        b.setType(client.getContext().getType());
+        b.addAllNamespaces(client.getNamespaces());
+        b.setType(client.getType());
 
         PacketUtil.writeAndFlush(ctx.channel(),
             Login.newBuilder().setFirst(b).setProtocolVersion(Protocol.VERSION));
@@ -224,8 +224,8 @@ public abstract class ClientHandshake extends AbstractFuture<Connection>
 
         b.setId(ComponentUUID.UUID.newBuilder().setMostSignificantBits(id.getMostSignificantBits())
             .setLeastSignificantBits(id.getLeastSignificantBits()));
-        b.addAllNamespaces(client.getContext().getNamespaces());
-        b.setType(client.getContext().getType());
+        b.addAllNamespaces(client.getNamespaces());
+        b.setType(client.getType());
 
         PacketUtil.writeAndFlush(ctx.channel(),
             Login.newBuilder().setSecond(b).setProtocolVersion(Protocol.VERSION));

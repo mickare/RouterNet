@@ -11,8 +11,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.protobuf.ByteString;
 
-import de.rennschnitzel.backbone.api.Connection;
-import de.rennschnitzel.backbone.api.RouterInfo;
+import de.rennschnitzel.backbone.api.network.Connection;
+import de.rennschnitzel.backbone.api.network.RouterInfo;
 import de.rennschnitzel.backbone.net.protocol.ComponentUUID;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthChallenge;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthResponse;

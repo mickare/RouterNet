@@ -33,7 +33,11 @@ message AuthResponse {
 }
 
 message AuthSuccess {
-	Server client = 1;
+	UUID cliendID = 1;
 	Router router = 2;
 	NetworkTopology network = 3;
+}
+
+message Upgrade {
+	Server client = 1;
 }

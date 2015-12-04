@@ -4,7 +4,7 @@ package de.rennschnitzel.backbone.net.protocol;
 
 message FstObject {
 
-	int32 type = 1;
+	string type = 1;
 	bytes data = 2;
 	
 }

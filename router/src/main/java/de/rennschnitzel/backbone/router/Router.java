@@ -2,7 +2,7 @@ package de.rennschnitzel.backbone.router;
 
 import java.util.logging.Logger;
 
-import de.rennschnitzel.backbone.api.RouterInfo;
+import de.rennschnitzel.backbone.api.network.RouterInfo;
 import de.rennschnitzel.backbone.net.protocol.ComponentUUID;
 import de.rennschnitzel.backbone.net.protocol.NetworkProtocol;
 import de.rennschnitzel.backbone.netty.BackboneChannelInitializer;
@@ -28,7 +28,7 @@ public class Router extends AbstractDirectService {
   private final Logger logger;
 
   @Override
-  protected void onStart() throws Exception {
+  protected void startUp() throws Exception {
 
 
     bossGroup = new NioEventLoopGroup(1);
@@ -54,7 +54,7 @@ public class Router extends AbstractDirectService {
   }
 
   @Override
-  protected void onStop() throws Exception {
+  protected void shutDown() throws Exception {
     // TODO Auto-generated method stub
 
   }

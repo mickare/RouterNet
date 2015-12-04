@@ -1,4 +1,4 @@
-package de.rennschnitzel.backbone.api;
+package de.rennschnitzel.backbone.api.network;
 
 import java.util.UUID;
 
