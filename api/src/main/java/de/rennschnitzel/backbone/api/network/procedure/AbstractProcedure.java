@@ -49,7 +49,17 @@ public abstract class AbstractProcedure<T, R> implements Procedure<T, R> {
     return getResultClass().getName();
   }
 
-  protected void validate(NetworkProtocol.Procedure procedure) throws IllegalArgumentException {
+
+  @Override
+  public boolean isApplicable(NetworkProtocol.Procedure procedure) {
+    boolean result = true;
+    result &= this.name.equals(procedure.getName());
+    result &= this.argClass.getName().equals(procedure.getArgument());
+    result &= this.resultClass.getName().equals(procedure.getResult());
+    return result;
+  }
+
+  protected final void validate(NetworkProtocol.Procedure procedure) throws IllegalArgumentException {
     Preconditions.checkArgument(this.name.equals(procedure.getName()));
     Preconditions.checkArgument(this.argClass.getName().equals(procedure.getArgument()));
     Preconditions.checkArgument(this.resultClass.getName().equals(procedure.getResult()));

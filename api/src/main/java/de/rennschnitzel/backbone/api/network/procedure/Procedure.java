@@ -28,6 +28,7 @@ public interface Procedure<T, R> extends Comparable<Procedure<?, ?>> {
     return NetworkProtocol.Procedure.newBuilder().setName(getName()).setArgument(getArgClassName()).setResult(getResultClassName()).build();
   }
 
+  boolean isApplicable(NetworkProtocol.Procedure procedure);
 
   CheckedFunction<ProcedureCall, T> getCallReader();
 
