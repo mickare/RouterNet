@@ -2,37 +2,28 @@ package de.rennschnitzel.backbone.api.network;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.UUID;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.protobuf.MessageOrBuilder;
-
-import de.rennschnitzel.backbone.api.network.list.ServerCollection;
-import de.rennschnitzel.backbone.api.network.procedure.RegisteredProcedure;
 import de.rennschnitzel.backbone.api.network.target.TargetOrBuilder;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
 import de.rennschnitzel.backbone.netty.exception.ProtocolException;
 
 public interface NetworkInterface {
 
-  ServerCollection getServers();
+  UUID getID();
 
   Set<String> getNamespaces();
-  
-  void handle(TransportProtocol.Message message) throws ProtocolException;
-  
+
+  void handle(TransportProtocol.ContentMessage message) throws ProtocolException;
+
   void sendBytes(TargetOrBuilder target, String key, byte[] data);
 
   void sendObject(TargetOrBuilder target, Object object);
 
-  void sendAny(TargetOrBuilder target, MessageOrBuilder message);
+  Map<UUID, Server> getServers();
 
-  <T, R> Map<Server, ListenableFuture<T>> callProcedures(TargetOrBuilder target, String name, Class<T> argument, Class<R> result);
+  Map<UUID, Server> getServers(TargetOrBuilder target);
 
-  <T, R> RegisteredProcedure<T, R> registerProcedure(String name, Class<T> argument, Class<R> result, Function<T, ? extends R> function);
-
-  Set<RegisteredProcedure<?, ?>> getRegisteredProcedures();
-
-  <T, R> RegisteredProcedure<T, R> getRegisteredProcedure(String name, Class<T> argument, Class<R> result);
+  Connection getConnection();
 
 }

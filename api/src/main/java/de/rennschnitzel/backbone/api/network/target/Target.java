@@ -2,24 +2,26 @@ package de.rennschnitzel.backbone.api.network.target;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import com.google.common.base.Preconditions;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.protobuf.MessageOrBuilder;
+import com.google.common.collect.Sets;
 
 import de.rennschnitzel.backbone.ProtocolUtils;
 import de.rennschnitzel.backbone.api.network.Network;
 import de.rennschnitzel.backbone.api.network.Server;
 import de.rennschnitzel.backbone.net.protocol.ComponentUUID;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
 public class Target implements TargetOrBuilder {
 
-  public static boolean serverInTarget(TransportProtocol.TargetOrBuilder target, Server server) {
+  // *************************************************************************
+  // Static helper
+
+  public static boolean serverInTarget(TransportProtocol.TargetMessageOrBuilder target, Server server) {
     if (target.getAll()) {
       return true;
     }
@@ -57,11 +59,19 @@ public class Target implements TargetOrBuilder {
     return new Builder().addNamespace(namespace).addNamespaces(namespaces);
   }
 
-  @NonNull
-  private final TransportProtocol.Target value;
+  // *************************************************************************
+  // Target instance
+
+  private final TransportProtocol.TargetMessage value;
+
+  public Target(TransportProtocol.TargetMessage value) {
+    Preconditions.checkNotNull(value);
+    Preconditions.checkArgument(value.getAll() || value.getNamespacesCount() > 0 || value.getServersCount() > 0);
+    this.value = value;
+  }
 
   @Override
-  public TransportProtocol.Target toProtocol() {
+  public TransportProtocol.TargetMessage toProtocol() {
     return value;
   }
 
@@ -78,25 +88,44 @@ public class Target implements TargetOrBuilder {
     Network.getInstance().sendObject(this, object);
   }
 
-  public void send(MessageOrBuilder message) {
-    Network.getInstance().sendAny(this, message);
+  public boolean isToAll() {
+    return this.value.getAll();
   }
 
-  public <T, R> Map<Server, ListenableFuture<T>> callServices(String name, Class<T> argument, Class<R> result) {
-    return Network.getInstance().callProcedures(this, name, argument, result);
+  public Set<UUID> getServers() {
+    return this.value.getServersList().stream().map(ProtocolUtils::convert).collect(Collectors.toSet());
   }
 
+  public Set<String> getNamespaces() {
+    return Sets.newHashSet(this.value.getNamespacesList());
+  }
+
+  public boolean isEmpty() {
+    return !isToAll() && this.value.getServersCount() == 0 && this.value.getNamespacesCount() == 0;
+  }
+
+  public Map<UUID, Server> asMap() {
+    return Network.getInstance().getServers(this);
+  }
+
+  public Target build() {
+    return this;
+  }
+
+
+  // *************************************************************************
+  // Builder
 
   @RequiredArgsConstructor
   public static class Builder implements TargetOrBuilder {
 
-    private final TransportProtocol.Target.Builder b = TransportProtocol.Target.newBuilder();
+    private final TransportProtocol.TargetMessage.Builder b = TransportProtocol.TargetMessage.newBuilder();
 
     public Target build() {
       return new Target(b.build());
     }
 
-    public TransportProtocol.Target toProtocol() {
+    public TransportProtocol.TargetMessage toProtocol() {
       return b.build();
     }
 
@@ -165,16 +194,6 @@ public class Target implements TargetOrBuilder {
     @Override
     public void send(Object object) {
       build().send(object);
-    }
-
-    @Override
-    public void send(MessageOrBuilder message) {
-      build().send(message);
-    }
-
-    @Override
-    public <T, R> Map<Server, ListenableFuture<T>> callServices(String name, Class<T> argument, Class<R> result) {
-      return build().callServices(name, argument, result);
     }
 
     @Override

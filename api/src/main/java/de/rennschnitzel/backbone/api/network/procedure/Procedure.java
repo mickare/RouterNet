@@ -2,40 +2,40 @@ package de.rennschnitzel.backbone.api.network.procedure;
 
 import java.util.function.BiConsumer;
 
-import com.google.common.util.concurrent.ListenableFuture;
-
 import de.rennschnitzel.backbone.net.protocol.NetworkProtocol;
-import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureCall;
-import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponse;
-import de.rennschnitzel.backbone.util.CheckedFunction;
+import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureCallMessage;
+import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
+import de.rennschnitzel.backbone.util.function.CheckedFunction;
 
 public interface Procedure<T, R> extends Comparable<Procedure<?, ?>> {
 
   String getName();
 
-  String getArgClassName();
+  ProcedureInformation getInfo();
 
   Class<T> getArgClass();
 
-  String getResultClassName();
-
   Class<R> getResultClass();
 
-  ListenableFuture<R> call(T arg);
-
-
-  default NetworkProtocol.Procedure toProtocol() {
-    return NetworkProtocol.Procedure.newBuilder().setName(getName()).setArgument(getArgClassName()).setResult(getResultClassName()).build();
+  default NetworkProtocol.ProcedureMessage toProtocol() {
+    return NetworkProtocol.ProcedureMessage.newBuilder().setName(getName()).setArgument(getArgClass().getName())
+        .setResult(getResultClass().getName()).build();
   }
 
-  boolean isApplicable(NetworkProtocol.Procedure procedure);
+  boolean isApplicable(NetworkProtocol.ProcedureMessage procedure);
 
-  CheckedFunction<ProcedureCall, T> getCallReader();
+  CheckedFunction<ProcedureCallMessage, T> getCallReader();
 
-  BiConsumer<ProcedureCall.Builder, T> getCallWriter();
+  BiConsumer<ProcedureCallMessage.Builder, T> getCallWriter();
 
-  CheckedFunction<ProcedureResponse, R> getResponseReader();
+  CheckedFunction<ProcedureResponseMessage, R> getResponseReader();
 
-  BiConsumer<ProcedureResponse.Builder, R> getResponseWriter();
+  BiConsumer<ProcedureResponseMessage.Builder, R> getResponseWriter();
+
+  CheckedFunction<T, R> getLocalFunction();
+
+  void setLocalFunction(CheckedFunction<T, R> function);
+
+  boolean isLocalFunction();
 
 }

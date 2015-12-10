@@ -1,4 +1,4 @@
-package de.rennschnitzel.backbone.util;
+package de.rennschnitzel.backbone.util.function;
 
 @FunctionalInterface
 public interface CheckedFunction<T, R> {

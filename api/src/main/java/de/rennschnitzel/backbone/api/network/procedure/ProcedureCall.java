@@ -1,59 +1,36 @@
 package de.rennschnitzel.backbone.api.network.procedure;
 
-import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import com.google.common.base.Preconditions;
-import com.google.common.util.concurrent.AbstractFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
-import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponse;
-import de.rennschnitzel.backbone.netty.exception.ConnectionException;
-import lombok.Getter;
+import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ContentMessage;
+import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
 
-public class ProcedureCall<T, R> extends AbstractFuture<R> {
+public interface ProcedureCall<T, R> {
 
-  private static final AtomicInteger ID_COUNTER = new AtomicInteger(new Random().nextInt());
+  int getId();
 
-  @Getter
-  private final int id = ID_COUNTER.incrementAndGet();
-  private final long timestamp = System.currentTimeMillis();
+  long getTimestamp();
 
-  private final Procedure<T, R> procedure;
-  private final T arg;
+  long getMaxTimeout();
 
-  public ProcedureCall(Procedure<T, R> procedure, T arg) {
-    Preconditions.checkNotNull(procedure);
-    this.procedure = procedure;
-    this.arg = arg;
-  }
+  Procedure<T, R> getProcedure();
 
-  public void receive(ProcedureResponse response) throws IllegalArgumentException {
-    if (!procedure.isApplicable(response.getProcedure())) {
-      throw new IllegalArgumentException("response is not applicable for procedure");
-    }
-    if(response.getCancelled()) {
-      super.cancel(true);
-    }
-    if (response.getDataCase() == ProcedureResponse.DataCase.ERROR) {
-      this.setException(new ConnectionException(response.getError()));
-    } else {
-      try {
-        procedure.getResponseReader().apply(response);
-      } catch (Exception e) {
-        this.setException(new ConnectionException(response.getError()));
-      }
-    }
-  }
+  T getArgument();
 
-  public TransportProtocol.ProcedureCall toProtocol() {
-    TransportProtocol.ProcedureCall.Builder b = TransportProtocol.ProcedureCall.newBuilder();
-    b.setProcedure(this.procedure.toProtocol());
-    b.setId(id);
-    b.setTimestamp(timestamp);
-    procedure.getCallWriter().accept(b, arg);
-    return b.build();
-  }
+  void receive(ContentMessage message, ProcedureResponseMessage response) throws IllegalArgumentException;
 
+  TransportProtocol.ProcedureCallMessage toProtocol();
+
+  void checkTimeout();
+
+  boolean isDone();
+
+  void await() throws InterruptedException;
+
+  void await(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException;
+
+  boolean setException(Throwable throwable);
 
 }

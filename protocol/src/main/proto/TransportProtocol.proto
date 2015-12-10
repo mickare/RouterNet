@@ -5,9 +5,6 @@ package de.rennschnitzel.backbone.net.protocol;
 import "NetworkProtocol.proto";
 import "HandshakeProtocol.proto";
 import "ComponentUUID.proto";
-import "ComponentFstObject.proto";
-import "google/protobuf/any.proto";
-
 
 message ErrorMessage {
 	enum Type {
@@ -30,7 +27,7 @@ message CloseMessage {
 	}
 }
 
-message Target {
+message TargetMessage {
 	bool all = 1;
 	repeated UUID servers = 2;
 	repeated string namespaces = 3;
@@ -40,27 +37,30 @@ message Packet {
 	oneof value {
 		ErrorMessage error = 1;
 		CloseMessage close = 2;
-		Login login = 10;
-		AuthChallenge authChallenge = 11;
-		AuthResponse authResponse = 12;
-		AuthSuccess authSuccess = 13;
-		Connected connected = 20;
-		Disconnected disconnected = 21;
-		ServerUpdate update = 22;
-		Message message = 30;
+		LoginMessage login = 10;
+		AuthChallengeMessage authChallenge = 11;
+		AuthResponseMessage authResponse = 12;
+		AuthSuccessMessage authSuccess = 13;
+		ConnectedMessage connected = 20;
+		DisconnectedMessage disconnected = 21;
+		ServerUpdateMessage update = 22;
+		ContentMessage message = 30;
 	}
 }
 
-message Message {
-	Target target = 1;
+message ContentMessage {
+	TargetMessage target = 1;
 	UUID sender = 3;
 	oneof content {
-		ErrorMessage error = 10;
 		ByteContent bytes = 20;
-		FstObject objectValue = 21;
-		google.protobuf.Any protoValue = 22;
+		ObjectContent object = 21;
 		ProcedureContent procedure = 30;
 	}
+}
+
+message ObjectContent {
+	string type = 1;
+	bytes data = 2;	
 }
 
 message ByteContent {
@@ -70,24 +70,24 @@ message ByteContent {
 
 message ProcedureContent {
 	oneof content {
-		ProcedureCall call = 1;
-		ProcedureResponse response = 2;
+		ProcedureCallMessage call = 4;
+		ProcedureResponseMessage response = 5;
 	}
 }
 
-message ProcedureCall {
-	Procedure procedure = 1;
+message ProcedureCallMessage {
+	ProcedureMessage procedure = 1;
 	int32 id = 2;
 	int64 timestamp = 3;
+	int64 maxTimeout = 4;
 	oneof data {
 		bytes bytes = 20;
-		bytes objectValue = 21;
-		google.protobuf.Any protoValue = 22;
+		bytes object = 21;
 	}
 }
 
-message ProcedureResponse {
-	Procedure procedure = 1;
+message ProcedureResponseMessage {
+	ProcedureMessage procedure = 1;
 	int32 id = 2;
 	int64 timestamp = 3;
 	bool success = 4;
@@ -95,7 +95,6 @@ message ProcedureResponse {
 	oneof data {
 		ErrorMessage error = 10;
 		bytes bytes = 20;
-		bytes objectValue = 21;
-		google.protobuf.Any protoValue = 22;
+		bytes object = 21;
 	}
 }

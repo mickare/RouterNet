@@ -4,7 +4,7 @@ package de.rennschnitzel.backbone.net.protocol;
 
 import "ComponentUUID.proto";
 
-message Server {
+message ServerMessage {
 	enum Type {
 		UNDEFINED = 0;
 		BUNGEECORD = 1;
@@ -15,47 +15,47 @@ message Server {
 	string name = 3;
 	repeated string namespaces = 4;
 	int64 timestamp = 5;
-	repeated Procedure procedures = 10;
+	repeated ProcedureMessage procedures = 10;
 }
 
-message Router {
+message RouterMessage {
 	UUID id = 1;
 	string name = 2;
 	int64 timestamp = 3;
-	Address address = 4;
-	repeated Procedure procedures = 10;
+	AddressMessage address = 4;
+	repeated ProcedureMessage procedures = 10;
 }
 
-message Procedure {
+message ProcedureMessage {
 	string name = 1;
 	string argument = 2;
 	string result = 3;
 }
 
-message Address {
+message AddressMessage {
 	string host = 1;
 	int32 port = 2;
 }
 
-message NetworkTopology {
+message NetworkTopologyMessage {
 	repeated string namespaces = 1;
-	repeated Server servers = 2;
-	repeated Router router = 3;
+	repeated ServerMessage servers = 2;
+	repeated RouterMessage router = 3;
 }
 
-message Connected {
+message ConnectedMessage {
 	oneof connected {
-		Server server = 1;
-		Router router = 2;
+		ServerMessage server = 1;
+		RouterMessage router = 2;
 	}
-	Router parent = 3;
+	RouterMessage parent = 3;
 }
 
-message Disconnected {
-	Server server = 1;
-	Router parent = 2;
+message DisconnectedMessage {
+	ServerMessage server = 1;
+	RouterMessage parent = 2;
 }
 
-message ServerUpdate {
-	Server server = 1;
+message ServerUpdateMessage {
+	ServerMessage server = 1;
 }

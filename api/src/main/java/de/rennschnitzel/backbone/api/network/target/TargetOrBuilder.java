@@ -5,8 +5,10 @@ import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
 
 public interface TargetOrBuilder extends MessageReceiver {
 
-  TransportProtocol.Target toProtocol();
+  TransportProtocol.TargetMessage toProtocol();
 
   boolean contains(Server home);
+  
+  Target build();
 
 }

@@ -5,39 +5,39 @@ package de.rennschnitzel.backbone.net.protocol;
 import "ComponentUUID.proto";
 import "NetworkProtocol.proto";
 
-message Login {
+message LoginMessage {
 	int32 protocolVersion = 1;
 	oneof login {
-		FirstLogin first = 2;
-		SecondLogin second = 3;
+		FirstLoginMessage first = 2;
+		SecondLoginMessage second = 3;
 	}
 }
 
-message FirstLogin {
+message FirstLoginMessage {
 	repeated string namespaces = 1;
-	Server.Type type = 2;
+	ServerMessage.Type type = 2;
 }
 
-message SecondLogin {
+message SecondLoginMessage {
 	UUID id = 1;
 	repeated string namespaces = 2;
-	Server.Type type = 3;		
+	ServerMessage.Type type = 3;		
 }
 
-message AuthChallenge {
+message AuthChallengeMessage {
 	bytes token = 1;
 }
 
-message AuthResponse {
+message AuthResponseMessage {
 	bytes token = 1;
 }
 
-message AuthSuccess {
+message AuthSuccessMessage {
 	UUID cliendID = 1;
-	Router router = 2;
-	NetworkTopology network = 3;
+	RouterMessage router = 2;
+	NetworkTopologyMessage network = 3;
 }
 
-message Upgrade {
-	Server client = 1;
+message UpgradeMessage {
+	ServerMessage client = 1;
 }
