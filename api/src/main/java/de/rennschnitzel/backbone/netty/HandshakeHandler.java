@@ -1,10 +1,8 @@
 package de.rennschnitzel.backbone.netty;
 
 import com.google.common.base.Preconditions;
+import com.google.protobuf.Message;
 
-import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.Connected;
-import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.Disconnected;
-import de.rennschnitzel.backbone.net.protocol.TransportProtocol.Message;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.backbone.netty.exception.ConnectionException;
 import de.rennschnitzel.backbone.netty.exception.HandshakeException;

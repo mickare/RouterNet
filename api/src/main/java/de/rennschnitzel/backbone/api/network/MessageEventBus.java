@@ -23,6 +23,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import de.rennschnitzel.backbone.api.network.event.ByteMessageInEvent;
 import de.rennschnitzel.backbone.api.network.event.ObjectMessageInEvent;
+import de.rennschnitzel.backbone.api.network.message.ByteMessage;
+import de.rennschnitzel.backbone.api.network.message.ObjectMessage;
 import de.rennschnitzel.backbone.api.network.procedure.MultiProcedureCall;
 import de.rennschnitzel.backbone.api.network.procedure.Procedure;
 import de.rennschnitzel.backbone.api.network.procedure.ProcedureCall;
@@ -36,7 +38,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class MessageManager {
+public class MessageEventBus {
 
   private final static long MAX_CALL_TIMEOUT = 10000; // 10 seconds
 
@@ -45,7 +47,7 @@ public class MessageManager {
   // key - byte listener
   private final Multimap<String, Listener<ByteMessageInEvent>> listenersByteMessage = HashMultimap.create();
   // type - object listener
-  private final BiMap<Class<?>, ClassObjectListeners<?>> listenersObject = HashBiMap.create();
+  private final BiMap<Class<?>, RegisteredObjectListeners<?>> listenersObject = HashBiMap.create();
 
   private final BiMap<ProcedureInformation, RegisteredProcedure<?, ?>> registeredProcedures = HashBiMap.create();
 
@@ -72,8 +74,8 @@ public class MessageManager {
     Preconditions.checkNotNull(listener);
     try (CloseableLock l = lock.writeLock().open()) {
       @SuppressWarnings("unchecked")
-      ClassObjectListeners<T> col =
-          (ClassObjectListeners<T>) this.listenersObject.computeIfAbsent(objectClass, (k) -> new ClassObjectListeners<T>(objectClass));
+      RegisteredObjectListeners<T> col = (RegisteredObjectListeners<T>) this.listenersObject.computeIfAbsent(objectClass,
+          (k) -> new RegisteredObjectListeners<T>(objectClass));
       col.listeners.add(listener);
     }
   }
@@ -94,14 +96,14 @@ public class MessageManager {
     }
   }
 
-  public <T, R> ProcedureCallResult<T, R> call(Server server, Procedure<T, R> procedure, T argument) {
+  public <T, R> ProcedureCallResult<T, R> callProcedure(Server server, Procedure<T, R> procedure, T argument) {
     Preconditions.checkNotNull(server);
     Preconditions.checkNotNull(procedure);
     final SingleProcedureCall<T, R> call = new SingleProcedureCall<>(server, procedure, argument, MAX_CALL_TIMEOUT);
     try (CloseableLock l = lock.readLock().open()) {
       if (!call.isDone()) {
         openCalls.put(call.getId(), call);
-        Network.getInstance().getConnection().sendCall(call);
+        Network.getInstance().sendCall(call);
       }
     } catch (Exception e) {
       call.setException(e);
@@ -110,7 +112,8 @@ public class MessageManager {
   }
 
 
-  public <T, R> Map<UUID, ? extends ListenableFuture<R>> call(Collection<? extends Server> servers, Procedure<T, R> procedure, T argument) {
+  public <T, R> Map<UUID, ? extends ListenableFuture<R>> callProcedure(Collection<? extends Server> servers, Procedure<T, R> procedure,
+      T argument) {
     Preconditions.checkNotNull(servers);
     Preconditions.checkArgument(!servers.isEmpty());
     Preconditions.checkNotNull(procedure);
@@ -118,7 +121,7 @@ public class MessageManager {
     try (CloseableLock l = lock.readLock().open()) {
       if (!call.isDone()) {
         openCalls.put(call.getId(), call);
-        Network.getInstance().getConnection().sendCall(call);
+        Network.getInstance().sendCall(call);
       }
     } catch (Exception e) {
       call.setException(e);
@@ -127,10 +130,18 @@ public class MessageManager {
   }
 
   @RequiredArgsConstructor
-  private static class ClassObjectListeners<T> {
+  private static class RegisteredObjectListeners<T> {
     @Getter
     private final Class<T> objectClass;
     private final Set<Listener<ObjectMessageInEvent<T>>> listeners = Sets.newConcurrentHashSet();
+
+    @SuppressWarnings("unchecked")
+    private void callUnsecure(ObjectMessageInEvent<?> event) throws ClassCastException {
+      if (!objectClass.isAssignableFrom(event.getObjectClass())) {
+        throw new ClassCastException("Can't cast from " + event.getObjectClass().getName() + " to " + objectClass);
+      }
+      this.call((ObjectMessageInEvent<T>) event);
+    }
 
     public void call(ObjectMessageInEvent<T> event) {
       for (Listener<ObjectMessageInEvent<T>> l : listeners) {
@@ -146,6 +157,16 @@ public class MessageManager {
   @FunctionalInterface
   public static interface Listener<E> {
     void on(E event);
+  }
+
+  public void callListeners(ByteMessage msg) {
+    final ByteMessageInEvent event = new ByteMessageInEvent(msg);
+    this.listenersByteMessage.get(msg.getKey()).forEach(l -> l.on(event));
+  }
+
+  public void callListeners(ObjectMessage msg) throws Exception {
+    final ObjectMessageInEvent<?> event = new ObjectMessageInEvent<>(msg.getClass(), msg);
+    this.listenersObject.get(msg.getType()).callUnsecure(event);
   }
 
 }

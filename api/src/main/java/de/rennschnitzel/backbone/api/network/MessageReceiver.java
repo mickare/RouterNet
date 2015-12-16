@@ -1,4 +1,4 @@
-package de.rennschnitzel.backbone.api.network.target;
+package de.rennschnitzel.backbone.api.network;
 
 public interface MessageReceiver {
 

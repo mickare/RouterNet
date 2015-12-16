@@ -4,6 +4,8 @@ import java.util.function.BiConsumer;
 
 import com.google.common.base.Preconditions;
 
+import de.rennschnitzel.backbone.api.network.Network;
+import de.rennschnitzel.backbone.api.network.Server;
 import de.rennschnitzel.backbone.net.protocol.NetworkProtocol;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureCallMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
@@ -30,6 +32,7 @@ public class BaseProcedure<T, R> implements Procedure<T, R> {
     Preconditions.checkNotNull(info);
     Preconditions.checkNotNull(argClass);
     Preconditions.checkNotNull(resultClass);
+    
     this.info = info;
     this.argClass = argClass;
     this.resultClass = resultClass;
@@ -82,6 +85,11 @@ public class BaseProcedure<T, R> implements Procedure<T, R> {
   @Override
   public boolean isLocalFunction() {
     return localFunction != null;
+  }
+
+  @Override
+  public ProcedureCallResult<T, R> call(Server server, T argument) {
+    return Network.getInstance().getMessageEventBus().callProcedure(server, this, argument);
   }
 
 

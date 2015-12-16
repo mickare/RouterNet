@@ -4,12 +4,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import com.google.common.collect.BiMap;
+
 import de.rennschnitzel.backbone.api.network.procedure.Procedure;
 import de.rennschnitzel.backbone.api.network.procedure.ProcedureCallResult;
 import de.rennschnitzel.backbone.api.network.procedure.ProcedureInformation;
 import de.rennschnitzel.backbone.net.protocol.NetworkProtocol;
 
-public interface Server {
+public interface Server extends MessageReceiver {
 
   UUID getID();
 
@@ -22,11 +24,11 @@ public interface Server {
   boolean isConnected();
 
   /**
-   * Gets the registered procedures of the server.
+   * Gets the procedures of the server.
    * 
-   * @return set of procedures
+   * @return map of procedures
    */
-  Set<Procedure<?, ?>> getProcedures();
+  BiMap<ProcedureInformation, Procedure<?, ?>> getProcedures();
 
   /**
    * Gets a registered procedure of a server.
@@ -38,12 +40,10 @@ public interface Server {
    */
   <T, R> Procedure<T, R> getProcedure(String name, Class<T> argument, Class<R> result);
 
-  <T, R> ProcedureCallResult<T,R> call(Procedure<T, R> remoteProcedure, T arg);
-
-  Connection getConnection();
+  <T, R> ProcedureCallResult<T, R> call(Procedure<T, R> procedure, T argument);
 
   boolean hasNamespace(String namespace);
 
   boolean hasProcedure(ProcedureInformation info);
-  
+
 }

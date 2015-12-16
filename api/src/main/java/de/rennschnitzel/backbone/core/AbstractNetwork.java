@@ -1,29 +1,30 @@
 package de.rennschnitzel.backbone.core;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Function;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.Any;
-import com.google.protobuf.MessageOrBuilder;
+import com.google.protobuf.ByteString;
 
 import de.rennschnitzel.backbone.ProtocolUtils;
+import de.rennschnitzel.backbone.api.network.Connection;
+import de.rennschnitzel.backbone.api.network.MessageEventBus;
 import de.rennschnitzel.backbone.api.network.Network;
 import de.rennschnitzel.backbone.api.network.Server;
-import de.rennschnitzel.backbone.api.network.list.ServerCollection;
+import de.rennschnitzel.backbone.api.network.message.ByteMessage;
+import de.rennschnitzel.backbone.api.network.message.ObjectMessage;
+import de.rennschnitzel.backbone.api.network.message.PackableMessage;
 import de.rennschnitzel.backbone.api.network.target.Target;
 import de.rennschnitzel.backbone.api.network.target.TargetOrBuilder;
-import de.rennschnitzel.backbone.net.protocol.ComponentFstObject;
 import de.rennschnitzel.backbone.net.protocol.ComponentUUID;
-import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.ProcedureMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureCallMessage;
@@ -37,14 +38,14 @@ public class AbstractNetwork extends Network {
   @Getter
   private final Logger logger;
 
-  private final Map<UUID, Server> serversMap = Maps.newConcurrentMap();
-  @Getter
-  private final ServerCollection servers = new ServerCollection(serversMap);
+  private final Map<UUID, Server> servers = Maps.newConcurrentMap();
 
   private final Set<String> namespacesSet = Sets.newConcurrentHashSet();
   @Getter
   private final Set<String> namespaces = Collections.unmodifiableSet(namespacesSet);
 
+  @Getter
+  private final MessageEventBus messageEventBus = new MessageEventBus();
 
   private Server home;
 
@@ -58,42 +59,44 @@ public class AbstractNetwork extends Network {
 
   @Override
   public void sendBytes(TargetOrBuilder target, String key, byte[] data) {
-    if (target.contains(home)) {
+    Preconditions.checkArgument(!key.isEmpty());
+    final Target t = target.build();
+    Preconditions.checkArgument(!t.isEmpty());
+    final String k = key.toLowerCase();
 
+    final boolean containsHome = t.contains(home);
+
+    ByteMessage msg = new ByteMessage(t, home.getID(), key, data);
+    
+    if (t.isToAll() || !t.getNamespaces().isEmpty() || t.getServers().size() > (containsHome ? 1 : 0)) {
+      write(msg);
+    }
+
+    if (containsHome) {
+      this.handle(msg);
     }
   }
 
+  protected abstract void write(PackableMessage packet);
+
+  protected abstract void writeProcedure(TargetOrBuilder target, ProcedureContent content);
+
   @Override
   public void sendObject(TargetOrBuilder target, Object object) {
-    // TODO Auto-generated method stub
+    Preconditions.checkNotNull(object);
+    Preconditions.checkArgument(object instanceof Serializable, "object is not serializable");
+    final Target t = target.build();
+    Preconditions.checkArgument(!t.isEmpty());
 
   }
-
-  @Override
-  public void sendAny(TargetOrBuilder target, MessageOrBuilder message) {
-    // TODO Auto-generated method stub
-
-  }
-
-  private void sendProcedure(TargetOrBuilder target, ProcedureContent content) {
-
-  }
-
 
   private void sendProcedure(TargetOrBuilder target, ProcedureCallMessage call) {
-    sendProcedure(target, ProcedureContent.newBuilder().setCall(call).build());
+    writeProcedure(target, ProcedureContent.newBuilder().setCall(call).build());
   }
 
 
   private void sendProcedure(TargetOrBuilder target, ProcedureResponseMessage response) {
-    sendProcedure(target, ProcedureContent.newBuilder().setResponse(response).build());
-  }
-
-  @Override
-  public <T, R> Map<Server, ListenableFuture<T>> callProcedures(TargetOrBuilder target, String name, Class<T> argumentType,
-      Class<R> resultType) {
-    // TODO Auto-generated method stub
-    return null;
+    writeProcedure(target, ProcedureContent.newBuilder().setResponse(response).build());
   }
 
   @Override
@@ -103,17 +106,12 @@ public class AbstractNetwork extends Network {
       return;
     }
     switch (message.getContentCase()) {
-      case ERROR:
-        handle(message.getTarget(), message.getSender(), message.getError());
-        break;
       case BYTES:
-        handle(message.getTarget(), message.getSender(), message.getBytes());
+        handle(new ByteMessage(message));
         break;
-      case OBJECTVALUE:
-        handle(message.getTarget(), message.getSender(), message.getObjectValue());
-        break;
-      case PROTOVALUE:
-        handle(message.getTarget(), message.getSender(), message.getProtoValue());
+      case OBJECT:
+        handle(new ObjectMessage(message));
+        handle(message.getTarget(), message.getSender(), message.getObject());
         break;
       case PROCEDURE:
         handle(message.getTarget(), message.getSender(), message.getProcedure());
@@ -123,21 +121,16 @@ public class AbstractNetwork extends Network {
     }
   }
 
-  private void handle(TransportProtocol.TargetMessage target, ComponentUUID.UUID sender, TransportProtocol.ErrorMessage error) {
-    logger.log(error.getFatal() ? Level.SEVERE : Level.WARNING, "Remote Error on " + ProtocolUtils.convert(sender),
-        error.getType() + " " + error.getMessage());
+  private void handle(ObjectMessage msg) {
+    this.messageEventBus.callListeners(msg);
   }
 
-  private void handle(TransportProtocol.TargetMessage target, ComponentUUID.UUID sender, TransportProtocol.ByteContent bytes) {
-    receive(new Target(target), ProtocolUtils.convert(sender), bytes.getKey(), bytes.getData().toByteArray());
+  private void handle(ByteMessage msg) {
+    this.messageEventBus.callListeners(msg);
   }
 
-  private void receive(Target target, UUID sender, String key, byte[] data) {
-
-  }
-
-  private void handle(TransportProtocol.TargetMessage target, ComponentUUID.UUID sender, ComponentFstObject.FstObject obj) {
-    receive(new Target(target), ProtocolUtils.convert(sender), obj.getType(), FST.asObject(obj.getData().toByteArray()));
+  private void handle(TransportProtocol.TargetMessage target, ComponentUUID.UUID sender, TransportProtocol.ObjectContent object) {
+    receive(new Target(target), ProtocolUtils.convert(sender), object.getType(), FST.asObject(object.getData().toByteArray()));
   }
 
   private void receive(Target target, UUID sender, String type, Object asObject) {
@@ -205,11 +198,30 @@ public class AbstractNetwork extends Network {
   }
 
   @Override
-  public Set<Server> getServers(TargetOrBuilder target) {
+  public UUID getID() {
     // TODO Auto-generated method stub
     return null;
   }
 
+  @Override
+  public Map<UUID, Server> getServers() {
+    return Collections.unmodifiableMap(this.servers);
+  }
 
+  @Override
+  public Map<UUID, Server> getServers(TargetOrBuilder target) {
+    ImmutableMap.Builder<UUID, Server> b = ImmutableMap.builder();
+    final Target t = target.build();
+    if (t.isToAll()) {
+      b.putAll(this.servers);
+    } else {
+      for (Server server : this.servers.values()) {
+        if (target.contains(server)) {
+          b.put(server.getID(), server);
+        }
+      }
+    }
+    return b.build();
+  }
 
 }

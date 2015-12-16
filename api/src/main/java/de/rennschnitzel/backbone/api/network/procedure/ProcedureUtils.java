@@ -1,5 +1,6 @@
 package de.rennschnitzel.backbone.api.network.procedure;
 
+import java.io.Serializable;
 import java.util.function.BiConsumer;
 
 import com.google.protobuf.ByteString;
@@ -19,7 +20,7 @@ public class ProcedureUtils {
       return (p) -> null;
     } else if (byte[].class.equals(resultClass)) {
       return (p) -> (R) p.getBytes().toByteArray();
-    } else if (Object.class.isAssignableFrom(resultClass)) {
+    } else if (Serializable.class.isAssignableFrom(resultClass)) {
       return (p) -> (R) Network.FST.getObjectInput(p.getObject().toByteArray()).readObject(resultClass);
     } else {
       throw new IllegalArgumentException("Unsupported response type!");
@@ -35,7 +36,7 @@ public class ProcedureUtils {
       return (p, r) -> p.clearData();
     } else if (byte[].class.equals(resultClass)) {
       return (p, r) -> p.setBytes(ByteString.copyFrom((byte[]) r));
-    } else if (Object.class.isAssignableFrom(resultClass)) {
+    } else if (Serializable.class.isAssignableFrom(resultClass)) {
       return (p, r) -> p.setObject(ByteString.copyFrom(Network.FST.asByteArray(r)));
     } else {
       throw new IllegalArgumentException("Unsupported response type!");
@@ -51,7 +52,7 @@ public class ProcedureUtils {
       return (p) -> null;
     } else if (byte[].class.equals(argClass)) {
       return (p) -> (A) p.getBytes().toByteArray();
-    } else if (Object.class.isAssignableFrom(argClass)) {
+    } else if (Serializable.class.isAssignableFrom(argClass)) {
       return (p) -> (A) Network.FST.getObjectInput(p.getObject().toByteArray()).readObject(argClass);
     } else {
       throw new IllegalArgumentException("Unsupported call type!");
@@ -65,7 +66,7 @@ public class ProcedureUtils {
       return (p, r) -> p.clearData();
     } else if (byte[].class.equals(argClass)) {
       return (p, r) -> p.setBytes(ByteString.copyFrom((byte[]) r));
-    } else if (Object.class.isAssignableFrom(argClass)) {
+    } else if (Serializable.class.isAssignableFrom(argClass)) {
       return (p, r) -> p.setObject(ByteString.copyFrom(Network.FST.asByteArray(r)));
     } else {
       throw new IllegalArgumentException("Unsupported call type!");

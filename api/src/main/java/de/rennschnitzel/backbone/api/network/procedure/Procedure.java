@@ -2,6 +2,7 @@ package de.rennschnitzel.backbone.api.network.procedure;
 
 import java.util.function.BiConsumer;
 
+import de.rennschnitzel.backbone.api.network.Server;
 import de.rennschnitzel.backbone.net.protocol.NetworkProtocol;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureCallMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
@@ -37,5 +38,7 @@ public interface Procedure<T, R> extends Comparable<Procedure<?, ?>> {
   void setLocalFunction(CheckedFunction<T, R> function);
 
   boolean isLocalFunction();
+
+  ProcedureCallResult<T, R> call(Server server, T argument);
 
 }

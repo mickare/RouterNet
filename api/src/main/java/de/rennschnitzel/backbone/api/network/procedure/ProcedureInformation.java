@@ -16,6 +16,11 @@ public class ProcedureInformation implements Comparable<ProcedureInformation> {
     this(msg.getName(), msg.getArgument(), msg.getResult());
   }
 
+
+  public ProcedureInformation(final String name, final Class<?> argument, final Class<?> result) {
+    this(name, argument.getName(), result.getName());
+  }
+
   public ProcedureInformation(final String name, final String argumentType, final String resultType)
       throws IllegalArgumentException, NullPointerException {
     Preconditions.checkArgument(!name.isEmpty());
