@@ -51,7 +51,7 @@ public class Target {
         t.getNamespacesIncludeList(), t.getNamespacesExcludeList());
   }
 
-  private static boolean overlaps(Collection<?> c, Collection<?> b) {
+  public static boolean overlaps(Collection<?> c, Collection<?> b) {
     for (Object o : b) {
       if (c.contains(o)) {
         return true;

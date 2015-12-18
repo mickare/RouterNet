@@ -72,6 +72,8 @@ message ChannelRegister {
 }
 
 message ProcedureMessage {
+	TargetMessage target = 1;
+	UUID sender = 2;
 	oneof content {
 		ProcedureCallMessage call = 4;
 		ProcedureResponseMessage response = 5;

@@ -1,4 +1,4 @@
-package de.rennschnitzel.backbone.api.network.procedure;
+package de.rennschnitzel.backbone.net.procedure;
 
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.AbstractFuture;

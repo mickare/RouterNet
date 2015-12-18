@@ -6,46 +6,40 @@ import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 
 import de.rennschnitzel.backbone.ProtocolUtils;
+import de.rennschnitzel.backbone.net.Message;
 import de.rennschnitzel.backbone.net.Target;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
 import lombok.Getter;
 
 @Getter
-public class ChannelMessage {
+public class ChannelMessage extends Message {
 
   private final Channel channel;
-  private final Target target;
-  private final UUID sender;
   private final ByteString byteData;
 
   private final TransportProtocol.ChannelMessage protocolMessage;
 
   public ChannelMessage(ChannelMessage cmsg) {
+    super(cmsg.target, cmsg.sender);
     this.channel = cmsg.channel;
-    this.target = cmsg.target;
-    this.sender = cmsg.sender;
     this.byteData = cmsg.byteData;
     this.protocolMessage = cmsg.protocolMessage;
   }
 
   public ChannelMessage(final Channel channel, final Target target, final UUID sender, final ByteString byteData) {
+    super(target, sender);
     Preconditions.checkNotNull(channel);
-    Preconditions.checkNotNull(target);
-    Preconditions.checkNotNull(sender);
     Preconditions.checkNotNull(byteData);
     this.channel = channel;
-    this.target = target;
-    this.sender = sender;
     this.byteData = byteData;
     this.protocolMessage = createProtocolMessage();
   }
 
   public ChannelMessage(final Channel channel, final TransportProtocol.ChannelMessage message) {
+    super(message.getTarget(), message.getSender());
     Preconditions.checkNotNull(channel.getChannelId() == message.getChannelId());
     this.channel = channel;
     this.protocolMessage = message;
-    this.target = new Target(message.getTarget());
-    this.sender = ProtocolUtils.convert(message.getSender());
     this.byteData = message.getData();
   }
 

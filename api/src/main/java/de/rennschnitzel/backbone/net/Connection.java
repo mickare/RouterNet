@@ -86,6 +86,17 @@ public abstract class Connection {
     return subChannel;
   }
 
+  protected void handle(TransportProtocol.ChannelMessage msg) {
+    if (!this.getHome().isPart(msg.getTarget())) {
+      // Just drop it.
+      return;
+    }
+    final Channel channel = this.getChannel(msg.getChannelId());
+    if (channel != null && !channel.isClosed()) {
+      channel.receive(msg);
+    }
+  }
+
   public abstract NetworkMember getHome();
 
   public abstract void send(TransportProtocol.Packet packet);

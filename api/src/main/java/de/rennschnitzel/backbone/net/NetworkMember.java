@@ -8,6 +8,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 import com.google.common.base.Preconditions;
 
+import de.rennschnitzel.backbone.ProtocolUtils;
+import de.rennschnitzel.backbone.net.procedure.ProcedureInformation;
+import de.rennschnitzel.backbone.net.protocol.TransportProtocol.TargetMessage;
 import lombok.Getter;
 
 public class NetworkMember {
@@ -30,5 +33,30 @@ public class NetworkMember {
   public boolean hasNamespace(String namespace) {
     return this.namespaces.contains(namespace.toLowerCase());
   }
+
+  public boolean isPart(TargetMessage target) {
+    if (target.getAll()) {
+      if (ProtocolUtils.convertProto(target.getServersExcludeList()).contains(this.id)) {
+        return false;
+      }
+      if (Target.overlaps(target.getNamespacesExcludeList(), this.namespaces)) {
+        return false;
+      }
+      return true;
+    }
+    if (ProtocolUtils.convertProto(target.getServersIncludeList()).contains(this.id)) {
+      return true;
+    }
+    if (Target.overlaps(target.getNamespacesIncludeList(), this.namespaces)) {
+      return true;
+    }
+    return false;
+  }
+
+  public boolean hasProcedure(ProcedureInformation info) {
+    // TODO Auto-generated method stub
+    return false;
+  }
+
 
 }

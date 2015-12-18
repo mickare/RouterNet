@@ -1,4 +1,4 @@
-package de.rennschnitzel.backbone.api.network.procedure;
+package de.rennschnitzel.backbone.net.procedure;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;

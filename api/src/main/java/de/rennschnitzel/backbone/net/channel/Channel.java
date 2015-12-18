@@ -94,7 +94,7 @@ public class Channel {
     if (cmsg.getTarget().contains(getHome())) {
       this.receive(cmsg);
     }
-  }  
+  }
 
   public void sendIgnoreSelf(ChannelMessage cmsg) throws IOException {
     this.connection.sendChannelMessage(cmsg.getProtocolMessage());
@@ -105,10 +105,6 @@ public class Channel {
   }
 
   public final void receive(final ChannelMessage cmsg) {
-    if (!cmsg.getTarget().contains(this.getHome())) {
-      // Just drop it.
-      return;
-    }
     this.listeners.forEach(c -> c.accept(cmsg));
     if (this.handler != null) {
       try {

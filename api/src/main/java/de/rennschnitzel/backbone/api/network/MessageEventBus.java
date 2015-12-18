@@ -32,6 +32,7 @@ import de.rennschnitzel.backbone.api.network.procedure.ProcedureCallResult;
 import de.rennschnitzel.backbone.api.network.procedure.ProcedureInformation;
 import de.rennschnitzel.backbone.api.network.procedure.RegisteredProcedure;
 import de.rennschnitzel.backbone.api.network.procedure.SingleProcedureCall;
+import de.rennschnitzel.backbone.net.NetworkMember;
 import de.rennschnitzel.backbone.util.concurrent.CloseableLock;
 import de.rennschnitzel.backbone.util.concurrent.CloseableReentrantReadWriteLock;
 import lombok.Getter;
@@ -96,7 +97,7 @@ public class MessageEventBus {
     }
   }
 
-  public <T, R> ProcedureCallResult<T, R> callProcedure(Server server, Procedure<T, R> procedure, T argument) {
+  public <T, R> ProcedureCallResult<T, R> callProcedure(NetworkMember server, Procedure<T, R> procedure, T argument) {
     Preconditions.checkNotNull(server);
     Preconditions.checkNotNull(procedure);
     final SingleProcedureCall<T, R> call = new SingleProcedureCall<>(server, procedure, argument, MAX_CALL_TIMEOUT);

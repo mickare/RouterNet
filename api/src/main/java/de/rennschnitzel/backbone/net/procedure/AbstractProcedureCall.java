@@ -1,4 +1,4 @@
-package de.rennschnitzel.backbone.api.network.procedure;
+package de.rennschnitzel.backbone.net.procedure;
 
 import java.util.Random;
 import java.util.concurrent.TimeoutException;
@@ -18,7 +18,7 @@ public abstract class AbstractProcedureCall<T, R> implements ProcedureCall<T, R>
   @Getter
   private final long timestamp = System.currentTimeMillis();
   @Getter
-  private final long maxTimeout; // in seconds
+  private final long maxTimeout;
   @Getter
   private final Procedure<T, R> procedure;
   @Getter
@@ -43,7 +43,7 @@ public abstract class AbstractProcedureCall<T, R> implements ProcedureCall<T, R>
 
   @Override
   public void checkTimeout() {
-    if (this.getMaxTimeout() * 1000 <= System.currentTimeMillis() - this.getTimestamp() && !isDone()) {
+    if (this.getMaxTimeout() <= System.currentTimeMillis() - this.getTimestamp() && !isDone()) {
       setException(new TimeoutException());
     }
   }
