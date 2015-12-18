@@ -15,7 +15,7 @@ import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
 
 public abstract class Connection {
 
-  private final AtomicInteger ID_GENERATOR = new AtomicInteger(0);
+  private final AtomicInteger CHANNEL_ID_GENERATOR = new AtomicInteger(0);
 
   private final ConcurrentMap<String, Channel> channelsByName = new ConcurrentHashMap<>();
   private final ConcurrentMap<Integer, Channel> channelsById = new ConcurrentHashMap<>();
@@ -30,10 +30,10 @@ public abstract class Connection {
     return this.channelsById.get(channelId);
   }
 
-  private synchronized int getNextFreeInteger() {
+  private synchronized int getNextFreeChannelId() {
     int id;
     do {
-      id = ID_GENERATOR.incrementAndGet();
+      id = CHANNEL_ID_GENERATOR.incrementAndGet();
     } while (channelsById.containsKey(id));
     return id;
   }
@@ -50,7 +50,7 @@ public abstract class Connection {
         // Check again, but in synchronized state!
         channel = this.channelsByName.get(key);
         if (channel == null) {
-          channel = new Channel(this, getNextFreeInteger(), key);
+          channel = new Channel(this, getNextFreeChannelId(), key);
           this.channelsByName.put(channel.getName(), channel);
           this.channelsById.put(channel.getChannelId(), channel);
           if (register) {

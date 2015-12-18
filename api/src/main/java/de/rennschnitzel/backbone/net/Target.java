@@ -1,11 +1,12 @@
 package de.rennschnitzel.backbone.net;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 
 import de.rennschnitzel.backbone.ProtocolUtils;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
@@ -15,7 +16,11 @@ import lombok.Getter;
 public class Target {
 
   public static Target toAll() {
-    return new Target(true, Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+    return Builder.toAll().build();
+  }
+
+  public static Target to(UUID server) {
+    return Builder.builder().include(server).build();
   }
 
   private final boolean toAll;
@@ -77,6 +82,119 @@ public class Target {
       return true;
     }
     return false;
+  }
+
+  public static class Builder {
+
+    public static Builder toAll() {
+      return new Builder().setToAll(true);
+    }
+
+    public static Builder builder() {
+      return new Builder();
+    }
+
+    private boolean toAll = false;
+    private final Set<UUID> serversInclude = Sets.newHashSet();
+    private final Set<UUID> serversExclude = Sets.newHashSet();
+    private final Set<String> namespacesInclude = Sets.newHashSet();
+    private final Set<String> namespacesExclude = Sets.newHashSet();
+
+
+    public Builder setToAll(boolean toAll) {
+      this.toAll = toAll;
+      return this;
+    }
+
+
+    public Builder include(NetworkMember server) {
+      return this.include(server.getId());
+    }
+
+    public Builder include(UUID server) {
+      Preconditions.checkNotNull(server);
+      this.serversInclude.add(server);
+      this.serversExclude.remove(server);
+      return this;
+    }
+
+    public Builder include(UUID... servers) {
+      for (int i = 0; i < servers.length; ++i) {
+        include(servers[i]);
+      }
+      return this;
+    }
+
+    public Builder includeAllServers(Collection<NetworkMember> c) {
+      c.forEach(this::include);
+      return this;
+    }
+
+    public Builder exclude(NetworkMember server) {
+      return this.exclude(server.getId());
+    }
+
+    public Builder exclude(UUID server) {
+      Preconditions.checkNotNull(server);
+      this.serversExclude.add(server);
+      this.serversInclude.remove(server);
+      return this;
+    }
+
+    public Builder exclude(UUID... servers) {
+      for (int i = 0; i < servers.length; ++i) {
+        exclude(servers[i]);
+      }
+      return this;
+    }
+
+    public Builder excludeAllServers(Collection<NetworkMember> c) {
+      c.forEach(this::exclude);
+      return this;
+    }
+
+    public Builder include(String namespace) {
+      String n = namespace.toLowerCase();
+      this.namespacesInclude.add(n);
+      this.namespacesExclude.remove(n);
+      return this;
+    }
+
+    public Builder include(String... namespaces) {
+      for (int i = 0; i < namespaces.length; ++i) {
+        include(namespaces[i]);
+      }
+      return this;
+    }
+
+    public Builder includeAllNamespaces(Collection<String> c) {
+      c.forEach(this::include);
+      return this;
+    }
+
+    public Builder exclude(String namespace) {
+      String n = namespace.toLowerCase();
+      this.namespacesExclude.add(n);
+      this.namespacesInclude.remove(n);
+      return this;
+    }
+
+    public Builder exclude(String... namespaces) {
+      for (int i = 0; i < namespaces.length; ++i) {
+        exclude(namespaces[i]);
+      }
+      return this;
+    }
+
+    public Builder excludeAllNamespaces(Collection<String> c) {
+      c.forEach(this::exclude);
+      return this;
+    }
+
+    public Target build() {
+      return new Target(this.toAll, this.serversInclude, this.serversExclude, this.namespacesInclude, this.namespacesExclude);
+    }
+
   }
 
 }
