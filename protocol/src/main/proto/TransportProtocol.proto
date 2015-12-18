@@ -29,8 +29,10 @@ message CloseMessage {
 
 message TargetMessage {
 	bool all = 1;
-	repeated UUID servers = 2;
-	repeated string namespaces = 3;
+	repeated UUID serversInclude = 2;
+	repeated UUID serversExclude = 3;
+	repeated string namespacesInclude = 4;
+	repeated string namespacesExclude = 5;
 }
 
 message Packet {
@@ -44,31 +46,32 @@ message Packet {
 		ConnectedMessage connected = 20;
 		DisconnectedMessage disconnected = 21;
 		ServerUpdateMessage update = 22;
-		ContentMessage message = 30;
+		ChannelMessage channelMessage = 30;
+		ChannelRegister channelRegister = 31;
+		ProcedureMessage procedureMessage = 40;
 	}
 }
 
-message ContentMessage {
-	TargetMessage target = 1;
+message ChannelMessage {
+	int32 channelId = 1;
+	TargetMessage target = 2;
 	UUID sender = 3;
-	oneof content {
-		ByteContent bytes = 20;
-		ObjectContent object = 21;
-		ProcedureContent procedure = 30;
+	bytes data = 4;
+}
+
+message ChannelRegister {
+	enum Type {
+		BYTES = 0;
+		OBJECT = 1;
+		STREAM = 2;
+		CUSTOM = 3;
 	}
+	int32 channelId = 1;
+	string name = 2;
+	Type type = 3;
 }
 
-message ObjectContent {
-	string type = 1;
-	bytes data = 2;	
-}
-
-message ByteContent {
-	string key = 1;
-	bytes data = 2;
-}
-
-message ProcedureContent {
+message ProcedureMessage {
 	oneof content {
 		ProcedureCallMessage call = 4;
 		ProcedureResponseMessage response = 5;
@@ -76,7 +79,7 @@ message ProcedureContent {
 }
 
 message ProcedureCallMessage {
-	ProcedureMessage procedure = 1;
+	ProcedureDescription procedure = 1;
 	int32 id = 2;
 	int64 timestamp = 3;
 	int64 maxTimeout = 4;
@@ -87,7 +90,7 @@ message ProcedureCallMessage {
 }
 
 message ProcedureResponseMessage {
-	ProcedureMessage procedure = 1;
+	ProcedureDescription procedure = 1;
 	int32 id = 2;
 	int64 timestamp = 3;
 	bool success = 4;

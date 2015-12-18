@@ -15,7 +15,7 @@ message ServerMessage {
 	string name = 3;
 	repeated string namespaces = 4;
 	int64 timestamp = 5;
-	repeated ProcedureMessage procedures = 10;
+	repeated ProcedureDescription procedures = 10;
 }
 
 message RouterMessage {
@@ -23,10 +23,10 @@ message RouterMessage {
 	string name = 2;
 	int64 timestamp = 3;
 	AddressMessage address = 4;
-	repeated ProcedureMessage procedures = 10;
+	repeated ProcedureDescription procedures = 10;
 }
 
-message ProcedureMessage {
+message ProcedureDescription {
 	string name = 1;
 	string argument = 2;
 	string result = 3;
