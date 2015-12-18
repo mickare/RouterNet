@@ -5,7 +5,7 @@ import java.util.function.BiConsumer;
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.backbone.net.Network;
-import de.rennschnitzel.backbone.net.NetworkMember;
+import de.rennschnitzel.backbone.net.node.NetworkNode;
 import de.rennschnitzel.backbone.net.protocol.NetworkProtocol;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureCallMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
@@ -88,7 +88,7 @@ public class BaseProcedure<T, R> implements Procedure<T, R> {
   }
 
   @Override
-  public ProcedureCallResult<T, R> call(NetworkMember server, T argument) {
+  public ProcedureCallResult<T, R> call(NetworkNode server, T argument) {
     return Network.getInstance().getProcedureManager().callProcedure(server, this, argument);
   }
 

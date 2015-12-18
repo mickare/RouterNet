@@ -11,6 +11,8 @@ import de.rennschnitzel.backbone.Owner;
 import de.rennschnitzel.backbone.net.channel.Channel;
 import de.rennschnitzel.backbone.net.channel.SubChannel;
 import de.rennschnitzel.backbone.net.channel.SubChannelDescriptor;
+import de.rennschnitzel.backbone.net.node.HomeNode;
+import de.rennschnitzel.backbone.net.node.NetworkNode;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
 
 public abstract class Connection {
@@ -97,7 +99,7 @@ public abstract class Connection {
     }
   }
 
-  public abstract NetworkMember getHome();
+  public abstract HomeNode getHome();
 
   public abstract void send(TransportProtocol.Packet packet);
 

@@ -11,8 +11,9 @@ import com.google.protobuf.ByteString;
 
 import de.rennschnitzel.backbone.Owner;
 import de.rennschnitzel.backbone.net.Connection;
-import de.rennschnitzel.backbone.net.NetworkMember;
 import de.rennschnitzel.backbone.net.Target;
+import de.rennschnitzel.backbone.net.node.HomeNode;
+import de.rennschnitzel.backbone.net.node.NetworkNode;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.Packet;
 import lombok.Getter;
@@ -60,7 +61,7 @@ public class Channel {
     this.closed = true;
   }
 
-  public NetworkMember getHome() {
+  public HomeNode getHome() {
     return this.connection.getHome();
   }
 

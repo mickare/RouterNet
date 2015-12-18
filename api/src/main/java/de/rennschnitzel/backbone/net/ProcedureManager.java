@@ -15,6 +15,7 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import de.rennschnitzel.backbone.net.node.NetworkNode;
 import de.rennschnitzel.backbone.net.procedure.MultiProcedureCall;
 import de.rennschnitzel.backbone.net.procedure.Procedure;
 import de.rennschnitzel.backbone.net.procedure.ProcedureCall;
@@ -58,6 +59,7 @@ public class ProcedureManager {
     RegisteredProcedure<T, R> proc = new RegisteredProcedure<>(name, function);
     try (CloseableLock l = lock.writeLock().open()) {
       registeredProcedures.put(proc.getInfo(), proc);
+      Network.getInstance().getHome().addRegisteredProcedure(proc);
     }
   }
 
@@ -67,11 +69,11 @@ public class ProcedureManager {
     }
   }
 
-  public <T, R> ProcedureCallResult<T, R> callProcedure(NetworkMember server, Procedure<T, R> procedure, T argument) {
+  public <T, R> ProcedureCallResult<T, R> callProcedure(NetworkNode server, Procedure<T, R> procedure, T argument) {
     return this.callProcedure(server, procedure, argument, PROCEDURE_DEFAULT_TIMEOUT);
   }
 
-  public <T, R> ProcedureCallResult<T, R> callProcedure(NetworkMember server, Procedure<T, R> procedure, T argument, long timeout) {
+  public <T, R> ProcedureCallResult<T, R> callProcedure(NetworkNode server, Procedure<T, R> procedure, T argument, long timeout) {
     Preconditions.checkNotNull(server);
     Preconditions.checkNotNull(procedure);
     Preconditions.checkArgument(timeout > 0);
@@ -87,12 +89,12 @@ public class ProcedureManager {
     return call.getResult();
   }
 
-  public <T, R> Map<UUID, ? extends ListenableFuture<R>> callProcedure(Collection<NetworkMember> servers, Procedure<T, R> procedure,
+  public <T, R> Map<UUID, ? extends ListenableFuture<R>> callProcedure(Collection<NetworkNode> servers, Procedure<T, R> procedure,
       T argument) {
     return this.callProcedure(servers, procedure, argument, PROCEDURE_DEFAULT_TIMEOUT);
   }
 
-  public <T, R> Map<UUID, ? extends ListenableFuture<R>> callProcedure(Collection<NetworkMember> servers, Procedure<T, R> procedure,
+  public <T, R> Map<UUID, ? extends ListenableFuture<R>> callProcedure(Collection<NetworkNode> servers, Procedure<T, R> procedure,
       T argument, long timeout) {
     Preconditions.checkNotNull(servers);
     Preconditions.checkArgument(!servers.isEmpty());

@@ -2,7 +2,7 @@ package de.rennschnitzel.backbone.api.network.procedure;
 
 import java.util.function.BiConsumer;
 
-import de.rennschnitzel.backbone.net.NetworkMember;
+import de.rennschnitzel.backbone.net.node.NetworkNode;
 import de.rennschnitzel.backbone.net.protocol.NetworkProtocol;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureCallMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
@@ -39,6 +39,6 @@ public interface Procedure<T, R> extends Comparable<Procedure<?, ?>> {
 
   boolean isLocalFunction();
 
-  ProcedureCallResult<T, R> call(NetworkMember server, T argument);
+  ProcedureCallResult<T, R> call(NetworkNode server, T argument);
 
 }

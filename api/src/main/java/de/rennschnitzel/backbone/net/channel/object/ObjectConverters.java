@@ -12,7 +12,7 @@ import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.ByteString.Output;
 
-import de.rennschnitzel.backbone.fst.FST;
+import de.rennschnitzel.backbone.net.Network;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -74,7 +74,7 @@ public class ObjectConverters {
     @Override
     public final ByteString asByteString(final T obj) throws ConvertObjectChannelException {
       try (final Output stream = ByteString.newOutput()) {
-        final FSTObjectOutput out = FST.DEFAULT.getObjectOutput(stream);
+        final FSTObjectOutput out = Network.SERIALIZATION.getObjectOutput(stream);
         out.writeObject(obj, this.dataClass);
         out.flush();
         return stream.toByteString();
@@ -87,7 +87,7 @@ public class ObjectConverters {
     @Override
     public final T asObject(final ByteString byteData) throws ConvertObjectChannelException {
       try (final InputStream stream = byteData.newInput()) {
-        final FSTObjectInput in = FST.DEFAULT.getObjectInput(stream);
+        final FSTObjectInput in = Network.SERIALIZATION.getObjectInput(stream);
         return (T) in.readObject(this.dataClass);
       } catch (final Exception e) {
         throw new ConvertObjectChannelException(e);

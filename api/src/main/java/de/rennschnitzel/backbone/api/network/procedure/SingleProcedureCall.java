@@ -7,7 +7,7 @@ import java.util.concurrent.TimeoutException;
 
 import com.google.common.base.Preconditions;
 
-import de.rennschnitzel.backbone.net.NetworkMember;
+import de.rennschnitzel.backbone.net.node.NetworkNode;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
 import de.rennschnitzel.backbone.netty.exception.ConnectionException;
@@ -16,11 +16,11 @@ import lombok.Getter;
 public class SingleProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
 
   @Getter
-  private final NetworkMember server;
+  private final NetworkNode server;
   @Getter
   private final ProcedureCallResult<T, R> result;
 
-  public SingleProcedureCall(NetworkMember server, Procedure<T, R> procedure, T argument, long maxTimeout) {
+  public SingleProcedureCall(NetworkNode server, Procedure<T, R> procedure, T argument, long maxTimeout) {
     super(procedure, argument, maxTimeout);
     Preconditions.checkNotNull(server);
     this.server = server;

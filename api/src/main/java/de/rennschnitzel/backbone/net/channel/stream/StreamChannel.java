@@ -19,7 +19,7 @@ import de.rennschnitzel.backbone.net.channel.ChannelHandler;
 import de.rennschnitzel.backbone.net.channel.ChannelMessage;
 import de.rennschnitzel.backbone.net.channel.SubChannel;
 import de.rennschnitzel.backbone.net.channel.SubChannelDescriptor;
-import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
+import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ChannelRegister.Type;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -31,15 +31,18 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
 
     @Getter
     private final int bufferSize;
+    @Getter
+    private final boolean writer;
 
-    public Descriptor(String name) {
-      this(name, 1 * (1 << 20)); // 1 MiB Buffer
+    public Descriptor(String name, boolean writer) {
+      this(name, writer, 1 * (1 << 20)); // 1 MiB Buffer
     }
 
-    public Descriptor(String name, int bufferSize) {
-      super(name, TransportProtocol.ChannelRegister.Type.STREAM);
+    public Descriptor(String name, boolean writer, int bufferSize) {
+      super(name, writer ? Type.STREAM_OUT : Type.STREAM_IN);
       Preconditions.checkNotNull(bufferSize > 32);
       this.bufferSize = bufferSize;
+      this.writer = writer;
     }
 
     @Override
@@ -70,9 +73,7 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
       return (StreamChannel) channel;
     }
 
-
   }
-
 
   private final CircularByteBuffer inputBuffer;
   @Getter
@@ -85,26 +86,36 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
 
   public StreamChannel(Owner owner, Channel parentChannel, Descriptor descriptor) throws IllegalStateException {
     super(owner, parentChannel, descriptor);
-    this.inputBuffer = new CircularByteBuffer(CircularByteBuffer.INFINITE_SIZE);
-    this.outputStream = new BufferedOutputStream(new ChannelOutput(), this.descriptor.bufferSize);
+    this.inputBuffer = descriptor.writer ? null : new CircularByteBuffer(CircularByteBuffer.INFINITE_SIZE);
+    this.outputStream = !descriptor.writer ? null : new BufferedOutputStream(new ChannelOutput(), this.descriptor.bufferSize);
   }
 
   public InputStream getInputStream() {
+    if (descriptor.writer) {
+      throw new UnsupportedOperationException("Stream channel is only output!");
+    }
     return this.inputBuffer.getInputStream();
   }
 
   @Override
   public synchronized void receive(ChannelMessage cmsg) throws IOException {
-    if (!isClosed()) {
+    if (!descriptor.writer && !isClosed()) {
       this.inputBuffer.getOutputStream().write(cmsg.getByteData().toByteArray());
     }
   }
 
   private void send(byte[] data) throws IOException {
+    if (!descriptor.writer) {
+      throw new UnsupportedOperationException("Stream channel is only input!");
+    }
     this.parentChannel.send(this.target, data);
+
   }
 
   private void send(ByteString data) throws IOException {
+    if (!descriptor.writer) {
+      throw new UnsupportedOperationException("Stream channel is only input!");
+    }
     this.parentChannel.send(this.target, data);
   }
 
@@ -123,20 +134,26 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
 
     @Override
     public synchronized void write(byte[] b) throws IOException {
-      check();
-      send(b);
+      if (descriptor.writer) {
+        check();
+        send(b);
+      }
     }
 
     @Override
     public synchronized void write(byte[] b, int off, int len) throws IOException {
-      check();
-      send(ByteString.copyFrom(b, off, len));
+      if (descriptor.writer) {
+        check();
+        send(ByteString.copyFrom(b, off, len));
+      }
     }
 
     @Override
     public synchronized void write(int b) throws IOException {
-      check();
-      send(ByteString.copyFrom(new byte[] {(byte) b}));
+      if (descriptor.writer) {
+        check();
+        send(ByteString.copyFrom(new byte[] {(byte) b}));
+      }
     }
   }
 

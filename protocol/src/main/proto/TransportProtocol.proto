@@ -63,8 +63,9 @@ message ChannelRegister {
 	enum Type {
 		BYTES = 0;
 		OBJECT = 1;
-		STREAM = 2;
-		CUSTOM = 3;
+		STREAM_IN = 2;
+		STREAM_OUT = 3;
+		CUSTOM = 4;
 	}
 	int32 channelId = 1;
 	string name = 2;

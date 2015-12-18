@@ -9,6 +9,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 import de.rennschnitzel.backbone.ProtocolUtils;
+import de.rennschnitzel.backbone.net.node.NetworkNode;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
 import lombok.Getter;
 
@@ -55,7 +56,7 @@ public class Target {
     this(t.getAll(), ProtocolUtils.convertProto(t.getServersIncludeList()), ProtocolUtils.convertProto(t.getServersExcludeList()),
         t.getNamespacesIncludeList(), t.getNamespacesExcludeList());
   }
-
+  
   public static boolean overlaps(Collection<?> c, Collection<?> b) {
     for (Object o : b) {
       if (c.contains(o)) {
@@ -65,7 +66,7 @@ public class Target {
     return false;
   }
 
-  public boolean contains(NetworkMember server) {
+  public boolean contains(NetworkNode server) {
     if (toAll) {
       if (serversExclude.contains(server.getId())) {
         return false;
@@ -107,7 +108,7 @@ public class Target {
     }
 
 
-    public Builder include(NetworkMember server) {
+    public Builder include(NetworkNode server) {
       return this.include(server.getId());
     }
 
@@ -125,12 +126,12 @@ public class Target {
       return this;
     }
 
-    public Builder includeAllServers(Collection<NetworkMember> c) {
+    public Builder includeAllServers(Collection<NetworkNode> c) {
       c.forEach(this::include);
       return this;
     }
 
-    public Builder exclude(NetworkMember server) {
+    public Builder exclude(NetworkNode server) {
       return this.exclude(server.getId());
     }
 
@@ -148,7 +149,7 @@ public class Target {
       return this;
     }
 
-    public Builder excludeAllServers(Collection<NetworkMember> c) {
+    public Builder excludeAllServers(Collection<NetworkNode> c) {
       c.forEach(this::exclude);
       return this;
     }

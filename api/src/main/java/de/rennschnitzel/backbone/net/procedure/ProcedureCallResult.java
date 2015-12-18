@@ -3,7 +3,7 @@ package de.rennschnitzel.backbone.net.procedure;
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.AbstractFuture;
 
-import de.rennschnitzel.backbone.net.NetworkMember;
+import de.rennschnitzel.backbone.net.node.NetworkNode;
 import lombok.Getter;
 
 public class ProcedureCallResult<T, R> extends AbstractFuture<R> {
@@ -11,11 +11,11 @@ public class ProcedureCallResult<T, R> extends AbstractFuture<R> {
   @Getter
   private final ProcedureCall<T, R> call;
   @Getter
-  private final NetworkMember server;
+  private final NetworkNode server;
   @Getter
   private long completionTime = -1;
 
-  protected ProcedureCallResult(ProcedureCall<T, R> call, NetworkMember server) {
+  protected ProcedureCallResult(ProcedureCall<T, R> call, NetworkNode server) {
     Preconditions.checkNotNull(call);
     Preconditions.checkNotNull(server);
     this.call = call;
