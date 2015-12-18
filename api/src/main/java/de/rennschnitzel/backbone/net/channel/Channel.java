@@ -29,7 +29,7 @@ public class Channel {
   @Getter
   private final String name;
 
-  private ChannelHandler<Channel, ChannelMessage> handler = null;
+  private ChannelHandler handler = null;
 
   private final CopyOnWriteArraySet<RegisteredMessageListener> listeners = new CopyOnWriteArraySet<>();
 
@@ -43,7 +43,7 @@ public class Channel {
     this.name = name.toLowerCase();
   }
 
-  public synchronized void registerHandler(ChannelHandler<Channel, ChannelMessage> handler) throws IllegalStateException {
+  public synchronized void registerHandler(ChannelHandler handler) throws IllegalStateException {
     Preconditions.checkNotNull(handler);
     Preconditions.checkState(this.handler == null);
     this.handler = handler;

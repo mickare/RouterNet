@@ -10,41 +10,38 @@ import java.util.logging.Level;
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.backbone.Owner;
-import de.rennschnitzel.backbone.net.NetworkMember;
 import de.rennschnitzel.backbone.net.Target;
+import de.rennschnitzel.backbone.net.channel.AbstractSubChannel;
+import de.rennschnitzel.backbone.net.channel.AbstractSubChannelDescriptor;
 import de.rennschnitzel.backbone.net.channel.Channel;
 import de.rennschnitzel.backbone.net.channel.ChannelHandler;
 import de.rennschnitzel.backbone.net.channel.ChannelMessage;
 import de.rennschnitzel.backbone.net.channel.SubChannel;
 import de.rennschnitzel.backbone.net.channel.SubChannelDescriptor;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
-import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ChannelRegister.Type;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-public class ObjectChannel<T> implements ChannelHandler<Channel, ChannelMessage>, SubChannel {
+public class ObjectChannel<T> extends AbstractSubChannel<ObjectChannel<T>, ObjectChannel.Descriptor<T>>
+    implements ChannelHandler, SubChannel {
 
-  public static class Descriptor<T> implements SubChannelDescriptor<ObjectChannel<T>> {
-    @Getter
-    private final String name;
+  public static class Descriptor<T> extends AbstractSubChannelDescriptor<Descriptor<T>, ObjectChannel<T>>
+      implements SubChannelDescriptor<ObjectChannel<T>> {
+
     @Getter
     private final Class<T> dataClass;
     @Getter
     private final ObjectConverter<T> converter;
-
-    @Getter
-    private final TransportProtocol.ChannelRegister.Type type = TransportProtocol.ChannelRegister.Type.OBJECT;
 
     public Descriptor(String name, Class<T> dataClass) throws InvalidClassException {
       this(name, dataClass, ObjectConverters.of(dataClass));
     }
 
     public Descriptor(String name, Class<T> dataClass, ObjectConverter<T> converter) {
-      Preconditions.checkArgument(!name.isEmpty());
+      super(name, TransportProtocol.ChannelRegister.Type.OBJECT);
       Preconditions.checkNotNull(dataClass);
       Preconditions.checkNotNull(converter);
-      this.name = name.toLowerCase();
       this.dataClass = dataClass;
       this.converter = converter;
     }
@@ -80,47 +77,18 @@ public class ObjectChannel<T> implements ChannelHandler<Channel, ChannelMessage>
 
   }
 
-  @Getter
-  private final Owner owner;
-  @Getter
-  private final Channel parentChannel;
-  @Getter
-  private final Descriptor<T> descriptor;
-
   private final CopyOnWriteArraySet<RegisteredMessageListener> listeners = new CopyOnWriteArraySet<>();
 
   public ObjectChannel(Owner owner, Channel parentChannel, Descriptor<T> descriptor) throws IllegalStateException {
+    super(owner, parentChannel, descriptor);
     Preconditions.checkNotNull(owner);
     Preconditions.checkNotNull(parentChannel);
     Preconditions.checkNotNull(descriptor);
-    this.owner = owner;
-    this.parentChannel = parentChannel;
-    this.descriptor = descriptor;
     this.parentChannel.registerHandler(this);
-  }
-
-  public boolean isClosed() {
-    return this.parentChannel.isClosed();
-  }
-
-  public void close() {
-    this.parentChannel.close();
   }
 
   public final ObjectConverter<T> getConverter() {
     return this.descriptor.getConverter();
-  }
-
-  public int getChannelId() {
-    return this.parentChannel.getChannelId();
-  }
-
-  public String getName() {
-    return this.parentChannel.getName();
-  }
-
-  public NetworkMember getHome() {
-    return this.parentChannel.getHome();
   }
 
   public void send(Target target, T obj) throws ConvertObjectChannelException, IOException {
@@ -131,6 +99,7 @@ public class ObjectChannel<T> implements ChannelHandler<Channel, ChannelMessage>
     this.parentChannel.send(ocmsg);
   }
 
+  @Override
   public void receive(ChannelMessage cmsg) throws ConvertObjectChannelException {
     this.receive(new ObjectChannelMessage<T>(this, cmsg));
   }
@@ -164,11 +133,6 @@ public class ObjectChannel<T> implements ChannelHandler<Channel, ChannelMessage>
         owner.getLogger().log(Level.SEVERE, "Message listener of " + owner.toString() + " threw exception: " + e.getMessage(), e);
       }
     }
-  }
-
-  @Override
-  public Type getType() {
-    return this.descriptor.getType();
   }
 
 }

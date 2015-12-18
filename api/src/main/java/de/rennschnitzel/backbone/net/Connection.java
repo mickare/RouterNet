@@ -1,11 +1,11 @@
 package de.rennschnitzel.backbone.net;
 
 import java.io.IOException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
 
 import de.rennschnitzel.backbone.Owner;
 import de.rennschnitzel.backbone.net.channel.Channel;
@@ -17,10 +17,10 @@ public abstract class Connection {
 
   private final AtomicInteger ID_GENERATOR = new AtomicInteger(0);
 
-  private final ConcurrentMap<String, Channel> channelsByName = Maps.newConcurrentMap();
-  private final ConcurrentMap<Integer, Channel> channelsById = Maps.newConcurrentMap();
+  private final ConcurrentMap<String, Channel> channelsByName = new ConcurrentHashMap<>();
+  private final ConcurrentMap<Integer, Channel> channelsById = new ConcurrentHashMap<>();
 
-  private final ConcurrentMap<SubChannelDescriptor<?>, SubChannel> subChannels = Maps.newConcurrentMap();
+  private final ConcurrentMap<SubChannelDescriptor<?>, SubChannel> subChannels = new ConcurrentHashMap<>();
 
   public Channel getChannel(String name) {
     return this.channelsByName.get(name.toLowerCase());
