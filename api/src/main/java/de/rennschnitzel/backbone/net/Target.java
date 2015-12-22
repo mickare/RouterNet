@@ -24,6 +24,15 @@ public class Target {
     return Builder.builder().include(server).build();
   }
 
+  public static Target to(NetworkNode server) {
+    return to(server.getId());
+  }
+
+
+  public static Target to(Collection<NetworkNode> servers) {
+    return Builder.builder().includeAllServers(servers).build();
+  }
+
   private final boolean toAll;
   private final Set<UUID> serversInclude;
   private final Set<UUID> serversExclude;
@@ -56,7 +65,7 @@ public class Target {
     this(t.getAll(), ProtocolUtils.convertProto(t.getServersIncludeList()), ProtocolUtils.convertProto(t.getServersExcludeList()),
         t.getNamespacesIncludeList(), t.getNamespacesExcludeList());
   }
-  
+
   public static boolean overlaps(Collection<?> c, Collection<?> b) {
     for (Object o : b) {
       if (c.contains(o)) {
@@ -197,5 +206,6 @@ public class Target {
     }
 
   }
+
 
 }

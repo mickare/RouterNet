@@ -3,6 +3,7 @@ package de.rennschnitzel.backbone.net.procedure;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import de.rennschnitzel.backbone.net.Target;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
@@ -17,6 +18,8 @@ public interface ProcedureCall<T, R> {
 
   Procedure<T, R> getProcedure();
 
+  Target getTarget();
+  
   T getArgument();
 
   void receive(ProcedureMessage message, ProcedureResponseMessage response) throws IllegalArgumentException;

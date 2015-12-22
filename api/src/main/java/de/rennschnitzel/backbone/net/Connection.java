@@ -12,9 +12,13 @@ import de.rennschnitzel.backbone.net.channel.Channel;
 import de.rennschnitzel.backbone.net.channel.SubChannel;
 import de.rennschnitzel.backbone.net.channel.SubChannelDescriptor;
 import de.rennschnitzel.backbone.net.node.HomeNode;
-import de.rennschnitzel.backbone.net.node.NetworkNode;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
+import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ChannelRegister;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public abstract class Connection {
 
   private final AtomicInteger CHANNEL_ID_GENERATOR = new AtomicInteger(0);
@@ -24,6 +28,10 @@ public abstract class Connection {
 
   private final ConcurrentMap<SubChannelDescriptor<?>, SubChannel> subChannels = new ConcurrentHashMap<>();
 
+  @Getter
+  @NonNull
+  private final Network network;
+  
   public Channel getChannel(String name) {
     return this.channelsByName.get(name.toLowerCase());
   }
@@ -88,16 +96,6 @@ public abstract class Connection {
     return subChannel;
   }
 
-  protected void handle(TransportProtocol.ChannelMessage msg) {
-    if (!this.getHome().isPart(msg.getTarget())) {
-      // Just drop it.
-      return;
-    }
-    final Channel channel = this.getChannel(msg.getChannelId());
-    if (channel != null && !channel.isClosed()) {
-      channel.receive(msg);
-    }
-  }
 
   public abstract HomeNode getHome();
 
@@ -117,6 +115,40 @@ public abstract class Connection {
 
   public abstract boolean isClosed();
 
+  private static boolean isDifferentChannelRegister(Channel dupl, ChannelRegister msg) {
+    if (dupl != null) {
+      if (dupl.getChannelId() != msg.getChannelId() || dupl.getType() != msg.getType() || !dupl.getName().equalsIgnoreCase(msg.getName())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public void registerChannel(ChannelRegister msg) {
+
+    synchronized (this) {
+
+      final String key = msg.getName().toLowerCase();
+      Channel old = this.channelsByName.get(key);
+      if (isDifferentChannelRegister(old, msg)) {
+        old.close();
+        this.channelsByName.remove(key, old);
+      }
+
+      // There could be one with a different id... find it!
+      Channel old2 = this.channelsById.get(msg.getChannelId());
+      if (isDifferentChannelRegister(old2, msg)) {
+        old2.close();
+        this.channelsById.remove(msg.getChannelId(), old2);
+      }
+
+      Channel channel = new Channel(this, msg.getChannelId(), key);
+      channel.setType(msg.getType());
+      this.channelsByName.put(channel.getName(), channel);
+      this.channelsById.put(channel.getChannelId(), channel);
+
+    }
+  }
 
 
 }

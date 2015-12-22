@@ -4,6 +4,8 @@ import java.util.function.Function;
 
 import com.google.common.base.Preconditions;
 
+import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureCallMessage;
+import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
 import lombok.Getter;
 import net.jodah.typetools.TypeResolver;
 
@@ -38,6 +40,11 @@ public class RegisteredProcedure<T, R> extends BaseProcedure<T, R> {
 
   public R call(T arg) {
     return this.function.apply(arg);
+  }
+
+  public void call(ProcedureCallMessage call, ProcedureResponseMessage.Builder out) throws Exception {
+    R result = this.call(this.getCallReader().apply(call));
+    this.getResponseWriter().accept(out, result);
   }
 
 }

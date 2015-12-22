@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.base.Preconditions;
 
+import de.rennschnitzel.backbone.net.Target;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
 import lombok.Getter;
 
@@ -22,11 +23,14 @@ public abstract class AbstractProcedureCall<T, R> implements ProcedureCall<T, R>
   @Getter
   private final Procedure<T, R> procedure;
   @Getter
+  private final Target target;
+  @Getter
   private final T argument;
 
-  public AbstractProcedureCall(Procedure<T, R> procedure, T argument, long maxTimeout) {
+  public AbstractProcedureCall(Procedure<T, R> procedure, Target target, T argument, long maxTimeout) {
     Preconditions.checkNotNull(procedure);
     this.procedure = procedure;
+    this.target = target;
     this.argument = argument;
     this.maxTimeout = maxTimeout;
   }

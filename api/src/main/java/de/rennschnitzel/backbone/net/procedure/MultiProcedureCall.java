@@ -13,6 +13,7 @@ import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import de.rennschnitzel.backbone.net.Target;
 import de.rennschnitzel.backbone.net.node.NetworkNode;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
@@ -23,7 +24,7 @@ public class MultiProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
   private final Map<UUID, ProcedureCallResult<T, R>> results;
 
   public MultiProcedureCall(Collection<NetworkNode> servers, Procedure<T, R> procedure, T argument, long maxTimeout) {
-    super(procedure, argument, maxTimeout);
+    super(procedure, Target.to(servers), argument, maxTimeout);
     Preconditions.checkArgument(!servers.isEmpty());
 
     ImmutableMap.Builder<UUID, ProcedureCallResult<T, R>> b = ImmutableMap.builder();

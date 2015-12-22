@@ -2,6 +2,7 @@ package de.rennschnitzel.backbone.net.channel;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -13,8 +14,8 @@ import de.rennschnitzel.backbone.Owner;
 import de.rennschnitzel.backbone.net.Connection;
 import de.rennschnitzel.backbone.net.Target;
 import de.rennschnitzel.backbone.net.node.HomeNode;
-import de.rennschnitzel.backbone.net.node.NetworkNode;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
+import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ChannelRegister;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.Packet;
 import lombok.Getter;
 import lombok.NonNull;
@@ -24,12 +25,13 @@ public class Channel {
 
   private final Connection connection;
   @Getter
-  private boolean closed;
+  private volatile boolean closed;
   @Getter
   private final int channelId;
   @Getter
   private final String name;
 
+  private Optional<ChannelRegister.Type> type = Optional.empty();
   private ChannelHandler handler = null;
 
   private final CopyOnWriteArraySet<RegisteredMessageListener> listeners = new CopyOnWriteArraySet<>();
@@ -47,14 +49,21 @@ public class Channel {
   public synchronized void registerHandler(ChannelHandler handler) throws IllegalStateException {
     Preconditions.checkNotNull(handler);
     Preconditions.checkState(this.handler == null);
+    if (this.type.isPresent()) {
+      Preconditions.checkState(handler.getType() == this.type.get());
+    }
     this.handler = handler;
+    this.type = Optional.of(handler.getType());
   }
 
-  public TransportProtocol.ChannelRegister.Type getType() {
-    if (handler != null) {
-      return handler.getType();
-    }
-    return TransportProtocol.ChannelRegister.Type.BYTES;
+  public synchronized void setType(ChannelRegister.Type type) {
+    Preconditions.checkNotNull(type);
+    Preconditions.checkState(!this.type.isPresent());
+    this.type = Optional.of(type);
+  }
+
+  public ChannelRegister.Type getType() {
+    return type.orElse(ChannelRegister.Type.BYTES);
   }
 
   public void close() {
@@ -101,7 +110,7 @@ public class Channel {
     this.connection.sendChannelMessage(cmsg.getProtocolMessage());
   }
 
-  public final void receive(final TransportProtocol.ChannelMessage msg) {
+  public final void receiveProto(final TransportProtocol.ChannelMessage msg) {
     this.receive(new ChannelMessage(this, msg));
   }
 

@@ -10,7 +10,7 @@ import io.netty.channel.ChannelHandlerContext;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-public abstract class HandshakeHandler extends PacketHandler {
+public abstract class HandshakeHandler extends NettyPacketHandler {
 
   public static final int VERSION = 1;
   
