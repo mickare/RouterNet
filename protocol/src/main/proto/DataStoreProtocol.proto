@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package de.rennschnitzel.backbone.net.protocol;
+
+enum DataStoreRequestType {
+	VOID = 0;
+	GET = 1;
+	GET_INDEX = 2;
+	SET = 3;
+	ADD = 4;
+	CLEAR = 5;
+	REMOVE = 6;
+	REMOVE_INDEX = 7;
+	PUSH = 8;
+	POP = 9;
+}
+
+message DataStoreEntryKeyMessage {
+	string name = 1;
+}
+
+message DataStoreRequestMessage {
+	int32 id = 1;
+	DataStoreEntryKeyMessage key = 2;
+	DataStoreRequestType type = 3;
+	repeated bytes data = 4;
+}
+
+message DataStoreResponseMessage {
+	int32 id = 1;
+	DataStoreEntryKeyMessage key = 2;
+	DataStoreRequestType type = 3;
+	bool success = 4;
+	repeated bytes data = 5;
+	
+}

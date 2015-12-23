@@ -5,6 +5,7 @@ package de.rennschnitzel.backbone.net.protocol;
 import "NetworkProtocol.proto";
 import "HandshakeProtocol.proto";
 import "ComponentUUID.proto";
+import "DataStoreProtocol.proto";
 
 message ErrorMessage {
 	enum Type {
@@ -49,6 +50,8 @@ message Packet {
 		ChannelMessage channelMessage = 30;
 		ChannelRegister channelRegister = 31;
 		ProcedureMessage procedureMessage = 40;
+		DataStoreRequestMessage dataStoreRequest = 50;
+		DataStoreResponseMessage dataStoreResponse = 51;
 	}
 }
 

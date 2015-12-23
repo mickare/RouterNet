@@ -18,7 +18,7 @@ import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.ServerUpdate;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.Message;
-import de.rennschnitzel.backbone.netty.PacketHandler;
+import de.rennschnitzel.backbone.netty.NettyPacketHandler;
 import de.rennschnitzel.backbone.netty.PacketUtil;
 import de.rennschnitzel.backbone.netty.exception.ConnectionException;
 import de.rennschnitzel.backbone.netty.exception.HandshakeException;
@@ -31,7 +31,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class RouterConnection extends PacketHandler implements Connection {
+public class RouterConnection extends NettyPacketHandler implements Connection {
 
   @NonNull
   private final AuthSuccess auth;

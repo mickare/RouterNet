@@ -26,7 +26,7 @@ import de.rennschnitzel.backbone.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.Message;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.Packet;
-import de.rennschnitzel.backbone.netty.PacketHandler;
+import de.rennschnitzel.backbone.netty.NettyPacketHandler;
 import de.rennschnitzel.backbone.netty.PacketUtil;
 import de.rennschnitzel.backbone.netty.exception.ConnectionException;
 import de.rennschnitzel.backbone.netty.exception.HandshakeException;
@@ -182,7 +182,7 @@ public abstract class ClientHandshake extends AbstractFuture<Connection>
   // *****************************************************************************
   // PacketHandler
 
-  private class HandshakePacketHandler extends PacketHandler {
+  private class HandshakePacketHandler extends NettyPacketHandler {
 
     @Override
     protected void channelRead0(final ChannelHandlerContext ctx, final Packet packet)
