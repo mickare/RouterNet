@@ -28,6 +28,7 @@ public class BaseDataStore {
   }
 
   public byte[] get(EntryKey desc, int index) {
+    Preconditions.checkArgument(index >= 0);
     Entry e = getEntry(desc);
     if (e != null) {
       return e.get(index);
@@ -48,11 +49,18 @@ public class BaseDataStore {
 
   public void set(EntryKey desc, List<byte[]> data) {
     Preconditions.checkNotNull(data);
+    if (data.isEmpty()) {
+      clear(desc);
+      return;
+    }
     getOrCreate(desc).set(data);
   }
 
   public void add(EntryKey desc, List<byte[]> data) {
     Preconditions.checkNotNull(data);
+    if (data.isEmpty()) {
+      return;
+    }
     getOrCreate(desc).data.addAll(data);
   }
 
@@ -63,32 +71,62 @@ public class BaseDataStore {
 
   public int remove(EntryKey desc, List<byte[]> data) {
     Preconditions.checkNotNull(data);
+    if (data.isEmpty()) {
+      return 0;
+    }
     Entry e = getEntry(desc);
     if (e != null) {
-      return e.remove(data);
+      int result = e.remove(data);
+      removeIfEmpty(e);
+      return result;
     }
     return 0;
   }
 
   public byte[] remove(EntryKey desc, int index) {
+    Preconditions.checkArgument(index >= 0);
     Entry e = getEntry(desc);
     if (e != null) {
-      return e.remove(index);
+      byte[] result =  e.remove(index);
+      removeIfEmpty(e);
+      return result;
     }
     return null;
   }
 
   public void push(EntryKey desc, List<byte[]> data) {
     Preconditions.checkNotNull(data);
+    if (data.isEmpty()) {
+      return;
+    }
     getOrCreate(desc).data.addAll(0, data);
   }
 
   public List<byte[]> pop(EntryKey desc, int amount) {
+    Preconditions.checkArgument(amount > 0);
     Entry e = getEntry(desc);
     if (e != null) {
-      return e.pop(amount);
+      List<byte[]> result = e.pop(amount);
+      removeIfEmpty(e);
+      return result;
     }
     return ImmutableList.of();
+  }
+
+  private void removeIfEmpty(Entry e) {
+    synchronized (e.data) {
+      if (e.isEmpty()) {
+        this.values.remove(e.descriptor, e);
+      }
+    }
+  }
+
+  public int size() {
+    return this.values.size();
+  }
+
+  public boolean isEmpty() {
+    return this.values.isEmpty();
   }
 
   @RequiredArgsConstructor
@@ -105,6 +143,10 @@ public class BaseDataStore {
         this.data.clear();
         this.data.addAll(data);
       }
+    }
+
+    public boolean isEmpty() {
+      return data.isEmpty();
     }
 
     public List<byte[]> pop(int amount) {
@@ -144,6 +186,7 @@ public class BaseDataStore {
           for (byte[] rem : data) {
             if (Arrays.equals(current, rem)) {
               it.remove();
+              count++;
               break;
             }
           }

@@ -8,11 +8,12 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 
-import de.rennschnitzel.backbone.net.protocol.DataStoreProtocol.DataStoreResponseMessage;
 import de.rennschnitzel.backbone.util.function.CheckedSupplier;
+import lombok.Getter;
 
 public class LocalDataStore implements DataStore {
 
+  @Getter
   private final BaseDataStore base;
 
   public LocalDataStore(BaseDataStore base) {
@@ -94,10 +95,5 @@ public class LocalDataStore implements DataStore {
     return call(() -> transform(base.pop(desc, amount)));
   }
 
-  @Override
-  public void handle(DataStoreResponseMessage msg) {
-    // TODO Auto-generated method stub
-
-  }
 
 }

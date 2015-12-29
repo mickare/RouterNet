@@ -16,7 +16,8 @@ public class ConnectionForTesting extends Connection {
 
   private final PacketHandler<Connection> handler;
 
-  public ConnectionForTesting(HomeNode home, PacketHandler<Connection> handler) {
+  public ConnectionForTesting(Network network, HomeNode home, PacketHandler<Connection> handler) {
+    super(network);
     Preconditions.checkNotNull(home);
     Preconditions.checkNotNull(handler);
     this.home = home;

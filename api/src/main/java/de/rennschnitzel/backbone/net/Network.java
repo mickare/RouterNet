@@ -18,12 +18,14 @@ import com.google.common.collect.MapMaker;
 import com.google.common.collect.Sets;
 import com.google.common.eventbus.EventBus;
 
+import de.rennschnitzel.backbone.ProtocolUtils;
 import de.rennschnitzel.backbone.net.channel.ChannelDescriptors;
 import de.rennschnitzel.backbone.net.channel.object.ObjectChannel;
 import de.rennschnitzel.backbone.net.channel.stream.StreamChannel;
 import de.rennschnitzel.backbone.net.node.HomeNode;
 import de.rennschnitzel.backbone.net.node.NetworkNode;
 import de.rennschnitzel.backbone.net.procedure.ProcedureCall;
+import de.rennschnitzel.backbone.net.protocol.ComponentUUID;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
 import de.rennschnitzel.backbone.net.store.DataStore;
 import lombok.Getter;
@@ -111,7 +113,12 @@ public abstract class Network {
 
   public abstract <T, R> void sendProcedureCall(ProcedureCall<T, R> call);
 
-  public abstract void sendProcedureResponse(ProcedureResponseMessage build);
+
+  public void sendProcedureResponse(ComponentUUID.UUID receiver, ProcedureResponseMessage build) {
+    sendProcedureResponse(ProtocolUtils.convert(receiver), build);
+  }
+
+  public abstract void sendProcedureResponse(UUID receiver, ProcedureResponseMessage build);
 
   public abstract DataStore getDataStore();
 

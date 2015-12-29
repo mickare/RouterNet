@@ -1,5 +1,6 @@
 package de.rennschnitzel.backbone.net.store;
 
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -138,8 +139,8 @@ public class NetworkDataStoreHandler {
           send(con, new Response(req, key, Collections.emptyList()));
           break;
         case REMOVE:
-          dataStore.remove(key, transform(req.getDataList()));
-          send(con, new Response(req, key, Collections.emptyList()));
+          int removed = dataStore.remove(key, transform(req.getDataList()));         
+          send(con, new Response(req, key, ByteBuffer.allocate(4).putInt(removed).array()));
           break;
         case REMOVE_INDEX:
           int index1 = req.getDataList().get(0).asReadOnlyByteBuffer().getInt();
@@ -148,9 +149,11 @@ public class NetworkDataStoreHandler {
         case PUSH:
           dataStore.push(key, transform(req.getDataList()));
           send(con, new Response(req, key, Collections.emptyList()));
+          break;
         case POP:
           int amount = req.getDataList().get(0).asReadOnlyByteBuffer().getInt();
           send(con, new Response(req, key, dataStore.pop(key, amount)));
+          break;
         default:
           throw new UnsupportedOperationException("Undefined data store request \"" + req.getType().toString() + "\"!");
       }

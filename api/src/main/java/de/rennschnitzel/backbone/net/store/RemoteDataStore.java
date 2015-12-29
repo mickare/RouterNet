@@ -95,8 +95,8 @@ public class RemoteDataStore implements DataStore {
 
     private void handle(DataStoreResponseMessage response) {
       Preconditions.checkArgument(this.id == response.getId());
-      requests.invalidate(this.id);
       if (this.isDone()) {
+        requests.invalidate(this.id);
         return;
       }
       try {
@@ -107,6 +107,8 @@ public class RemoteDataStore implements DataStore {
         this.set(this.readData(response.getDataList()));
       } catch (Exception e) {
         this.setException(e);
+      } finally {
+        requests.invalidate(this.id);
       }
     }
 
@@ -132,7 +134,7 @@ public class RemoteDataStore implements DataStore {
 
   }
 
-  public void handle(DataStoreResponseMessage response) {
+  public void handle(Connection ctx, DataStoreResponseMessage response) {
     Request<?> req = requests.getIfPresent(response.getId());
     if (req != null) {
       req.handle(response);
@@ -160,6 +162,15 @@ public class RemoteDataStore implements DataStore {
     return req;
   }
 
+  @Override
+  public ListenableFuture<ByteString> get(EntryKey desc, int index) {
+    Preconditions.checkArgument(index >= 0);
+    ByteString bs = ByteString.copyFrom(ByteBuffer.allocate(4).putInt(index).array());
+    Request<ByteString> req = newRequest(desc, DataStoreRequestType.GET_INDEX, ImmutableList.of(bs), (d) -> d.isEmpty() ? null : d.get(0));
+    send(req);
+    return req;
+  }
+  
   @Override
   public ListenableFuture<Void> set(EntryKey desc, List<byte[]> data) {
     Request<Void> req = newRequestBytes(desc, DataStoreRequestType.SET, data, (d) -> null);
@@ -195,7 +206,8 @@ public class RemoteDataStore implements DataStore {
 
   @Override
   public ListenableFuture<ByteString> remove(EntryKey desc, int index) {
-    ByteString bs = ByteString.copyFrom(ByteBuffer.allocate(4).putInt(index));
+    Preconditions.checkArgument(index >= 0);
+    ByteString bs = ByteString.copyFrom(ByteBuffer.allocate(4).putInt(index).array());
     Request<ByteString> req =
         newRequest(desc, DataStoreRequestType.REMOVE_INDEX, ImmutableList.of(bs), (d) -> d.isEmpty() ? null : d.get(0));
     send(req);
@@ -211,20 +223,13 @@ public class RemoteDataStore implements DataStore {
 
   @Override
   public ListenableFuture<List<ByteString>> pop(EntryKey desc, int amount) {
-    ByteString bs = ByteString.copyFrom(ByteBuffer.allocate(4).putInt(amount));
     Preconditions.checkArgument(amount > 0);
-    Request<List<ByteString>> req = newRequest(desc, DataStoreRequestType.GET_INDEX, ImmutableList.of(bs), (d) -> d);
+    ByteString bs = ByteString.copyFrom(ByteBuffer.allocate(4).putInt(amount).array());
+    Request<List<ByteString>> req = newRequest(desc, DataStoreRequestType.POP, ImmutableList.of(bs), (d) -> d);
     send(req);
     return req;
   }
 
 
-  @Override
-  public ListenableFuture<ByteString> get(EntryKey desc, int index) {
-    ByteString bs = ByteString.copyFrom(ByteBuffer.allocate(4).putInt(index));
-    Request<ByteString> req = newRequest(desc, DataStoreRequestType.GET_INDEX, ImmutableList.of(bs), (d) -> d.isEmpty() ? null : d.get(0));
-    send(req);
-    return req;
-  }
 
 }

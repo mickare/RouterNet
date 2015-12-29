@@ -150,12 +150,12 @@ public class ProcedureManager {
     return b;
   }
 
-  private void sendFail(ProcedureCallMessage call, ErrorMessage.Builder error) {
+  private void sendFail(ProcedureMessage msg, ProcedureCallMessage call, ErrorMessage.Builder error) {
     ProcedureResponseMessage.Builder b = newResponse(call);
     b.setSuccess(false);
     b.setCancelled(false);
     b.setError(error);
-    network.sendProcedureResponse(b.build());
+    network.sendProcedureResponse(msg.getSender(), b.build());
   }
 
   private void handle(ProcedureMessage msg, ProcedureCallMessage call) {
@@ -163,18 +163,18 @@ public class ProcedureManager {
       ProcedureInformation key = new ProcedureInformation(call.getProcedure());
       RegisteredProcedure<?, ?> proc = this.registeredProcedures.get(key);
       if (proc == null) {
-        sendFail(call, ErrorMessage.newBuilder().setType(ErrorMessage.Type.UNDEFINED).setMessage("unregistered procedure"));
+        sendFail(msg, call, ErrorMessage.newBuilder().setType(ErrorMessage.Type.UNDEFINED).setMessage("unregistered procedure"));
       }
 
       ProcedureResponseMessage.Builder out = newResponse(call);
       proc.call(call, out);
       out.setSuccess(true);
       out.setCancelled(false);
-      network.sendProcedureResponse(out.build());
+      network.sendProcedureResponse(msg.getSender(), out.build());
 
     } catch (Exception e) {
       network.getLogger().log(Level.SEVERE, "Procedure handling failed\n" + e.getMessage(), e);
-      sendFail(call, ErrorMessage.newBuilder().setType(ErrorMessage.Type.UNDEFINED)
+      sendFail(msg, call, ErrorMessage.newBuilder().setType(ErrorMessage.Type.UNDEFINED)
           .setMessage("exception in procedure call + (" + e.getMessage() + ")"));
     }
   }
