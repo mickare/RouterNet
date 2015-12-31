@@ -28,6 +28,8 @@ public class BaseNetworkNode implements NetworkNode {
   @Getter
   private long timestamp = System.currentTimeMillis();
   protected final Set<ProcedureInformation> procedures = new CopyOnWriteArraySet<>();
+  @Getter
+  protected ServerMessage.Type type = ServerMessage.Type.UNDEFINED;
 
   public BaseNetworkNode(UUID id) {
     Preconditions.checkNotNull(id);
@@ -58,6 +60,7 @@ public class BaseNetworkNode implements NetworkNode {
   public void update(ServerMessage server) {
     Preconditions.checkArgument(this.id.equals(ProtocolUtils.convert(server.getId())));
     this.name = Optional.ofNullable(server.getName().isEmpty() ? null : server.getName().toLowerCase());
+    this.type = server.getType();
     this.namespaces.retainAll(server.getNamespacesList());
     this.namespaces.addAll(server.getNamespacesList());
     this.timestamp = server.getTimestamp();

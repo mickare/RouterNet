@@ -1,7 +1,5 @@
 package de.rennschnitzel.backbone.net.packet;
 
-import de.rennschnitzel.backbone.net.protocol.DataStoreProtocol.DataStoreRequestMessage;
-import de.rennschnitzel.backbone.net.protocol.DataStoreProtocol.DataStoreResponseMessage;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthChallengeMessage;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthResponseMessage;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.LoginMessage;
@@ -17,16 +15,6 @@ import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureMessage
 public class SimplePacketHandler<C> implements PacketHandler<C> {
 
   public SimplePacketHandler() {}
-
-  @Override
-  public void handle(C ctx, DataStoreResponseMessage msg) throws Exception {
-    throw new UnsupportedOperationException("Not implemented!");
-  }
-
-  @Override
-  public void handle(C ctx, DataStoreRequestMessage msg) throws Exception {
-    throw new UnsupportedOperationException("Not implemented!");
-  }
 
   @Override
   public void handle(C ctx, ProcedureMessage msg) throws Exception {

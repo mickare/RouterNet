@@ -22,12 +22,16 @@ import de.rennschnitzel.backbone.ProtocolUtils;
 import de.rennschnitzel.backbone.net.channel.ChannelDescriptors;
 import de.rennschnitzel.backbone.net.channel.object.ObjectChannel;
 import de.rennschnitzel.backbone.net.channel.stream.StreamChannel;
+import de.rennschnitzel.backbone.net.node.BaseNetworkNode;
 import de.rennschnitzel.backbone.net.node.HomeNode;
 import de.rennschnitzel.backbone.net.node.NetworkNode;
 import de.rennschnitzel.backbone.net.procedure.ProcedureCall;
 import de.rennschnitzel.backbone.net.protocol.ComponentUUID;
+import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.ConnectedMessage;
+import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.DisconnectedMessage;
+import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.ServerMessage;
+import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.ServerUpdateMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
-import de.rennschnitzel.backbone.net.store.DataStore;
 import lombok.Getter;
 
 public abstract class Network {
@@ -51,21 +55,12 @@ public abstract class Network {
     return ChannelDescriptors.getObjectChannel(name, dataClass);
   }
 
-  public static StreamChannel.Descriptor getStreamChannelOut(String name) {
-    return ChannelDescriptors.getStreamChannelOut(name);
+  public static StreamChannel.Descriptor getStreamChannel(String name) {
+    return ChannelDescriptors.getStreamChannel(name);
   }
 
-  public static StreamChannel.Descriptor getStreamChannelOut(String name, int bufferSize) {
-    return ChannelDescriptors.getStreamChannelOut(name, bufferSize);
-  }
-
-
-  public static StreamChannel.Descriptor getStreamChannelIn(String name) {
-    return ChannelDescriptors.getStreamChannelIn(name);
-  }
-
-  public static StreamChannel.Descriptor getStreamChannelIn(String name, int bufferSize) {
-    return ChannelDescriptors.getStreamChannelIn(name, bufferSize);
+  public static StreamChannel.Descriptor getStreamChannel(String name, int bufferSize) {
+    return ChannelDescriptors.getStreamChannel(name, bufferSize);
   }
 
 
@@ -73,7 +68,7 @@ public abstract class Network {
   // ******************************************************************************************
 
 
-  private final ConcurrentMap<UUID, NetworkNode> servers = new ConcurrentHashMap<>();
+  private final ConcurrentMap<UUID, NetworkNode> nodes = new ConcurrentHashMap<>();
 
   @Getter
   private final EventBus eventBus = new EventBus();
@@ -87,13 +82,13 @@ public abstract class Network {
     Network.instance = this;
   }
 
-  public Map<UUID, NetworkNode> getServers() {
-    return Collections.unmodifiableMap(servers);
+  public Map<UUID, NetworkNode> getNodes() {
+    return Collections.unmodifiableMap(nodes);
   }
 
   public Map<UUID, NetworkNode> getServersOfTarget(Target target) {
     ImmutableMap.Builder<UUID, NetworkNode> b = ImmutableMap.builder();
-    this.servers.values().stream().filter(target::contains).forEach(n -> b.put(n.getId(), n));
+    this.nodes.values().stream().filter(target::contains).forEach(n -> b.put(n.getId(), n));
     return b.build();
   }
 
@@ -107,7 +102,7 @@ public abstract class Network {
   public Map<UUID, NetworkNode> getServersOfNamespace(Collection<String> namespaces) {
     Preconditions.checkNotNull(namespaces);
     ImmutableMap.Builder<UUID, NetworkNode> b = ImmutableMap.builder();
-    this.servers.values().stream().filter(s -> s.hasNamespace(namespaces));
+    this.nodes.values().stream().filter(s -> s.hasNamespace(namespaces));
     return b.build();
   }
 
@@ -120,13 +115,34 @@ public abstract class Network {
 
   public abstract void sendProcedureResponse(UUID receiver, ProcedureResponseMessage build);
 
-  public abstract DataStore getDataStore();
-
   public abstract ProcedureManager getProcedureManager();
 
   public void publishChanges(HomeNode homeNode) {
     // TODO Auto-generated method stub
 
+  }
+
+  public void updateNodes(ServerMessage msg) {
+    UUID id = ProtocolUtils.convert(msg.getId());
+    this.nodes.computeIfAbsent(id, BaseNetworkNode::new).update(msg);
+  }
+
+  public void updateNodes(ConnectedMessage msg) {
+    updateNodes(msg.getServer());
+  }
+
+  public void updateNodes(ServerUpdateMessage msg) {
+    updateNodes(msg.getServer());
+  }
+
+  public void updateNodes(DisconnectedMessage msg) {
+    UUID id = ProtocolUtils.convert(msg.getServer().getId());
+    Preconditions.checkArgument(!id.equals(this.getHome().getId()));
+    NetworkNode node = this.nodes.get(id);
+    if (node != null) {
+      node.update(msg.getServer());
+      this.nodes.remove(id, node);
+    }
   }
 
 

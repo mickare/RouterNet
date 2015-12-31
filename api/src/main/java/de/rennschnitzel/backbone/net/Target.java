@@ -3,6 +3,7 @@ package de.rennschnitzel.backbone.net;
 import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
@@ -44,9 +45,17 @@ public class Target {
   public Target(boolean toAll, Collection<UUID> serversInclude, Collection<UUID> serversExclude, Collection<String> namespacesInclude,
       Collection<String> namespacesExclude) {
     this.toAll = toAll;
-    this.serversInclude = ImmutableSet.copyOf(serversInclude);
+    Set<UUID> incServ = Sets.newHashSet(serversInclude);
+    incServ.removeAll(serversExclude);
+    Set<String> incName = Sets.newHashSet(namespacesInclude);
+    incName.removeAll(namespacesExclude);
+    if (toAll) {
+      incServ.clear();
+      incName.clear();
+    }
+    this.serversInclude = ImmutableSet.copyOf(incServ);
     this.serversExclude = ImmutableSet.copyOf(serversExclude);
-    this.namespacesInclude = ImmutableSet.copyOf(namespacesInclude);
+    this.namespacesInclude = ImmutableSet.copyOf(incName);
     this.namespacesExclude = ImmutableSet.copyOf(namespacesExclude);
     this.protocolMessage = createProtocolMessage();
   }
@@ -93,6 +102,50 @@ public class Target {
     }
     return false;
   }
+
+  public boolean isEmpty() {
+    return this.toAll ? false : this.serversInclude.isEmpty() && this.namespacesInclude.isEmpty();
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Target[");
+    if (toAll) {
+      sb.append("toAll");
+      if (!this.serversExclude.isEmpty()) {
+        sb.append(", excludedServers:[");
+        sb.append(this.serversExclude.stream().map(UUID::toString).collect(Collectors.joining(", ")));
+        sb.append("]");
+      }
+      if (!this.namespacesExclude.isEmpty()) {
+        sb.append(", excludedNamespaces:[");
+        sb.append(this.namespacesExclude.stream().collect(Collectors.joining(", ")));
+        sb.append("]");
+      }
+    } else {
+      if (!this.serversInclude.isEmpty()) {
+        sb.append("servers:[");
+        sb.append(this.serversInclude.stream().map(UUID::toString).collect(Collectors.joining(", ")));
+        sb.append("]");
+
+
+        if (!this.namespacesInclude.isEmpty()) {
+          sb.append(", ");
+        }
+      }
+      if (!this.namespacesInclude.isEmpty()) {
+        sb.append("namespaces:[");
+        sb.append(this.namespacesInclude.stream().collect(Collectors.joining(", ")));
+        sb.append("]");
+      }
+    }
+    sb.append("]");
+    return sb.toString();
+  }
+
+  // *********************************************************
+  // Builder
 
   public static class Builder {
 
@@ -202,6 +255,8 @@ public class Target {
     }
 
     public Target build() {
+      this.serversInclude.removeAll(this.serversExclude);
+      this.namespacesInclude.removeAll(this.namespacesExclude);
       return new Target(this.toAll, this.serversInclude, this.serversExclude, this.namespacesInclude, this.namespacesExclude);
     }
 

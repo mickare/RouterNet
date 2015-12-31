@@ -10,7 +10,6 @@ import de.rennschnitzel.backbone.net.procedure.ProcedureCall;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
-import de.rennschnitzel.backbone.net.store.DataStore;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -23,14 +22,19 @@ public class NetworkForTesting extends Network {
   private Connection connection = null;
 
   @Getter
-  private final DataStore dataStore;
-
-  @Getter
   private final ProcedureManager procedureManager = new ProcedureManager(this);
 
-  public NetworkForTesting(DataStore dataStore) {
-    Preconditions.checkNotNull(dataStore);
-    this.dataStore = dataStore;
+  @Getter
+  private final HomeNode home;
+
+
+  public NetworkForTesting() {
+    this(new HomeNode(UUID.randomUUID()));
+  }
+
+  public NetworkForTesting(HomeNode home) {
+    Preconditions.checkNotNull(home);
+    this.home = home;
   }
 
   public void setInstance() {
@@ -44,11 +48,6 @@ public class NetworkForTesting extends Network {
     b.setSender(getHome().getIdProto());
     b.setCall(call.toProtocol());
     connection.send(Packet.newBuilder().setProcedureMessage(b));
-  }
-
-  @Override
-  public HomeNode getHome() {
-    return connection.getHome();
   }
 
   @Override

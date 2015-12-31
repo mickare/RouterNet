@@ -4,6 +4,7 @@ import java.util.function.Function;
 
 import com.google.common.base.Preconditions;
 
+import de.rennschnitzel.backbone.net.Network;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureCallMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
 import lombok.Getter;
@@ -19,21 +20,21 @@ public class RegisteredProcedure<T, R> extends BaseProcedure<T, R> {
   @Getter
   private final Function<T, R> function;
 
-  public RegisteredProcedure(String name, Function<T, R> function) {
-    this(name, resolveArgumentClass(function), function);
+  public RegisteredProcedure(Network network, String name, Function<T, R> function) {
+    this(network, name, resolveArgumentClass(function), function);
   }
 
   @SuppressWarnings("unchecked")
-  private RegisteredProcedure(String name, Class<?>[] typeArgs, Function<T, R> function) {
-    this(name, (Class<T>) typeArgs[0], (Class<R>) typeArgs[1], function);
+  private RegisteredProcedure(Network network, String name, Class<?>[] typeArgs, Function<T, R> function) {
+    this(network, name, (Class<T>) typeArgs[0], (Class<R>) typeArgs[1], function);
   }
 
-  public RegisteredProcedure(String name, Class<T> argClass, Class<R> resultClass, Function<T, R> function) {
-    this(new ProcedureInformation(name, argClass.getName(), resultClass.getName()), argClass, resultClass, function);
+  public RegisteredProcedure(Network network, String name, Class<T> argClass, Class<R> resultClass, Function<T, R> function) {
+    this(network, new ProcedureInformation(name, argClass.getName(), resultClass.getName()), argClass, resultClass, function);
   }
 
-  public RegisteredProcedure(ProcedureInformation info, Class<T> argClass, Class<R> resultClass, Function<T, R> function) {
-    super(info, argClass, resultClass);
+  public RegisteredProcedure(Network network, ProcedureInformation info, Class<T> argClass, Class<R> resultClass, Function<T, R> function) {
+    super(network, info, argClass, resultClass);
     Preconditions.checkNotNull(function);
     this.function = function;
   }

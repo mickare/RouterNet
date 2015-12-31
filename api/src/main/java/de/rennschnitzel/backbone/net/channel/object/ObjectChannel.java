@@ -71,6 +71,9 @@ public class ObjectChannel<T> extends AbstractSubChannel<ObjectChannel<T>, Objec
     @SuppressWarnings("unchecked")
     @Override
     public ObjectChannel<T> cast(SubChannel channel) {
+      if (channel == null) {
+        return null;
+      }
       Preconditions.checkArgument(channel.getDescriptor() == this);
       return (ObjectChannel<T>) channel;
     }
@@ -81,10 +84,6 @@ public class ObjectChannel<T> extends AbstractSubChannel<ObjectChannel<T>, Objec
 
   public ObjectChannel(Owner owner, Channel parentChannel, Descriptor<T> descriptor) throws IllegalStateException {
     super(owner, parentChannel, descriptor);
-    Preconditions.checkNotNull(owner);
-    Preconditions.checkNotNull(parentChannel);
-    Preconditions.checkNotNull(descriptor);
-    this.parentChannel.registerHandler(this);
   }
 
   public final ObjectConverter<T> getConverter() {

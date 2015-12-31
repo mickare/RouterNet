@@ -64,7 +64,7 @@ public class ProcedureManager {
     Preconditions.checkNotNull(name);
     Preconditions.checkNotNull(function);
     Preconditions.checkArgument(!name.isEmpty());
-    RegisteredProcedure<T, R> proc = new RegisteredProcedure<>(name, function);
+    RegisteredProcedure<T, R> proc = new RegisteredProcedure<>(network, name, function);
     try (CloseableLock l = lock.writeLock().open()) {
       registeredProcedures.put(proc.getInfo(), proc);
       network.getHome().addRegisteredProcedure(proc);

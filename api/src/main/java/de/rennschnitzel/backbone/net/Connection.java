@@ -31,7 +31,7 @@ public abstract class Connection {
   @Getter
   @NonNull
   private final Network network;
-  
+
   public Channel getChannel(String name) {
     return this.channelsByName.get(name.toLowerCase());
   }
@@ -97,7 +97,9 @@ public abstract class Connection {
   }
 
 
-  public abstract HomeNode getHome();
+  public HomeNode getHome() {
+    return this.network.getHome();
+  }
 
   public abstract void send(TransportProtocol.Packet packet);
 

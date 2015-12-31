@@ -29,6 +29,12 @@ public class HomeNode extends BaseNetworkNode {
     this.namespaces.addAll(temp);
   }
 
+  public void setType(ServerMessage.Type type) {
+    Preconditions.checkNotNull(type);
+    Preconditions.checkArgument(type != ServerMessage.Type.UNRECOGNIZED);
+    this.type = type;
+  }
+
   public void addNamespace(String namespace) {
     Preconditions.checkArgument(!namespace.isEmpty());
     dirty &= this.namespaces.add(namespace.toLowerCase());

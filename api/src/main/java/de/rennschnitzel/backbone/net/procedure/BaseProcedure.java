@@ -24,15 +24,18 @@ public class BaseProcedure<T, R> implements Procedure<T, R> {
   private final CheckedFunction<ProcedureResponseMessage, R> responseReader;
   private final BiConsumer<ProcedureResponseMessage.Builder, R> responseWriter;
 
-  @Getter
+  private final Network network;
+  
   @Setter
   private CheckedFunction<T, R> localFunction = null;
 
-  public BaseProcedure(final ProcedureInformation info, final Class<T> argClass, final Class<R> resultClass) {
+  public BaseProcedure(final Network network, final ProcedureInformation info, final Class<T> argClass, final Class<R> resultClass) {
+    Preconditions.checkNotNull(network);
     Preconditions.checkNotNull(info);
     Preconditions.checkNotNull(argClass);
     Preconditions.checkNotNull(resultClass);
 
+    this.network = network;
     this.info = info;
     this.argClass = argClass;
     this.resultClass = resultClass;
@@ -89,7 +92,7 @@ public class BaseProcedure<T, R> implements Procedure<T, R> {
 
   @Override
   public ProcedureCallResult<T, R> call(NetworkNode server, T argument) {
-    return Network.getInstance().getProcedureManager().callProcedure(server, this, argument);
+    return network.getProcedureManager().callProcedure(server, this, argument);
   }
 
 

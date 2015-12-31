@@ -15,14 +15,14 @@ import lombok.Getter;
 public class ChannelMessage extends Message {
 
   private final Channel channel;
-  private final ByteString byteData;
+  private final ByteString data;
 
   private final TransportProtocol.ChannelMessage protocolMessage;
 
   public ChannelMessage(ChannelMessage cmsg) {
     super(cmsg.target, cmsg.sender);
     this.channel = cmsg.channel;
-    this.byteData = cmsg.byteData;
+    this.data = cmsg.data;
     this.protocolMessage = cmsg.protocolMessage;
   }
 
@@ -31,7 +31,7 @@ public class ChannelMessage extends Message {
     Preconditions.checkNotNull(channel);
     Preconditions.checkNotNull(byteData);
     this.channel = channel;
-    this.byteData = byteData;
+    this.data = byteData;
     this.protocolMessage = createProtocolMessage();
   }
 
@@ -40,7 +40,7 @@ public class ChannelMessage extends Message {
     Preconditions.checkNotNull(channel.getChannelId() == message.getChannelId());
     this.channel = channel;
     this.protocolMessage = message;
-    this.byteData = message.getData();
+    this.data = message.getData();
   }
 
   private final TransportProtocol.ChannelMessage createProtocolMessage() {
@@ -48,7 +48,7 @@ public class ChannelMessage extends Message {
     b.setChannelId(channel.getChannelId());
     b.setTarget(this.getTarget().getProtocolMessage());
     b.setSender(ProtocolUtils.convert(channel.getHome().getId()));
-    b.setData(this.byteData);
+    b.setData(this.data);
     return b.build();
   }
 

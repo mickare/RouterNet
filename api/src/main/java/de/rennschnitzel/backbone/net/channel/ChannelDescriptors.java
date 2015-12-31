@@ -24,21 +24,12 @@ public class ChannelDescriptors {
     }
   }
 
-  public static StreamChannel.Descriptor getStreamChannelOut(String name) {
-    return new StreamChannel.Descriptor(name, true);
+  public static StreamChannel.Descriptor getStreamChannel(String name) {
+    return new StreamChannel.Descriptor(name);
   }
 
-  public static StreamChannel.Descriptor getStreamChannelOut(String name, int bufferSize) {
-    return new StreamChannel.Descriptor(name, true, bufferSize);
-  }
-
-
-  public static StreamChannel.Descriptor getStreamChannelIn(String name) {
-    return new StreamChannel.Descriptor(name, false);
-  }
-
-  public static StreamChannel.Descriptor getStreamChannelIn(String name, int bufferSize) {
-    return new StreamChannel.Descriptor(name, false, bufferSize);
+  public static StreamChannel.Descriptor getStreamChannel(String name, int bufferSize) {
+    return new StreamChannel.Descriptor(name, bufferSize);
   }
 
 

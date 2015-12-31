@@ -1,7 +1,5 @@
 package de.rennschnitzel.backbone.net.packet;
 
-import de.rennschnitzel.backbone.net.protocol.DataStoreProtocol.DataStoreRequestMessage;
-import de.rennschnitzel.backbone.net.protocol.DataStoreProtocol.DataStoreResponseMessage;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthChallengeMessage;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthResponseMessage;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.LoginMessage;
@@ -53,12 +51,6 @@ public interface PacketHandler<C> {
       case PROCEDUREMESSAGE:
         handle(ctx, packet.getProcedureMessage());
         break;
-      case DATASTOREREQUEST:
-        handle(ctx, packet.getDataStoreRequest());
-        break;
-      case DATASTORERESPONSE:
-        handle(ctx, packet.getDataStoreResponse());
-        break;
       default:
         handleUndefined(ctx, packet);
     }
@@ -67,10 +59,6 @@ public interface PacketHandler<C> {
   default void handleUndefined(C ctx, Packet packet) throws Exception {
     throw new ProtocolException("Invalid or unknown packet!");
   }
-
-  void handle(C ctx, DataStoreResponseMessage msg) throws Exception;
-
-  void handle(C ctx, DataStoreRequestMessage msg) throws Exception;
 
   void handle(C ctx, ProcedureMessage msg) throws Exception;
 

@@ -30,12 +30,15 @@ public abstract class AbstractSubChannelDescriptor<SELF extends AbstractSubChann
   @SuppressWarnings("unchecked")
   @Override
   public C cast(SubChannel channel) {
+    if (channel == null) {
+      return null;
+    }
     Preconditions.checkArgument(channel.getDescriptor() == this);
     return (C) channel;
   }
-  
+
   public abstract boolean equals(Object o);
-  
+
   public abstract int hashCode();
 
 }

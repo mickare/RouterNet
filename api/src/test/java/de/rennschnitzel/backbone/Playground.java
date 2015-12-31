@@ -19,7 +19,7 @@ public class Playground {
     Class<?>[] res = TypeResolver.resolveRawArguments(Consumer.class, c.getClass());
 
     for (int i = 0; i < res.length; ++i) {
-      System.out.println("[" + i + "] " + res[i].getName());
+      //System.out.println("[" + i + "] " + res[i].getName());
     }
 
     assertTrue(true);

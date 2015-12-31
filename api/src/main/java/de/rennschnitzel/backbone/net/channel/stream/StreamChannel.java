@@ -31,18 +31,15 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
 
     @Getter
     private final int bufferSize;
-    @Getter
-    private final boolean writer;
 
-    public Descriptor(String name, boolean writer) {
-      this(name, writer, 1 * (1 << 20)); // 1 MiB Buffer
+    public Descriptor(String name) {
+      this(name, 1 * (1 << 20)); // 1 MiB Buffer
     }
 
-    public Descriptor(String name, boolean writer, int bufferSize) {
-      super(name, writer ? Type.STREAM_OUT : Type.STREAM_IN);
+    public Descriptor(String name, int bufferSize) {
+      super(name, Type.STREAM);
       Preconditions.checkNotNull(bufferSize > 32);
       this.bufferSize = bufferSize;
-      this.writer = writer;
     }
 
     @Override
@@ -69,6 +66,9 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
 
     @Override
     public StreamChannel cast(SubChannel channel) {
+      if (channel == null) {
+        return null;
+      }
       Preconditions.checkArgument(channel.getDescriptor() == this);
       return (StreamChannel) channel;
     }
@@ -86,45 +86,56 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
 
   public StreamChannel(Owner owner, Channel parentChannel, Descriptor descriptor) throws IllegalStateException {
     super(owner, parentChannel, descriptor);
-    this.inputBuffer = descriptor.writer ? null : new CircularByteBuffer(CircularByteBuffer.INFINITE_SIZE);
-    this.outputStream = !descriptor.writer ? null : new BufferedOutputStream(new ChannelOutput(), this.descriptor.bufferSize);
+    this.inputBuffer = new CircularByteBuffer(CircularByteBuffer.INFINITE_SIZE);
+    this.outputStream = new BufferedOutputStream(new ChannelOutput(), this.descriptor.bufferSize);
   }
 
   public InputStream getInputStream() {
-    if (descriptor.writer) {
-      throw new UnsupportedOperationException("Stream channel is only output!");
-    }
     return this.inputBuffer.getInputStream();
+  }
+  
+  public OutputStream getOutputStream() {
+    return this.outputStream;    
+  }
+
+  @Override
+  public void close() {
+    super.close();
+    try {
+      this.inputBuffer.getInputStream().close();
+    } catch (IOException e) {
+    }
+    try {
+      this.inputBuffer.getOutputStream().close();
+    } catch (IOException e) {
+    }
+    try {
+      this.outputStream.close();
+    } catch (IOException e) {
+    }
   }
 
   @Override
   public synchronized void receive(ChannelMessage cmsg) throws IOException {
-    if (!descriptor.writer && !isClosed()) {
-      this.inputBuffer.getOutputStream().write(cmsg.getByteData().toByteArray());
+    this.receive(cmsg.getData().toByteArray());
+  }
+
+  private void receive(byte[] data) throws IOException {
+    if (!isClosed()) {
+      this.inputBuffer.getOutputStream().write(data);
     }
   }
 
   private void send(byte[] data) throws IOException {
-    if (!descriptor.writer) {
-      throw new UnsupportedOperationException("Stream channel is only input!");
-    }
     this.parentChannel.send(this.target, data);
 
   }
 
   private void send(ByteString data) throws IOException {
-    if (!descriptor.writer) {
-      throw new UnsupportedOperationException("Stream channel is only input!");
-    }
     this.parentChannel.send(this.target, data);
   }
 
   private class ChannelOutput extends OutputStream {
-
-    @Override
-    public void close() throws IOException {
-      StreamChannel.this.close();
-    }
 
     private void check() throws IOException {
       if (isClosed()) {
@@ -134,26 +145,22 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
 
     @Override
     public synchronized void write(byte[] b) throws IOException {
-      if (descriptor.writer) {
-        check();
-        send(b);
-      }
+      check();
+      send(b);
     }
 
     @Override
     public synchronized void write(byte[] b, int off, int len) throws IOException {
-      if (descriptor.writer) {
-        check();
-        send(ByteString.copyFrom(b, off, len));
-      }
+      check();
+      ByteString data = ByteString.copyFrom(b, off, len);
+      send(data);
     }
 
     @Override
     public synchronized void write(int b) throws IOException {
-      if (descriptor.writer) {
-        check();
-        send(ByteString.copyFrom(new byte[] {(byte) b}));
-      }
+      check();
+      ByteString data = ByteString.copyFrom(new byte[] {(byte) b});
+      send(data);
     }
   }
 

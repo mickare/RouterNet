@@ -2,8 +2,6 @@ package de.rennschnitzel.backbone.net.packet;
 
 import de.rennschnitzel.backbone.net.Connection;
 import de.rennschnitzel.backbone.net.channel.Channel;
-import de.rennschnitzel.backbone.net.protocol.DataStoreProtocol.DataStoreRequestMessage;
-import de.rennschnitzel.backbone.net.protocol.DataStoreProtocol.DataStoreResponseMessage;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthChallengeMessage;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthResponseMessage;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.LoginMessage;
@@ -18,22 +16,10 @@ import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.backbone.netty.exception.ProtocolException;
 
-public class ClientPacketHandler implements PacketHandler<Connection> {
+public class BasePacketHandler implements PacketHandler<Connection> {
 
   private boolean isReceiver(Connection con, TransportProtocol.TargetMessage target) {
     return con.getHome().isPart(target);
-  }
-
-  @Override
-  public void handle(Connection con, DataStoreResponseMessage msg) throws Exception {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void handle(Connection con, DataStoreRequestMessage msg) throws Exception {
-    // TODO Auto-generated method stub
-
   }
 
   @Override
@@ -62,19 +48,17 @@ public class ClientPacketHandler implements PacketHandler<Connection> {
 
   @Override
   public void handle(Connection con, ServerUpdateMessage msg) throws Exception {
-    // TODO Auto-generated method stub
-
+    con.getNetwork().updateNodes(msg);
   }
 
   @Override
   public void handle(Connection con, DisconnectedMessage msg) throws Exception {
-    // TODO Auto-generated method stub
-
+    con.getNetwork().updateNodes(msg);
   }
 
   @Override
   public void handle(Connection con, ConnectedMessage msg) throws Exception {
-
+    con.getNetwork().updateNodes(msg);
   }
 
   @Override
