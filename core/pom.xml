@@ -9,8 +9,8 @@
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
-	<artifactId>api</artifactId>
-	<name>RS-Backbone-api</name>
+	<artifactId>core</artifactId>
+	<name>RS-Backbone-core</name>
 
 	<dependencies>
 		<dependency>

@@ -12,7 +12,7 @@ public class LazyCache<T> implements CheckedSupplier<T> {
 
   private final CheckedSupplier<T> supplier;
 
-  private volatile CheckedSupplier<T> cache;
+  private volatile MemoizingSupplier<T> cache;
 
   public LazyCache(CheckedSupplier<T> supplier) {
     this.supplier = supplier;
@@ -40,12 +40,20 @@ public class LazyCache<T> implements CheckedSupplier<T> {
     reset();
   }
 
+  public void set(T value) {
+    this.cache.set(value);
+  }
+
   private static class MemoizingSupplier<T> implements CheckedSupplier<T> {
     final CheckedSupplier<T> delegate;
     volatile T value;
 
     MemoizingSupplier(CheckedSupplier<T> delegate) {
       this.delegate = delegate;
+    }
+
+    private synchronized void set(T value) {
+      this.value = value;
     }
 
     @Override

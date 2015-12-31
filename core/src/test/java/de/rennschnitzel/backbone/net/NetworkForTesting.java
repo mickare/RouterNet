@@ -1,6 +1,7 @@
 package de.rennschnitzel.backbone.net;
 
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import com.google.common.base.Preconditions;
@@ -59,6 +60,11 @@ public class NetworkForTesting extends Network {
   public void sendProcedureResponse(UUID receiver, ProcedureResponseMessage msg) {
     connection.send(Packet.newBuilder()
         .setProcedureMessage(ProcedureMessage.newBuilder().setTarget(Target.to(receiver).getProtocolMessage()).setResponse(msg)));
+  }
+
+  @Override
+  public void scheduleAsyncLater(Runnable run, long timeout, TimeUnit unit) {
+    run.run();
   }
 
 }

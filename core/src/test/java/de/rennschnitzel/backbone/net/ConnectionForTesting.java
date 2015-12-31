@@ -3,6 +3,7 @@ package de.rennschnitzel.backbone.net;
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.backbone.net.packet.PacketHandler;
+import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.ConnectedMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.Packet;
 import lombok.Getter;
 import lombok.NonNull;
@@ -32,6 +33,8 @@ public class ConnectionForTesting extends Connection {
     synchronized (lockObj) {
       this.connected = connection;
       connection.connected = this;
+      
+      this.connected.send(Packet.newBuilder().setConnected(ConnectedMessage.newBuilder().setServer(this.getHome())));
     }
   }
 

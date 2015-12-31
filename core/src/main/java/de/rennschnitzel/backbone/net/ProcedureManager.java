@@ -60,15 +60,19 @@ public class ProcedureManager {
       })//
       .build();
 
-  public <T, R> void registerProcedure(String name, Function<T, R> function) {
+  public <T, R> RegisteredProcedure<T, R> registerProcedure(String name, Function<T, R> function) {
     Preconditions.checkNotNull(name);
     Preconditions.checkNotNull(function);
     Preconditions.checkArgument(!name.isEmpty());
     RegisteredProcedure<T, R> proc = new RegisteredProcedure<>(network, name, function);
     try (CloseableLock l = lock.writeLock().open()) {
       registeredProcedures.put(proc.getInfo(), proc);
-      network.getHome().addRegisteredProcedure(proc);
     }
+    network.getHome().addRegisteredProcedure(proc);
+    network.scheduleAsyncLater(() -> {
+      network.getHome().publishChanges();
+    } , 20, TimeUnit.MILLISECONDS);
+    return proc;
   }
 
   public RegisteredProcedure<?, ?> getRegisteredProcedure(ProcedureInformation info) {

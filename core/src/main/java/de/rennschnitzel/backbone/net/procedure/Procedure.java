@@ -41,4 +41,6 @@ public interface Procedure<T, R> extends Comparable<Procedure<?, ?>> {
 
   ProcedureCallResult<T, R> call(NetworkNode server, T argument);
 
+  boolean isApplicable(ProcedureInformation info);
+
 }

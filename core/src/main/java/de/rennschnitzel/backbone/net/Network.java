@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import org.nustaq.serialization.FSTConfiguration;
@@ -144,6 +145,8 @@ public abstract class Network {
       this.nodes.remove(id, node);
     }
   }
+
+  public abstract void scheduleAsyncLater(Runnable run, long timeout, TimeUnit unit);
 
 
 

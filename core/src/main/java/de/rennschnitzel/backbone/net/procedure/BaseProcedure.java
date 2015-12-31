@@ -25,7 +25,7 @@ public class BaseProcedure<T, R> implements Procedure<T, R> {
   private final BiConsumer<ProcedureResponseMessage.Builder, R> responseWriter;
 
   private final Network network;
-  
+
   @Setter
   private CheckedFunction<T, R> localFunction = null;
 
@@ -51,6 +51,15 @@ public class BaseProcedure<T, R> implements Procedure<T, R> {
   @Override
   public String getName() {
     return info.getName();
+  }
+
+  @Override
+  public boolean isApplicable(ProcedureInformation info) {
+    boolean result = true;
+    result &= this.getName().equals(info.getName());
+    result &= this.argClass.getName().equals(info.getArgumentType());
+    result &= this.resultClass.getName().equals(info.getResultType());
+    return result;
   }
 
   @Override

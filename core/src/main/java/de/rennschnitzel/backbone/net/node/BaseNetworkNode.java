@@ -95,5 +95,20 @@ public class BaseNetworkNode implements NetworkNode {
     return procedures.contains(info);
   }
 
+  @Override
+  public ServerMessage toProtocol() {
+    ServerMessage.Builder b = ServerMessage.newBuilder();
+    b.setId(this.getIdProto());
+    if (name.isPresent()) {
+      b.setName(this.name.get());
+    }
+    b.setTimestamp(this.timestamp);
+    b.addAllNamespaces(this.namespaces);
+    this.procedures.stream().map(p -> p)
+    b.addAllProcedures(this.procedures);
+
+    return b.build();
+  }
+
 
 }
