@@ -8,6 +8,7 @@ import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.backbone.net.node.HomeNode;
 import de.rennschnitzel.backbone.net.procedure.ProcedureCall;
+import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.ServerUpdateMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
@@ -25,17 +26,13 @@ public class NetworkForTesting extends Network {
   @Getter
   private final ProcedureManager procedureManager = new ProcedureManager(this);
 
-  @Getter
-  private final HomeNode home;
-
 
   public NetworkForTesting() {
     this(new HomeNode(UUID.randomUUID()));
   }
 
   public NetworkForTesting(HomeNode home) {
-    Preconditions.checkNotNull(home);
-    this.home = home;
+    super(home);
   }
 
   public void setInstance() {
@@ -58,13 +55,20 @@ public class NetworkForTesting extends Network {
 
   @Override
   public void sendProcedureResponse(UUID receiver, ProcedureResponseMessage msg) {
-    connection.send(Packet.newBuilder()
-        .setProcedureMessage(ProcedureMessage.newBuilder().setTarget(Target.to(receiver).getProtocolMessage()).setResponse(msg)));
+    connection.send(Packet.newBuilder().setProcedureMessage(ProcedureMessage.newBuilder().setSender(this.getHome().getIdProto())
+        .setTarget(Target.to(receiver).getProtocolMessage()).setResponse(msg)));
   }
 
   @Override
   public void scheduleAsyncLater(Runnable run, long timeout, TimeUnit unit) {
     run.run();
+  }
+
+  @Override
+  public void publishChanges(HomeNode homeNode) {
+    Preconditions.checkNotNull(homeNode);
+    Preconditions.checkNotNull(this.connection);
+    this.connection.send(Packet.newBuilder().setUpdate(ServerUpdateMessage.newBuilder().setServer(homeNode.toProtocol())));
   }
 
 }

@@ -38,5 +38,7 @@ public interface NetworkNode {
 
   boolean hasNamespace(Collection<String> namespaces);
 
+  ServerMessage toProtocol();
+
 
 }

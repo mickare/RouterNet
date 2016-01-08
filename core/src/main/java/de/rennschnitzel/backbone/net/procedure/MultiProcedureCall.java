@@ -13,11 +13,11 @@ import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import de.rennschnitzel.backbone.exception.ConnectionException;
 import de.rennschnitzel.backbone.net.Target;
 import de.rennschnitzel.backbone.net.node.NetworkNode;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
-import de.rennschnitzel.backbone.netty.exception.ConnectionException;
 
 public class MultiProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
 

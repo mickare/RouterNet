@@ -1,28 +1,42 @@
 package de.rennschnitzel.backbone.net.procedure;
 
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.backbone.net.Network;
 import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.ProcedureDescription;
 import de.rennschnitzel.backbone.util.LazyCache;
+import de.rennschnitzel.backbone.util.TypeUtils;
 import lombok.Getter;
-import net.jodah.typetools.TypeResolver;
 
 public class ProcedureInformation implements Comparable<ProcedureInformation> {
 
   private static final Object LOCK = new Object();
 
-  private static <T, R> Class<?>[] resolveArgumentClass(Function<T, R> function) {
-    Preconditions.checkNotNull(function);
-    return TypeResolver.resolveRawArguments(Function.class, function.getClass());
+  @SuppressWarnings("unchecked")
+  public static <T, R> ProcedureInformation of(String name, Function<T, R> function) {
+    Class<?>[] typeArgs = TypeUtils.resolveArgumentClass(function);
+    return new ProcedureInformation(name, (Class<T>) typeArgs[0], (Class<R>) typeArgs[1]);
   }
 
-  public static ProcedureInformation of(String name, Function<?, ?> function) {
-    return new ProcedureInformation(name, function);
+  public static ProcedureInformation of(String name, Consumer<?> function) {
+    return new ProcedureInformation(name, TypeUtils.resolveArgumentClass(function), Void.class);
   }
+
+
+  public static ProcedureInformation of(String name, Supplier<?> function) {
+    return new ProcedureInformation(name, Void.class, TypeUtils.resolveArgumentClass(function));
+  }
+
+
+  public static ProcedureInformation of(String name, Runnable function) {
+    return new ProcedureInformation(name, Void.class, Void.class);
+  }
+
 
 
   public static ProcedureInformation of(String name, final Class<?> argument, final Class<?> result) {
@@ -48,18 +62,18 @@ public class ProcedureInformation implements Comparable<ProcedureInformation> {
     this(msg.getName(), msg.getArgument(), msg.getResult());
   }
 
-  public ProcedureInformation(String name, Function<?, ?> function) {
-    this(name, resolveArgumentClass(function));
-  }
-
-  private ProcedureInformation(String name, Class<?>[] typeArgs) {
-    this(name, typeArgs[0], typeArgs[1]);
-  }
+  /*
+   * public ProcedureInformation(String name, Function<?, ?> function) { this(name,
+   * TypeUtils.resolveArgumentClass(function)); }
+   * 
+   * private ProcedureInformation(String name, Class<?>[] typeArgs) { this(name, typeArgs[0],
+   * typeArgs[1]); }
+   */
 
   public ProcedureInformation(final String name, final Class<?> argument, final Class<?> result) {
     this(name, argument.getName(), result.getName());
     this.argumentClass.set(argument);
-    this.argumentClass.set(result);
+    this.resultClass.set(result);
   }
 
   public ProcedureInformation(final String name, final String argumentType, final String resultType)
@@ -83,14 +97,33 @@ public class ProcedureInformation implements Comparable<ProcedureInformation> {
 
   @SuppressWarnings("unchecked")
   public <T, R> Procedure<T, R> getProcedure(Network network, Function<T, R> function) throws RuntimeException {
-    Class<?>[] typeArgs = resolveArgumentClass(function);
+    Class<?>[] typeArgs = TypeUtils.resolveArgumentClass(function);
     return getProcedure(network, (Class<T>) typeArgs[0], (Class<R>) typeArgs[1]);
+  }
+
+  @SuppressWarnings("unchecked")
+  public <T> Procedure<T, Void> getProcedure(Network network, Consumer<T> function) throws RuntimeException {
+    return getProcedure(network, (Class<T>) TypeUtils.resolveArgumentClass(function), Void.class);
+  }
+
+  @SuppressWarnings("unchecked")
+  public <R> Procedure<Void, R> getProcedure(Network network, Supplier<R> function) throws RuntimeException {
+    return getProcedure(network, Void.class, (Class<R>) TypeUtils.resolveArgumentClass(function));
+  }
+
+  public Procedure<Void, Void> getProcedure(Network network, Runnable function) throws RuntimeException {
+    return getProcedure(network, Void.class, Void.class);
   }
 
   public <T, R> Procedure<T, R> getProcedure(Network network, final Class<T> argumentType, final Class<R> resultType)
       throws RuntimeException {
-    Preconditions.checkArgument(isApplicable(argumentType, resultType));
+    checkApplicable(argumentType, resultType);
     return new BaseProcedure<>(network, this, argumentType, resultType);
+  }
+
+  private void checkApplicable(final Class<?> argumentType, final Class<?> resultType) throws IllegalArgumentException {
+    Preconditions.checkArgument(getArgumentClass().isAssignableFrom(argumentType));
+    Preconditions.checkArgument(getResultClass().isAssignableFrom(resultType));
   }
 
   public boolean isApplicable(final Class<?> argumentType, final Class<?> resultType) throws RuntimeException {

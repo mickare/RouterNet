@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>de.rennschnitzel.backbone</groupId>
@@ -18,9 +19,10 @@
 		<module>protocol</module>
 		<module>core</module>
 		<module>client</module>
-    <module>client-api</module>
+		<module>client-api</module>
 		<module>router</module>
-  </modules>
+		<module>netty</module>
+	</modules>
 
 	<distributionManagement>
 		<repository>
@@ -34,5 +36,23 @@
 			<url>http://repo.rennschnitzel.de:8081/nexus/content/repositories/rs-public/</url>
 		</snapshotRepository>
 	</distributionManagement>
+
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>1.14.8</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>18.0</version>
+		</dependency>
+	</dependencies>
 
 </project>

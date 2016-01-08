@@ -1,4 +1,4 @@
-package de.rennschnitzel.backbone.netty.exception;
+package de.rennschnitzel.backbone.exception;
 
 import com.google.common.base.Preconditions;
 

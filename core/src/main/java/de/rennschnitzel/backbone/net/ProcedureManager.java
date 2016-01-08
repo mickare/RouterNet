@@ -4,7 +4,9 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 
 import com.google.common.base.Preconditions;
@@ -16,6 +18,7 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import de.rennschnitzel.backbone.exception.ProtocolException;
 import de.rennschnitzel.backbone.net.node.NetworkNode;
 import de.rennschnitzel.backbone.net.procedure.MultiProcedureCall;
 import de.rennschnitzel.backbone.net.procedure.Procedure;
@@ -28,15 +31,17 @@ import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureCallMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
-import de.rennschnitzel.backbone.netty.exception.ProtocolException;
+import de.rennschnitzel.backbone.util.TypeUtils;
 import de.rennschnitzel.backbone.util.concurrent.CloseableLock;
 import de.rennschnitzel.backbone.util.concurrent.CloseableReentrantReadWriteLock;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import net.jodah.typetools.TypeResolver;
 
 @RequiredArgsConstructor
 public class ProcedureManager {
+
 
   /**
    * Default timeout of procedures. (in seconds)
@@ -60,17 +65,51 @@ public class ProcedureManager {
       })//
       .build();
 
+
+
+  @SuppressWarnings("unchecked")
   public <T, R> RegisteredProcedure<T, R> registerProcedure(String name, Function<T, R> function) {
+    final Class<?>[] args = TypeUtils.resolveArgumentClass(function);
+    return registerProcedure(name, function, (Class<T>) args[0], (Class<R>) args[1]);
+  }
+
+
+  @SuppressWarnings("unchecked")
+  public <T> RegisteredProcedure<T, Void> registerProcedure(final String name, final Consumer<T> consumer) {
+    return registerProcedure(name, (t) -> {
+      consumer.accept(t);
+      return null;
+    } , (Class<T>) TypeUtils.resolveArgumentClass(consumer), Void.class);
+  }
+
+  @SuppressWarnings("unchecked")
+  public <R> RegisteredProcedure<Void, R> registerProcedure(final String name, final Supplier<R> supplier) {
+    return registerProcedure(name, (t) -> supplier.get(), Void.class, (Class<R>) TypeUtils.resolveArgumentClass(supplier));
+  }
+
+  public RegisteredProcedure<Void, Void> registerProcedure(final String name, final Runnable run) {
+    return registerProcedure(name, (t) -> {
+      run.run();
+      return null;
+    } , Void.class, Void.class);
+  }
+
+  public <T, R> RegisteredProcedure<T, R> registerProcedure(final String name, final Function<T, R> function, final Class<T> argClass,
+      final Class<R> resultClass) {
     Preconditions.checkNotNull(name);
     Preconditions.checkNotNull(function);
     Preconditions.checkArgument(!name.isEmpty());
-    RegisteredProcedure<T, R> proc = new RegisteredProcedure<>(network, name, function);
+    Preconditions.checkNotNull(argClass);
+    Preconditions.checkNotNull(resultClass);
+    Preconditions.checkArgument(argClass != TypeResolver.Unknown.class);
+    Preconditions.checkArgument(resultClass != TypeResolver.Unknown.class);
+    final RegisteredProcedure<T, R> proc = new RegisteredProcedure<T, R>(network, name, argClass, resultClass, function);
     try (CloseableLock l = lock.writeLock().open()) {
       registeredProcedures.put(proc.getInfo(), proc);
     }
     network.getHome().addRegisteredProcedure(proc);
     network.scheduleAsyncLater(() -> {
-      network.getHome().publishChanges();
+      network.getHome().publishChanges(network);
     } , 20, TimeUnit.MILLISECONDS);
     return proc;
   }

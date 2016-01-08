@@ -37,12 +37,12 @@ public class HomeNode extends BaseNetworkNode {
 
   public void addNamespace(String namespace) {
     Preconditions.checkArgument(!namespace.isEmpty());
-    dirty &= this.namespaces.add(namespace.toLowerCase());
+    dirty |= this.namespaces.add(namespace.toLowerCase());
   }
 
   public void removeNamespace(String namespace) {
     Preconditions.checkArgument(!namespace.isEmpty());
-    dirty &= this.namespaces.remove(namespace.toLowerCase());
+    dirty |= this.namespaces.remove(namespace.toLowerCase());
   }
 
   public void setName(String name) {
@@ -55,14 +55,15 @@ public class HomeNode extends BaseNetworkNode {
   }
 
   public void addRegisteredProcedure(RegisteredProcedure<?, ?> procedure) {
-    dirty &= this.procedures.add(procedure.getInfo());
+    dirty |= this.procedures.add(procedure.getInfo());
   }
 
   public void removeRegisteredProcedure(RegisteredProcedure<?, ?> procedure) {
-    dirty &= this.procedures.remove(procedure.getInfo());
+    dirty |= this.procedures.remove(procedure.getInfo());
   }
 
-  public void publishChanges() {
+  public void publishChanges(Network network) {
+    Preconditions.checkNotNull(network);
     if (!this.dirty) {
       return;
     }
@@ -71,13 +72,26 @@ public class HomeNode extends BaseNetworkNode {
         return;
       }
       this.dirty = false;
-      Network.getInstance().publishChanges(this);
+      network.publishChanges(this);
     }
   }
 
   @Override
   public void update(ServerMessage server) {
     throw new UnsupportedOperationException("home server cant be updated via network");
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("HomeNode[");
+    if (name.isPresent()) {
+      sb.append(name.get());
+      sb.append(", ");
+    }
+    sb.append(this.getId().toString());
+    sb.append("]");
+    return sb.toString();
   }
 
 }

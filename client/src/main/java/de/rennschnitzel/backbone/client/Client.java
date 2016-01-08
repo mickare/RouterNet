@@ -9,12 +9,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AbstractScheduledService;
 
-import de.rennschnitzel.backbone.api.network.Connection;
-import de.rennschnitzel.backbone.api.network.ConnectionFuture;
-import de.rennschnitzel.backbone.api.network.RouterInfo;
 import de.rennschnitzel.backbone.client.util.UUIDContainer;
-import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthSuccess;
-import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.Server;
 import de.rennschnitzel.backbone.netty.BackboneChannelInitializer;
 import de.rennschnitzel.backbone.util.FutureUtils;
 import io.netty.bootstrap.Bootstrap;

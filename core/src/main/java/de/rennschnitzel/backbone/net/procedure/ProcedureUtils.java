@@ -23,7 +23,7 @@ public class ProcedureUtils {
     } else if (Serializable.class.isAssignableFrom(resultClass)) {
       return (p) -> (R) Network.SERIALIZATION.getObjectInput(p.getObject().toByteArray()).readObject(resultClass);
     } else {
-      throw new IllegalArgumentException("Unsupported response type!");
+      throw new IllegalArgumentException("Unsupported response type (" + resultClass.getName() + ")!");
     }
 
   }
@@ -39,7 +39,7 @@ public class ProcedureUtils {
     } else if (Serializable.class.isAssignableFrom(resultClass)) {
       return (p, r) -> p.setObject(ByteString.copyFrom(Network.SERIALIZATION.asByteArray(r)));
     } else {
-      throw new IllegalArgumentException("Unsupported response type!");
+      throw new IllegalArgumentException("Unsupported response type (" + resultClass.getName() + ")!");
     }
 
   }
@@ -55,7 +55,7 @@ public class ProcedureUtils {
     } else if (Serializable.class.isAssignableFrom(argClass)) {
       return (p) -> (A) Network.SERIALIZATION.getObjectInput(p.getObject().toByteArray()).readObject(argClass);
     } else {
-      throw new IllegalArgumentException("Unsupported call type!");
+      throw new IllegalArgumentException("Unsupported call type (" + argClass.getName() + ")!");
     }
 
   }
@@ -69,7 +69,7 @@ public class ProcedureUtils {
     } else if (Serializable.class.isAssignableFrom(argClass)) {
       return (p, r) -> p.setObject(ByteString.copyFrom(Network.SERIALIZATION.asByteArray(r)));
     } else {
-      throw new IllegalArgumentException("Unsupported call type!");
+      throw new IllegalArgumentException("Unsupported call type (" + argClass.getName() + ")!");
     }
 
   }

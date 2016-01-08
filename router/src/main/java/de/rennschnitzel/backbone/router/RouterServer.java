@@ -2,6 +2,7 @@ package de.rennschnitzel.backbone.router;
 
 import java.util.logging.Logger;
 
+import de.rennschnitzel.backbone.Router;
 import de.rennschnitzel.backbone.api.network.RouterInfo;
 import de.rennschnitzel.backbone.net.protocol.ComponentUUID;
 import de.rennschnitzel.backbone.net.protocol.NetworkProtocol;
@@ -15,17 +16,19 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class Router extends AbstractDirectService {
+public class RouterServer extends AbstractDirectService {
 
+  @NonNull
+  private final Router router;
 
-  private final RouterInfo router;
+  @NonNull
+  private final Logger logger;
 
   private EventLoopGroup bossGroup, workerGroup;
-
-  private final Logger logger;
 
   @Override
   protected void startUp() throws Exception {
@@ -59,15 +62,13 @@ public class Router extends AbstractDirectService {
 
   }
 
-  public NetworkProtocol.Router toProtocol() {
-    NetworkProtocol.Router.Builder r = NetworkProtocol.Router.newBuilder();
-    r.setId(ComponentUUID.UUID.newBuilder()
-        .setMostSignificantBits(router.getId().getMostSignificantBits())
+  public NetworkProtocol.RouterMessage toProtocol() {
+    NetworkProtocol.RouterMessage.Builder r = NetworkProtocol.RouterMessage.newBuilder();
+    r.setId(ComponentUUID.UUID.newBuilder().setMostSignificantBits(router.getId().getMostSignificantBits())
         .setLeastSignificantBits(router.getId().getLeastSignificantBits()));
     r.setName(router.getName());
     r.setTimestamp(System.currentTimeMillis());
-    r.setAddress(
-        NetworkProtocol.Address.newBuilder().setHost(router.getHost()).setPort(router.getPort()));
+    r.setAddress(NetworkProtocol.Address.newBuilder().setHost(router.getHost()).setPort(router.getPort()));
     return null;
   }
 

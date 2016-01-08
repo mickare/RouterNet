@@ -1,4 +1,4 @@
-package de.rennschnitzel.backbone.netty.exception;
+package de.rennschnitzel.backbone.exception;
 
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ErrorMessage.Type;
 

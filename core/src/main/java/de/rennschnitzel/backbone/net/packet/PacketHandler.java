@@ -1,5 +1,6 @@
 package de.rennschnitzel.backbone.net.packet;
 
+import de.rennschnitzel.backbone.exception.ProtocolException;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthChallengeMessage;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthResponseMessage;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.LoginMessage;
@@ -12,7 +13,6 @@ import de.rennschnitzel.backbone.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureMessage;
-import de.rennschnitzel.backbone.netty.exception.ProtocolException;
 
 public interface PacketHandler<C> {
 

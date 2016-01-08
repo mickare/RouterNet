@@ -3,9 +3,9 @@ package de.rennschnitzel.backbone.netty;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import de.rennschnitzel.backbone.exception.ConnectionException;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ErrorMessage;
-import de.rennschnitzel.backbone.netty.exception.ConnectionException;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerAdapter;

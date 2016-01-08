@@ -11,17 +11,17 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.protobuf.ByteString;
 
-import de.rennschnitzel.backbone.api.network.Connection;
-import de.rennschnitzel.backbone.api.network.RouterInfo;
 import de.rennschnitzel.backbone.net.protocol.ComponentUUID;
-import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthChallenge;
-import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthResponse;
-import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthSuccess;
-import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.FirstLogin;
-import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.Login;
-import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.SecondLogin;
-import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.Server;
+import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthChallengeMessage;
+import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthResponseMessage;
+import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthSuccessMessage;
+import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.LoginMessage;
+import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.ServerMessage;
+import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.ServerUpdateMessage;
+import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ChannelRegister;
+import de.rennschnitzel.backbone.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ErrorMessage;
+import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.backbone.netty.HandshakeHandler;
 import de.rennschnitzel.backbone.netty.PacketUtil;
 import de.rennschnitzel.backbone.netty.exception.ConnectionException;
@@ -48,9 +48,9 @@ public class RouterHandshakeHandler extends HandshakeHandler {
   @Getter
   private final Router router;
   @Getter
-  private Server client;
+  private ServerMessage client;
 
-  private Login login = null;
+  private LoginMessage login = null;
   private final ByteString challenge = ByteString.copyFrom(nextChallenge(32));
 
   public RouterHandshakeHandler(Router router) {
@@ -110,7 +110,7 @@ public class RouterHandshakeHandler extends HandshakeHandler {
 
 
   @Override
-  protected void handle(ChannelHandlerContext ctx, Login login) throws HandshakeException {
+  public void handle(ChannelHandlerContext ctx, LoginMessage login) throws HandshakeException {
     this.checkState(State.LOGIN);
 
     switch (login.getLoginCase()) {
@@ -126,12 +126,12 @@ public class RouterHandshakeHandler extends HandshakeHandler {
     }
 
     this.login = login;
-    PacketUtil.writeAndFlush(ctx, AuthChallenge.newBuilder().setToken(challenge));
+    PacketUtil.writeAndFlush(ctx.channel(), AuthChallengeMessage.newBuilder().setToken(challenge));
     this.setState(State.AUTH);
   }
 
   @Override
-  protected void handle(ChannelHandlerContext ctx, AuthResponse authResponse)
+  public void handle(ChannelHandlerContext ctx, AuthResponseMessage authResponse)
       throws HandshakeException {
     this.checkState(State.AUTH);
 
@@ -140,7 +140,7 @@ public class RouterHandshakeHandler extends HandshakeHandler {
       return;
     }
 
-    AuthSuccess.Builder b = AuthSuccess.newBuilder();
+    AuthSuccessMessage.Builder b = AuthSuccessMessage.newBuilder();
     b.setRouter(router.toProtocol());
     b.setClient(value)
     PacketUtil.writeAndFlush(ctx, b);
@@ -149,17 +149,23 @@ public class RouterHandshakeHandler extends HandshakeHandler {
 
 
   @Override
-  protected void handle(ChannelHandlerContext ctx, AuthChallenge authChallenge) throws Exception {
+  public void handle(ChannelHandlerContext ctx, AuthChallengeMessage authChallenge) throws Exception {
     throw new HandshakeException("Invalid or unknown packet!");
   }
 
 
   @Override
-  protected void handle(ChannelHandlerContext ctx, AuthSuccess authSuccess) throws Exception {
+  protected void handle(ChannelHandlerContext ctx, AuthSuccessMessage authSuccess) throws Exception {
     throw new HandshakeException("Invalid or unknown packet!");
   }
 
   protected abstract RouterConnection upgrade(ChannelHandlerContext ctx, AuthSuccess authSuccess);
+
+  @Override
+  public void handle(ChannelHandlerContext ctx, CloseMessage msg) throws Exception {
+    // TODO Auto-generated method stub
+
+  }
 
 
 }

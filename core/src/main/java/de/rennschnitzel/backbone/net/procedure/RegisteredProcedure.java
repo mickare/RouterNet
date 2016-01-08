@@ -8,26 +8,20 @@ import de.rennschnitzel.backbone.net.Network;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureCallMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
 import lombok.Getter;
-import net.jodah.typetools.TypeResolver;
 
 public class RegisteredProcedure<T, R> extends BaseProcedure<T, R> {
-
-  private static <T, R> Class<?>[] resolveArgumentClass(Function<T, R> function) {
-    Preconditions.checkNotNull(function);
-    return TypeResolver.resolveRawArguments(Function.class, function.getClass());
-  }
 
   @Getter
   private final Function<T, R> function;
 
-  public RegisteredProcedure(Network network, String name, Function<T, R> function) {
-    this(network, name, resolveArgumentClass(function), function);
-  }
-
-  @SuppressWarnings("unchecked")
-  private RegisteredProcedure(Network network, String name, Class<?>[] typeArgs, Function<T, R> function) {
-    this(network, name, (Class<T>) typeArgs[0], (Class<R>) typeArgs[1], function);
-  }
+  /*
+   * public RegisteredProcedure(Network network, String name, Function<T, R> function) {
+   * this(network, name, resolveArgumentClass(function), function); }
+   * 
+   * @SuppressWarnings("unchecked") private RegisteredProcedure(Network network, String name,
+   * Class<?>[] typeArgs, Function<T, R> function) { this(network, name, (Class<T>) typeArgs[0],
+   * (Class<R>) typeArgs[1], function); }
+   */
 
   public RegisteredProcedure(Network network, String name, Class<T> argClass, Class<R> resultClass, Function<T, R> function) {
     this(network, new ProcedureInformation(name, argClass.getName(), resultClass.getName()), argClass, resultClass, function);

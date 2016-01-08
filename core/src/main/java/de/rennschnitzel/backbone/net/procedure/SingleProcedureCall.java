@@ -7,11 +7,12 @@ import java.util.concurrent.TimeoutException;
 
 import com.google.common.base.Preconditions;
 
+import de.rennschnitzel.backbone.ProtocolUtils;
+import de.rennschnitzel.backbone.exception.ConnectionException;
 import de.rennschnitzel.backbone.net.Target;
 import de.rennschnitzel.backbone.net.node.NetworkNode;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
-import de.rennschnitzel.backbone.netty.exception.ConnectionException;
 import lombok.Getter;
 
 public class SingleProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
@@ -37,7 +38,7 @@ public class SingleProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
     if (!getProcedure().isApplicable(response.getProcedure())) {
       throw new IllegalArgumentException("response is not applicable for procedure");
     }
-    UUID senderId = new UUID(message.getSender().getMostSignificantBits(), message.getSender().getLeastSignificantBits());
+    UUID senderId = ProtocolUtils.convert(message.getSender());
     Preconditions.checkArgument(senderId.equals(server.getId()), "Wrong response sender");
     if (response.getCancelled()) {
       result.cancel(true);

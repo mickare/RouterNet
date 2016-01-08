@@ -6,35 +6,28 @@
 		<groupId>de.rennschnitzel.backbone</groupId>
 		<artifactId>parent</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
-		<relativePath>../pom.xml</relativePath>
 	</parent>
 
-	<artifactId>core</artifactId>
-	<name>RS-Backbone-core</name>
+	<artifactId>netty</artifactId>
+	<name>RS-Backbone-netty</name>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
 
 	<dependencies>
 		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>3.8.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>de.rennschnitzel.backbone</groupId>
-			<artifactId>protocol</artifactId>
+			<artifactId>core</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>io.netty</groupId>
-			<artifactId>netty-all</artifactId>
-			<version>4.0.32.Final</version>
-		</dependency>
-		<dependency>
-			<groupId>de.ruedigermoeller</groupId>
-			<artifactId>fst</artifactId>
-			<version>2.40</version>
-		</dependency>
-		<dependency>
-			<groupId>net.jodah</groupId>
-			<artifactId>typetools</artifactId>
-			<version>LATEST</version>
-		</dependency>
 	</dependencies>
-
 
 	<build>
 		<plugins>
@@ -56,5 +49,5 @@
 			</plugin>
 		</plugins>
 	</build>
-
+	
 </project>

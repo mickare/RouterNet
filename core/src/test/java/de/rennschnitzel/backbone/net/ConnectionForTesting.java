@@ -33,8 +33,9 @@ public class ConnectionForTesting extends Connection {
     synchronized (lockObj) {
       this.connected = connection;
       connection.connected = this;
-      
-      this.connected.send(Packet.newBuilder().setConnected(ConnectedMessage.newBuilder().setServer(this.getHome())));
+
+      this.send(Packet.newBuilder().setConnected(ConnectedMessage.newBuilder().setServer(this.getHome().toProtocol())));
+      this.connected.send(Packet.newBuilder().setConnected(ConnectedMessage.newBuilder().setServer(this.connected.getHome().toProtocol())));
     }
   }
 

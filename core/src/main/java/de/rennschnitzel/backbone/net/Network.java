@@ -75,7 +75,14 @@ public abstract class Network {
   private final EventBus eventBus = new EventBus();
 
 
-  public abstract HomeNode getHome();
+  @Getter
+  private final HomeNode home;
+
+  protected Network(HomeNode home) {
+    Preconditions.checkNotNull(home);
+    this.home = home;
+    this.nodes.put(home.getId(), home);
+  }
 
   public abstract Logger getLogger();
 
@@ -85,6 +92,10 @@ public abstract class Network {
 
   public Map<UUID, NetworkNode> getNodes() {
     return Collections.unmodifiableMap(nodes);
+  }
+
+  public NetworkNode getNode(UUID id) {
+    return this.nodes.get(id);
   }
 
   public Map<UUID, NetworkNode> getServersOfTarget(Target target) {
@@ -118,10 +129,7 @@ public abstract class Network {
 
   public abstract ProcedureManager getProcedureManager();
 
-  public void publishChanges(HomeNode homeNode) {
-    // TODO Auto-generated method stub
-
-  }
+  public abstract void publishChanges(HomeNode homeNode);
 
   public void updateNodes(ServerMessage msg) {
     UUID id = ProtocolUtils.convert(msg.getId());
@@ -138,7 +146,9 @@ public abstract class Network {
 
   public void updateNodes(DisconnectedMessage msg) {
     UUID id = ProtocolUtils.convert(msg.getServer().getId());
-    Preconditions.checkArgument(!id.equals(this.getHome().getId()));
+    if (id.equals(this.getHome().getId())) {
+      return; // just ignore it.
+    }
     NetworkNode node = this.nodes.get(id);
     if (node != null) {
       node.update(msg.getServer());

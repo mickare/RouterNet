@@ -35,7 +35,7 @@
 		</dependency>
 		<dependency>
 			<groupId>de.rennschnitzel.backbone</groupId>
-			<artifactId>api</artifactId>
+			<artifactId>core</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>

@@ -1,11 +1,16 @@
 package de.rennschnitzel.backbone.netty;
 
 import com.google.common.base.Preconditions;
-import com.google.protobuf.Message;
 
+import de.rennschnitzel.backbone.exception.ConnectionException;
+import de.rennschnitzel.backbone.exception.HandshakeException;
+import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.ConnectedMessage;
+import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.DisconnectedMessage;
+import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.ServerUpdateMessage;
+import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ChannelMessage;
+import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ChannelRegister;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.Packet;
-import de.rennschnitzel.backbone.netty.exception.ConnectionException;
-import de.rennschnitzel.backbone.netty.exception.HandshakeException;
+import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureMessage;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 public abstract class HandshakeHandler extends NettyPacketHandler {
 
   public static final int VERSION = 1;
+
   
   @RequiredArgsConstructor
   public static enum State {
@@ -20,12 +26,13 @@ public abstract class HandshakeHandler extends NettyPacketHandler {
     @Getter
     private final int step;
   }
-
+  
   private volatile State state = State.NEW;
-
   @Getter
   private ChannelHandlerContext channelContext = null;
 
+  protected abstract void onFail(Throwable cause);
+  
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     this.checkState(State.NEW);
@@ -46,7 +53,6 @@ public abstract class HandshakeHandler extends NettyPacketHandler {
   }
 
 
-  protected abstract void onFail(Throwable cause);
 
   public synchronized final void fail(Throwable cause) {
     if (this.state.step < State.FAILED.step) {
@@ -58,14 +64,12 @@ public abstract class HandshakeHandler extends NettyPacketHandler {
 
   protected synchronized final void checkState(final State setpoint) throws ConnectionException {
     if (this.state != setpoint) {
-      throw new HandshakeException(
-          "Wrong state (\"" + this.state.name() + "\" should be \"" + setpoint.name() + "\")!");
+      throw new HandshakeException("Wrong state (\"" + this.state.name() + "\" should be \"" + setpoint.name() + "\")!");
     }
   }
 
   @Override
-  protected void channelRead0(final ChannelHandlerContext ctx, final Packet packet)
-      throws Exception {
+  protected void channelRead0(final ChannelHandlerContext ctx, final Packet packet) throws Exception {
     try {
       super.channelRead0(ctx, packet);
     } catch (final Exception e) {
@@ -77,18 +81,33 @@ public abstract class HandshakeHandler extends NettyPacketHandler {
   }
 
   @Override
-  protected void handle(ChannelHandlerContext ctx, Connected connected) throws HandshakeException {
+  public void handle(ChannelHandlerContext ctx, ConnectedMessage connected) throws HandshakeException {
     throw new HandshakeException("Invalid or unknown packet!");
   }
 
   @Override
-  protected void handle(ChannelHandlerContext ctx, Disconnected disconnected)
-      throws HandshakeException {
+  public void handle(ChannelHandlerContext ctx, DisconnectedMessage disconnected) throws HandshakeException {
     throw new HandshakeException("Invalid or unknown packet!");
   }
 
   @Override
-  protected void handle(ChannelHandlerContext ctx, Message message) throws HandshakeException {
+  public void handle(ChannelHandlerContext ctx, ChannelMessage message) throws HandshakeException {
+    throw new HandshakeException("Invalid or unknown packet!");
+  }
+
+
+  @Override
+  public void handle(ChannelHandlerContext ctx, ProcedureMessage msg) throws HandshakeException {
+    throw new HandshakeException("Invalid or unknown packet!");
+  }
+
+  @Override
+  public void handle(ChannelHandlerContext ctx, ChannelRegister msg) throws HandshakeException {
+    throw new HandshakeException("Invalid or unknown packet!");
+  }
+
+  @Override
+  public void handle(ChannelHandlerContext ctx, ServerUpdateMessage msg) throws HandshakeException {
     throw new HandshakeException("Invalid or unknown packet!");
   }
 

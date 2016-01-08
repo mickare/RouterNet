@@ -1,54 +1,29 @@
 package de.rennschnitzel.backbone.router;
 
-import java.util.UUID;
+import de.rennschnitzel.backbone.net.Connection;
+import de.rennschnitzel.backbone.net.Network;
+import de.rennschnitzel.backbone.net.protocol.TransportProtocol.Packet;
+import io.netty.channel.ChannelHandlerContext;
 
-import de.rennschnitzel.backbone.api.network.Connection;
-import de.rennschnitzel.backbone.net.protocol.TransportProtocol.CloseMessage;
-import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ErrorMessage;
-import de.rennschnitzel.backbone.net.protocol.TransportProtocol.Message;
-import de.rennschnitzel.backbone.netty.exception.NotConnectedException;
-import io.netty.channel.ChannelFuture;
+public class ClientConnection extends Connection {
 
-public class ClientConnection implements Connection {
-
-  public UUID getRouterUUID() {
-    // TODO Auto-generated method stub
-    return null;
+  private final ChannelHandlerContext ctx;
+  
+  public ClientConnection(Network network) {
+    super(network);
   }
 
-  public UUID getClientUUID() {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  public boolean isOpen() {
-    // TODO Auto-generated method stub
-    return false;
-  }
-
-  public boolean isActive() {
-    // TODO Auto-generated method stub
-    return false;
-  }
-
-  public ChannelFuture close() {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  public ChannelFuture close(CloseMessage packet) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  public void send(ErrorMessage packet) throws NotConnectedException {
+  @Override
+  public void send(Packet packet) {
     // TODO Auto-generated method stub
     
   }
 
-  public void send(Message packet) throws NotConnectedException {
+  @Override
+  public boolean isClosed() {
     // TODO Auto-generated method stub
-    
+    return false;
   }
+
 
 }

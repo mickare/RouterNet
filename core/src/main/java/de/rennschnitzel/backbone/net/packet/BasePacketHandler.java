@@ -1,5 +1,6 @@
 package de.rennschnitzel.backbone.net.packet;
 
+import de.rennschnitzel.backbone.exception.ProtocolException;
 import de.rennschnitzel.backbone.net.Connection;
 import de.rennschnitzel.backbone.net.channel.Channel;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthChallengeMessage;
@@ -14,7 +15,6 @@ import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ChannelRegister;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureMessage;
-import de.rennschnitzel.backbone.netty.exception.ProtocolException;
 
 public class BasePacketHandler implements PacketHandler<Connection> {
 

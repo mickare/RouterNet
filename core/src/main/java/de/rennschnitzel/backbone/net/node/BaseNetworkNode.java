@@ -64,8 +64,8 @@ public class BaseNetworkNode implements NetworkNode {
     this.namespaces.retainAll(server.getNamespacesList());
     this.namespaces.addAll(server.getNamespacesList());
     this.timestamp = server.getTimestamp();
-    List<ProcedureInformation> procedures = server.getProceduresList().stream().map(ProcedureInformation::new).collect(Collectors.toList());
-    this.procedures.retainAll(procedures);
+    Set<ProcedureInformation> procedures = server.getProceduresList().stream().map(ProcedureInformation::new).collect(Collectors.toSet());
+    this.procedures.clear();
     this.procedures.addAll(procedures);
 
   }
@@ -98,16 +98,28 @@ public class BaseNetworkNode implements NetworkNode {
   @Override
   public ServerMessage toProtocol() {
     ServerMessage.Builder b = ServerMessage.newBuilder();
+    b.setType(this.type);
     b.setId(this.getIdProto());
     if (name.isPresent()) {
       b.setName(this.name.get());
     }
     b.setTimestamp(this.timestamp);
     b.addAllNamespaces(this.namespaces);
-    this.procedures.stream().map(p -> p)
-    b.addAllProcedures(this.procedures);
-
+    this.procedures.stream().map(ProcedureInformation::toProtocol).forEach(b::addProcedures);
     return b.build();
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("NetworkNode[");
+    if (name.isPresent()) {
+      sb.append(name.get());
+      sb.append(", ");
+    }
+    sb.append(this.id.toString());
+    sb.append("]");
+    return sb.toString();
   }
 
 
