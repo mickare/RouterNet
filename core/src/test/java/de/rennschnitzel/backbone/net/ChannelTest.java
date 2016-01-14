@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -54,7 +55,7 @@ public class ChannelTest {
 
     target_client = Target.to(net_client.getHome().getId());
     target_router = Target.to(net_router.getHome().getId());
-    
+
     con_router.connect(con_client);
 
   }
@@ -150,18 +151,19 @@ public class ChannelTest {
     StreamChannel out = con_client.getOrCreateSubChannel(descOut, testingOwner);
     StreamChannel in = con_router.getOrCreateSubChannel(descIn, testingOwner);
 
+    InputStream input = in.newInputBuffer();
 
     byte[][] data = new byte[10][128];
     for (int i = 0; i < data.length; ++i) {
       rand.nextBytes(data[i]);
-      out.getOutputStream().write(data[i]);
+      out.getOutputBuffer().write(data[i]);
     }
 
-    out.getOutputStream().flush();
+    out.getOutputBuffer().flush();
 
     for (int i = 0; i < data.length; ++i) {
       byte[] buf = new byte[128];
-      in.getInputStream().read(buf);
+      input.read(buf);
       assertArrayEquals(buf, data[i]);
     }
 

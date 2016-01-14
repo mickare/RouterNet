@@ -89,8 +89,7 @@ public class ProcedureTest {
 
     ProcedureInformation info1 = ProcedureInformation.of("function", String.class, Integer.class);
     ProcedureInformation info2 = ProcedureInformation.of("function", func);
-    System.out
-        .println("divergent: " + regProc.getInfo().getArgumentType() + " - " + info1.getArgumentType() + " - " + info2.getArgumentType());
+
     assertEquals(info1, info2);
 
     assertNotNull(net_client.getProcedureManager().getRegisteredProcedure(info1));
@@ -128,9 +127,6 @@ public class ProcedureTest {
 
     ProcedureInformation info1 = ProcedureInformation.of("function", String.class, String.class);
     ProcedureInformation info2 = ProcedureInformation.of("function", func);
-
-    System.out
-        .println("divergent: " + regProc.getInfo().getArgumentType() + " - " + info1.getArgumentType() + " - " + info2.getArgumentType());
 
     assertEquals(info1, info2);
     assertNotNull(net_client.getProcedureManager().getRegisteredProcedure(info1));

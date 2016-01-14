@@ -71,9 +71,9 @@ public abstract class Network {
 
   private final ConcurrentMap<UUID, NetworkNode> nodes = new ConcurrentHashMap<>();
 
-  @Getter
-  private final EventBus eventBus = new EventBus();
 
+  @Getter
+  private final ProcedureManager procedureManager = new ProcedureManager(this);
 
   @Getter
   private final HomeNode home;
@@ -126,8 +126,6 @@ public abstract class Network {
   }
 
   public abstract void sendProcedureResponse(UUID receiver, ProcedureResponseMessage build);
-
-  public abstract ProcedureManager getProcedureManager();
 
   public abstract void publishChanges(HomeNode homeNode);
 
