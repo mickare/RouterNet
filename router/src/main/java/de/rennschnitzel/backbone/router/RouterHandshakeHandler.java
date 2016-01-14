@@ -151,7 +151,8 @@ public class RouterHandshakeHandler extends HandshakeHandler {
 
 
   @Override
-  public void handle(ChannelHandlerContext ctx, AuthChallengeMessage authChallenge) throws Exception {
+  public void handle(ChannelHandlerContext ctx, AuthChallengeMessage authChallenge)
+      throws Exception {
     throw new HandshakeException("Invalid or unknown packet!");
   }
 

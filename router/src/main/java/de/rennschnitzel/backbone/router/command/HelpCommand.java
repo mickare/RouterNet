@@ -16,37 +16,37 @@ import com.google.common.collect.Sets;
  *
  */
 public class HelpCommand extends AbstractCommand {
-	
-	private final CommandManager manager;
-	
-	public HelpCommand( CommandManager manager ) {
-		super( "help", "help", "shows help" );
-		this.manager = manager;
-	}
-	
-	@Override
-	public void execute( String[] args ) {
-		
-		List<Command> commands = Lists.newLinkedList( Sets.newHashSet( manager.getCommands().values() ) );
-		Collections.sort( commands, new Comparator<Command>() {
-			@Override
-			public int compare( Command o1, Command o2 ) {
-				return o1.getLabel().compareTo( o2.getLabel() );
-			}
-		} );
-		
-		StringBuilder sb = new StringBuilder();
-		sb.append( "Available commands:\n\n" );
-		
-		for ( Command cmd : commands ) {
-			sb.append( ' ' );
-			sb.append( Strings.padEnd( cmd.getUsage(), 15, ' ' ) );
-			sb.append( " - " ).append( cmd.getDescription() );
-			sb.append( '\n' );
-		}
-		
-		getLogger().info( sb.toString() );
-		
-	}
-	
+
+  private final CommandManager manager;
+
+  public HelpCommand(CommandManager manager) {
+    super("help", "help", "shows help");
+    this.manager = manager;
+  }
+
+  @Override
+  public void execute(String[] args) {
+
+    List<Command> commands = Lists.newLinkedList(Sets.newHashSet(manager.getCommands().values()));
+    Collections.sort(commands, new Comparator<Command>() {
+      @Override
+      public int compare(Command o1, Command o2) {
+        return o1.getLabel().compareTo(o2.getLabel());
+      }
+    });
+
+    StringBuilder sb = new StringBuilder();
+    sb.append("Available commands:\n\n");
+
+    for (Command cmd : commands) {
+      sb.append(' ');
+      sb.append(Strings.padEnd(cmd.getUsage(), 15, ' '));
+      sb.append(" - ").append(cmd.getDescription());
+      sb.append('\n');
+    }
+
+    getLogger().info(sb.toString());
+
+  }
+
 }

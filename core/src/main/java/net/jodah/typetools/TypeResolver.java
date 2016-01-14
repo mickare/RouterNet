@@ -1,17 +1,15 @@
 /**
  * Copyright 2002-2015 the original author or authors.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package net.jodah.typetools;
 
@@ -33,15 +31,16 @@ import java.util.WeakHashMap;
 import sun.reflect.ConstantPool;
 
 /**
- * Enhanced type resolution utilities. Originally based on org.springframework.core.GenericTypeResolver.
+ * Enhanced type resolution utilities. Originally based on
+ * org.springframework.core.GenericTypeResolver.
  * 
  * @author Jonathan Halterman
  */
 @SuppressWarnings("restriction")
 public final class TypeResolver {
   /** Cache of type variable/argument pairs */
-  private static final Map<Class<?>, Reference<Map<TypeVariable<?>, Type>>> typeVariableCache = Collections
-      .synchronizedMap(new WeakHashMap<Class<?>, Reference<Map<TypeVariable<?>, Type>>>());
+  private static final Map<Class<?>, Reference<Map<TypeVariable<?>, Type>>> typeVariableCache =
+      Collections.synchronizedMap(new WeakHashMap<Class<?>, Reference<Map<TypeVariable<?>, Type>>>());
   private static volatile int METHOD_REF_OFFSET = -1;
   private static volatile boolean CACHE_ENABLED = true;
   private static boolean SUPPORTS_LAMBDAS;
@@ -67,12 +66,10 @@ public final class TypeResolver {
 
   /** An unknown type. */
   public static final class Unknown {
-    private Unknown() {
-    }
+    private Unknown() {}
   }
 
-  private TypeResolver() {
-  }
+  private TypeResolver() {}
 
   /**
    * Enables the internal caching of resolved TypeVariables.
@@ -90,27 +87,32 @@ public final class TypeResolver {
   }
 
   /**
-   * Returns the raw class representing the argument for the {@code type} using type variable information from the
-   * {@code subType}. If no arguments can be resolved then {@code Unknown.class} is returned.
+   * Returns the raw class representing the argument for the {@code type} using type variable
+   * information from the {@code subType}. If no arguments can be resolved then
+   * {@code Unknown.class} is returned.
    * 
    * @param type to resolve argument for
    * @param subType to extract type variable information from
    * @return argument for {@code type} else {@link Unknown.class} if no type arguments are declared
-   * @throws IllegalArgumentException if more or less than one argument is resolved for the {@code type}
+   * @throws IllegalArgumentException if more or less than one argument is resolved for the
+   *         {@code type}
    */
   public static <T, S extends T> Class<?> resolveRawArgument(Class<T> type, Class<S> subType) {
     return resolveRawArgument(resolveGenericType(type, subType), subType);
   }
 
   /**
-   * Returns the raw class representing the argument for the {@code genericType} using type variable information from
-   * the {@code subType}. If {@code genericType} is an instance of class, then {@code genericType} is returned. If no
-   * arguments can be resolved then {@code Unknown.class} is returned.
+   * Returns the raw class representing the argument for the {@code genericType} using type variable
+   * information from the {@code subType}. If {@code genericType} is an instance of class, then
+   * {@code genericType} is returned. If no arguments can be resolved then {@code Unknown.class} is
+   * returned.
    * 
    * @param genericType to resolve argument for
    * @param subType to extract type variable information from
-   * @return argument for {@code genericType} else {@link Unknown.class} if no type arguments are declared
-   * @throws IllegalArgumentException if more or less than one argument is resolved for the {@code genericType}
+   * @return argument for {@code genericType} else {@link Unknown.class} if no type arguments are
+   *         declared
+   * @throws IllegalArgumentException if more or less than one argument is resolved for the
+   *         {@code genericType}
    */
   public static Class<?> resolveRawArgument(Type genericType, Class<?> subType) {
     Class<?>[] arguments = resolveRawArguments(genericType, subType);
@@ -118,35 +120,36 @@ public final class TypeResolver {
       return Unknown.class;
 
     if (arguments.length != 1)
-      throw new IllegalArgumentException(
-          "Expected 1 argument for generic type " + genericType + " but found " + arguments.length);
+      throw new IllegalArgumentException("Expected 1 argument for generic type " + genericType + " but found " + arguments.length);
 
     return arguments[0];
   }
 
   /**
-   * Returns an array of raw classes representing arguments for the {@code type} using type variable information from
-   * the {@code subType}. Arguments for {@code type} that cannot be resolved are returned as {@code Unknown.class}. If
-   * no arguments can be resolved then {@code null} is returned.
+   * Returns an array of raw classes representing arguments for the {@code type} using type variable
+   * information from the {@code subType}. Arguments for {@code type} that cannot be resolved are
+   * returned as {@code Unknown.class}. If no arguments can be resolved then {@code null} is
+   * returned.
    * 
    * @param type to resolve arguments for
    * @param subType to extract type variable information from
-   * @return array of raw classes representing arguments for the {@code type} else {@code null} if no type arguments are
-   *         declared
+   * @return array of raw classes representing arguments for the {@code type} else {@code null} if
+   *         no type arguments are declared
    */
   public static <T, S extends T> Class<?>[] resolveRawArguments(Class<T> type, Class<S> subType) {
     return resolveRawArguments(resolveGenericType(type, subType), subType);
   }
 
   /**
-   * Returns an array of raw classes representing arguments for the {@code genericType} using type variable information
-   * from the {@code subType}. Arguments for {@code genericType} that cannot be resolved are returned as
-   * {@code Unknown.class}. If no arguments can be resolved then {@code null} is returned.
+   * Returns an array of raw classes representing arguments for the {@code genericType} using type
+   * variable information from the {@code subType}. Arguments for {@code genericType} that cannot be
+   * resolved are returned as {@code Unknown.class}. If no arguments can be resolved then
+   * {@code null} is returned.
    * 
    * @param genericType to resolve arguments for
    * @param subType to extract type variable information from
-   * @return array of raw classes representing arguments for the {@code genericType} else {@code null} if no type
-   *         arguments are declared
+   * @return array of raw classes representing arguments for the {@code genericType} else
+   *         {@code null} if no type arguments are declared
    */
   public static Class<?>[] resolveRawArguments(Type genericType, Class<?> subType) {
     Class<?>[] result = null;
@@ -154,10 +157,8 @@ public final class TypeResolver {
 
     // Handle lambdas
     if (SUPPORTS_LAMBDAS && subType.isSynthetic()) {
-      Class<?> fi = genericType instanceof ParameterizedType
-          && ((ParameterizedType) genericType).getRawType() instanceof Class
-              ? (Class<?>) ((ParameterizedType) genericType).getRawType()
-              : genericType instanceof Class ? (Class<?>) genericType : null;
+      Class<?> fi = genericType instanceof ParameterizedType && ((ParameterizedType) genericType).getRawType() instanceof Class
+          ? (Class<?>) ((ParameterizedType) genericType).getRawType() : genericType instanceof Class ? (Class<?>) genericType : null;
       if (fi != null && fi.isInterface())
         functionalInterface = fi;
     }
@@ -182,8 +183,8 @@ public final class TypeResolver {
   }
 
   /**
-   * Returns the generic {@code type} using type variable information from the {@code subType} else {@code null} if the
-   * generic type cannot be resolved.
+   * Returns the generic {@code type} using type variable information from the {@code subType} else
+   * {@code null} if the generic type cannot be resolved.
    * 
    * @param type to resolve generic type for
    * @param subType to extract type variable information from
@@ -216,8 +217,8 @@ public final class TypeResolver {
   }
 
   /**
-   * Resolves the raw class for the {@code genericType}, using the type variable information from the {@code subType}
-   * else {@link Unknown} if the raw class cannot be resolved.
+   * Resolves the raw class for the {@code genericType}, using the type variable information from
+   * the {@code subType} else {@link Unknown} if the raw class cannot be resolved.
    * 
    * @param type to resolve raw class for
    * @param subType to extract type variable information from
@@ -239,15 +240,13 @@ public final class TypeResolver {
     } else if (genericType instanceof TypeVariable) {
       TypeVariable<?> variable = (TypeVariable<?>) genericType;
       genericType = getTypeVariableMap(subType, functionalInterface).get(variable);
-      genericType = genericType == null ? resolveBound(variable)
-          : resolveRawClass(genericType, subType, functionalInterface);
+      genericType = genericType == null ? resolveBound(variable) : resolveRawClass(genericType, subType, functionalInterface);
     }
 
     return genericType instanceof Class ? (Class<?>) genericType : Unknown.class;
   }
 
-  private static Map<TypeVariable<?>, Type> getTypeVariableMap(final Class<?> targetType,
-      Class<?> functionalInterface) {
+  private static Map<TypeVariable<?>, Type> getTypeVariableMap(final Class<?> targetType, Class<?> functionalInterface) {
     Reference<Map<TypeVariable<?>, Type>> ref = typeVariableCache.get(targetType);
     Map<TypeVariable<?>, Type> map = ref != null ? ref.get() : null;
 
@@ -293,8 +292,7 @@ public final class TypeResolver {
   /**
    * Populates the {@code map} with variable/argument pairs for the {@code functionalInterface}.
    */
-  private static void populateLambdaArgs(Class<?> functionalInterface, final Class<?> lambdaType,
-      Map<TypeVariable<?>, Type> map) {
+  private static void populateLambdaArgs(Class<?> functionalInterface, final Class<?> lambdaType, Map<TypeVariable<?>, Type> map) {
     if (GET_CONSTANT_POOL != null) {
       try {
         // Find SAM
@@ -308,17 +306,17 @@ public final class TypeResolver {
             // Get functional interface's type params
             Type returnTypeVar = m.getGenericReturnType();
             Type[] paramTypeVars = m.getGenericParameterTypes();
-            
+
             // Get lambda's type arguments
             ConstantPool constantPool = (ConstantPool) GET_CONSTANT_POOL.invoke(lambdaType);
-            String[] methodRefInfo = constantPool
-                .getMemberRefInfoAt(constantPool.getSize() - resolveMethodRefOffset(constantPool, lambdaType));
+            String[] methodRefInfo =
+                constantPool.getMemberRefInfoAt(constantPool.getSize() - resolveMethodRefOffset(constantPool, lambdaType));
 
             // Skip auto boxing methods
             if (methodRefInfo[1].equals("valueOf") && constantPool.getSize() > 22) {
               try {
-                methodRefInfo = constantPool.getMemberRefInfoAt(
-                    constantPool.getSize() - resolveAutoboxedMethodRefOffset(constantPool, lambdaType));
+                methodRefInfo =
+                    constantPool.getMemberRefInfoAt(constantPool.getSize() - resolveAutoboxedMethodRefOffset(constantPool, lambdaType));
               } catch (MethodRefOffsetResolutionFailed ignore) {
               }
             }
@@ -330,23 +328,22 @@ public final class TypeResolver {
             }
 
             TypeDescriptor[] arguments = TypeDescriptor.getArgumentTypes(methodRefInfo[2]);
-            
+
             // Handle arbitrary object instance method references
             int paramOffset = 0;
             if (paramTypeVars[0] instanceof TypeVariable && paramTypeVars.length == arguments.length + 1) {
-              Class<?> instanceType = TypeDescriptor.getObjectType(methodRefInfo[0])
-                  .getType(lambdaType.getClassLoader());
+              Class<?> instanceType = TypeDescriptor.getObjectType(methodRefInfo[0]).getType(lambdaType.getClassLoader());
               map.put((TypeVariable<?>) paramTypeVars[0], instanceType);
               paramOffset = 1;
             }
 
             // Handle local final variables from context that are passed as arguments.
             int argOffset = 0;
-            if(paramTypeVars.length < arguments.length ) {
+            if (paramTypeVars.length < arguments.length) {
               argOffset = arguments.length - paramTypeVars.length;
             }
-            
-            for(int i = 0; i + argOffset < arguments.length; i++) {
+
+            for (int i = 0; i + argOffset < arguments.length; i++) {
               if (paramTypeVars[i] instanceof TypeVariable) {
                 map.put((TypeVariable<?>) paramTypeVars[i + paramOffset], arguments[i + argOffset].getType(lambdaType.getClassLoader()));
               }
@@ -366,8 +363,7 @@ public final class TypeResolver {
   /**
    * Populates the {@code map} with with variable/argument pairs for the given {@code types}.
    */
-  private static void populateSuperTypeArgs(final Type[] types, final Map<TypeVariable<?>, Type> map,
-      boolean depthFirst) {
+  private static void populateSuperTypeArgs(final Type[] types, final Map<TypeVariable<?>, Type> map, boolean depthFirst) {
     for (Type type : types) {
       if (type instanceof ParameterizedType) {
         ParameterizedType parameterizedType = (ParameterizedType) type;
@@ -428,7 +424,8 @@ public final class TypeResolver {
   }
 
   /**
-   * Resolves the first bound for the {@code typeVariable}, returning {@code Unknown.class} if none can be resolved.
+   * Resolves the first bound for the {@code typeVariable}, returning {@code Unknown.class} if none
+   * can be resolved.
    */
   public static Type resolveBound(TypeVariable<?> typeVariable) {
     Type[] bounds = typeVariable.getBounds();
@@ -470,8 +467,9 @@ public final class TypeResolver {
   }
 
   /**
-   * Resolves method ref offset of method reference lambda type having autoboxed return type. We can't cache the result
-   * value because results are different depending on given {@code lambdaType}.
+   * Resolves method ref offset of method reference lambda type having autoboxed return type. We
+   * can't cache the result value because results are different depending on given
+   * {@code lambdaType}.
    */
   private static int resolveAutoboxedMethodRefOffset(ConstantPool constantPool, Class<?> lambdaType) {
     int constantPoolSize = constantPool.getSize();

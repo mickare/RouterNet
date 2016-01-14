@@ -17,19 +17,23 @@ public class PipelineUtils {
   private static boolean epoll;
 
   static {
-    if (!PlatformDependent.isWindows() && Boolean.parseBoolean(System.getProperty("bungee.epoll", "false"))) {
-      Router.getInstance().getLogger().info("Not on Windows, attempting to use enhanced EpollEventLoop");
+    if (!PlatformDependent.isWindows()
+        && Boolean.parseBoolean(System.getProperty("bungee.epoll", "false"))) {
+      Router.getInstance().getLogger()
+          .info("Not on Windows, attempting to use enhanced EpollEventLoop");
       if (epoll = Epoll.isAvailable()) {
         Router.getInstance().getLogger().info("Epoll is working, utilising it!");
       } else {
-        Router.getInstance().getLogger().log(Level.WARNING, "Epoll is not working, falling back to NIO: {0}",
+        Router.getInstance().getLogger().log(Level.WARNING,
+            "Epoll is not working, falling back to NIO: {0}",
             Utils.exception(Epoll.unavailabilityCause()));
       }
     }
   }
 
   public static EventLoopGroup newEventLoopGroup(int threads, ThreadFactory factory) {
-    return epoll ? new EpollEventLoopGroup(threads, factory) : new NioEventLoopGroup(threads, factory);
+    return epoll ? new EpollEventLoopGroup(threads, factory)
+        : new NioEventLoopGroup(threads, factory);
   }
 
   public PipelineUtils() {

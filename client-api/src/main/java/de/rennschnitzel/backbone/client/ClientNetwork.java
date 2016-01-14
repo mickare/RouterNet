@@ -26,13 +26,13 @@ public class ClientNetwork extends Network {
   @Override
   public <T, R> void sendProcedureCall(ProcedureCall<T, R> call) {
     // TODO Auto-generated method stub
-    
+
   }
 
   @Override
   public void sendProcedureResponse(UUID receiver, ProcedureResponseMessage build) {
     // TODO Auto-generated method stub
-    
+
   }
 
   @Override

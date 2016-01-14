@@ -1,33 +1,45 @@
 package de.rennschnitzel.backbone.router.netty;
 
+import com.google.common.base.Preconditions;
+
 import de.rennschnitzel.backbone.net.Connection;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.backbone.netty.ConnectionBasePacketAdapter;
+import de.rennschnitzel.backbone.router.Router;
+import de.rennschnitzel.backbone.router.RouterNetwork;
 import lombok.Getter;
 
 public class NettyConnection extends Connection {
 
+  @Getter
+  private final Router router;
 
   @Getter
   private final RouterPacketHandler packetHandler = new RouterPacketHandler();
   @Getter
   private final ConnectionBasePacketAdapter<NettyConnection> protocolHandler;
 
-  public NettyConnection() {
+  public NettyConnection(Router router) {
+    super(router.getNetwork());
+    this.router = router;
     protocolHandler = new ConnectionBasePacketAdapter<>(this, packetHandler);
 
   }
 
   @Override
-  public void send(Packet packet) {
-    // TODO Auto-generated method stub
+  public RouterNetwork getNetwork() {
+    return (RouterNetwork) this.getNetwork();
+  }
 
+  @Override
+  public void send(Packet packet) {
+    Preconditions.checkNotNull(packet);
+    this.protocolHandler.getContext().channel().write(packet);
   }
 
   @Override
   public boolean isClosed() {
-    // TODO Auto-generated method stub
-    return false;
+    return !this.protocolHandler.getContext().channel().isOpen();
   }
 
 }

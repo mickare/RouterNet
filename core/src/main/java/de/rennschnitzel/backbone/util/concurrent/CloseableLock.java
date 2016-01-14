@@ -11,10 +11,10 @@ import java.util.concurrent.locks.Lock;
  */
 public interface CloseableLock extends Lock, AutoCloseable {
 
-	public CloseableLock open();
-	
-	public void close();
+  public CloseableLock open();
 
-	CloseableLock open( long time, TimeUnit unit ) throws TimeoutException, InterruptedException;
-	
+  public void close();
+
+  CloseableLock open(long time, TimeUnit unit) throws TimeoutException, InterruptedException;
+
 }

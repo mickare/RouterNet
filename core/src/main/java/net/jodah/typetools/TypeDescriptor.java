@@ -1,31 +1,23 @@
 /***
- * ASM: a very small and fast Java bytecode manipulation framework
- * Copyright (c) 2000-2011 INRIA, France Telecom
- * All rights reserved.
+ * ASM: a very small and fast Java bytecode manipulation framework Copyright (c) 2000-2011 INRIA,
+ * France Telecom All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the copyright holders nor the names of its
- *    contributors may be used to endorse or promote products derived from
- *    this software without specific prior written permission.
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met: 1. Redistributions of source code must retain the
+ * above copyright notice, this list of conditions and the following disclaimer. 2. Redistributions
+ * in binary form must reproduce the above copyright notice, this list of conditions and the
+ * following disclaimer in the documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holders nor the names of its contributors may be used to
+ * endorse or promote products derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
- * THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ * FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
+ * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package net.jodah.typetools;
 
@@ -50,8 +42,7 @@ final class TypeDescriptor {
   /**
    * The <tt>boolean</tt> type.
    */
-  public static final TypeDescriptor BOOLEAN_TYPE = new TypeDescriptor(BOOLEAN, null, ('Z' << 24) | (0 << 16)
-    | (5 << 8) | 1, 1);
+  public static final TypeDescriptor BOOLEAN_TYPE = new TypeDescriptor(BOOLEAN, null, ('Z' << 24) | (0 << 16) | (5 << 8) | 1, 1);
 
   /**
    * The sort of the <tt>byte</tt> type. See {@link #getSort getSort}.
@@ -61,8 +52,7 @@ final class TypeDescriptor {
   /**
    * The <tt>byte</tt> type.
    */
-  public static final TypeDescriptor BYTE_TYPE = new TypeDescriptor(BYTE, null, ('B' << 24) | (0 << 16) | (5 << 8) | 1,
-    1);
+  public static final TypeDescriptor BYTE_TYPE = new TypeDescriptor(BYTE, null, ('B' << 24) | (0 << 16) | (5 << 8) | 1, 1);
 
   /**
    * The sort of the <tt>char</tt> type. See {@link #getSort getSort}.
@@ -72,8 +62,7 @@ final class TypeDescriptor {
   /**
    * The <tt>char</tt> type.
    */
-  public static final TypeDescriptor CHAR_TYPE = new TypeDescriptor(CHAR, null, ('C' << 24) | (0 << 16) | (6 << 8) | 1,
-    1);
+  public static final TypeDescriptor CHAR_TYPE = new TypeDescriptor(CHAR, null, ('C' << 24) | (0 << 16) | (6 << 8) | 1, 1);
 
   /**
    * The sort of the <tt>double</tt> type. See {@link #getSort getSort}.
@@ -83,8 +72,7 @@ final class TypeDescriptor {
   /**
    * The <tt>double</tt> type.
    */
-  public static final TypeDescriptor DOUBLE_TYPE = new TypeDescriptor(DOUBLE, null, ('D' << 24) | (3 << 16) | (3 << 8)
-    | 2, 1);
+  public static final TypeDescriptor DOUBLE_TYPE = new TypeDescriptor(DOUBLE, null, ('D' << 24) | (3 << 16) | (3 << 8) | 2, 1);
 
   /**
    * The sort of the <tt>float</tt> type. See {@link #getSort getSort}.
@@ -94,8 +82,7 @@ final class TypeDescriptor {
   /**
    * The <tt>float</tt> type.
    */
-  public static final TypeDescriptor FLOAT_TYPE = new TypeDescriptor(FLOAT, null, ('F' << 24) | (2 << 16) | (2 << 8)
-    | 1, 1);
+  public static final TypeDescriptor FLOAT_TYPE = new TypeDescriptor(FLOAT, null, ('F' << 24) | (2 << 16) | (2 << 8) | 1, 1);
 
   /**
    * The sort of the <tt>int</tt> type. See {@link #getSort getSort}.
@@ -115,8 +102,7 @@ final class TypeDescriptor {
   /**
    * The <tt>long</tt> type.
    */
-  public static final TypeDescriptor LONG_TYPE = new TypeDescriptor(LONG, null, ('J' << 24) | (1 << 16) | (1 << 8) | 2,
-    1);
+  public static final TypeDescriptor LONG_TYPE = new TypeDescriptor(LONG, null, ('J' << 24) | (1 << 16) | (1 << 8) | 2, 1);
 
   /**
    * The sort of method types. See {@link #getSort getSort}.
@@ -136,8 +122,7 @@ final class TypeDescriptor {
   /**
    * The <tt>short</tt> type.
    */
-  public static final TypeDescriptor SHORT_TYPE = new TypeDescriptor(SHORT, null, ('S' << 24) | (0 << 16) | (7 << 8)
-    | 1, 1);
+  public static final TypeDescriptor SHORT_TYPE = new TypeDescriptor(SHORT, null, ('S' << 24) | (0 << 16) | (7 << 8) | 1, 1);
 
   /**
    * The sort of the <tt>void</tt> type. See {@link #getSort getSort}.
@@ -147,8 +132,7 @@ final class TypeDescriptor {
   /**
    * The <tt>void</tt> type.
    */
-  public static final TypeDescriptor VOID_TYPE = new TypeDescriptor(VOID, null, ('V' << 24) | (5 << 16) | (0 << 8) | 0,
-    1);
+  public static final TypeDescriptor VOID_TYPE = new TypeDescriptor(VOID, null, ('V' << 24) | (5 << 16) | (0 << 8) | 0, 1);
 
   /**
    * A buffer containing the internal name of this Java type. This field is only used for reference
@@ -298,7 +282,7 @@ final class TypeDescriptor {
           ++len;
         }
         return new TypeDescriptor(OBJECT, buf, off + 1, len - 1);
-        // case '(':
+      // case '(':
       default:
         return new TypeDescriptor(METHOD, buf, off, buf.length - off);
     }
@@ -311,9 +295,9 @@ final class TypeDescriptor {
    * @return the raw class corresponding to this type descriptor
    */
   public Class<?> getType() {
-	  return getType(null);
+    return getType(null);
   }
-  
+
   /**
    * Returns the raw class corresponding to this type descriptor. Primitive types return their
    * corresponding wrappers.
@@ -351,7 +335,7 @@ final class TypeDescriptor {
           return loader == null ? Class.forName(sb.toString()) : loader.loadClass(sb.toString());
         case OBJECT:
           String clazz = new String(buf, off, len).replace('/', '.');
-          return loader == null ? Class.forName(clazz) : loader.loadClass(clazz); 
+          return loader == null ? Class.forName(clazz) : loader.loadClass(clazz);
         default:
           return null;
       }

@@ -72,12 +72,14 @@ public abstract class HandshakeHandler extends NettyPacketHandler {
 
   protected synchronized final void checkState(final State setpoint) throws ConnectionException {
     if (this.state != setpoint) {
-      throw new HandshakeException("Wrong state (\"" + this.state.name() + "\" should be \"" + setpoint.name() + "\")!");
+      throw new HandshakeException(
+          "Wrong state (\"" + this.state.name() + "\" should be \"" + setpoint.name() + "\")!");
     }
   }
 
   @Override
-  protected void channelRead0(final ChannelHandlerContext ctx, final Packet packet) throws Exception {
+  protected void channelRead0(final ChannelHandlerContext ctx, final Packet packet)
+      throws Exception {
     try {
       super.channelRead0(ctx, packet);
     } catch (final Exception e) {
@@ -89,12 +91,14 @@ public abstract class HandshakeHandler extends NettyPacketHandler {
   }
 
   @Override
-  public void handle(ChannelHandlerContext ctx, ConnectedMessage connected) throws HandshakeException {
+  public void handle(ChannelHandlerContext ctx, ConnectedMessage connected)
+      throws HandshakeException {
     throw new HandshakeException("Invalid or unknown packet!");
   }
 
   @Override
-  public void handle(ChannelHandlerContext ctx, DisconnectedMessage disconnected) throws HandshakeException {
+  public void handle(ChannelHandlerContext ctx, DisconnectedMessage disconnected)
+      throws HandshakeException {
     throw new HandshakeException("Invalid or unknown packet!");
   }
 

@@ -16,19 +16,19 @@ import de.rennschnitzel.backbone.router.Router;
  */
 public class ExitCommand extends AbstractCommand {
 
-	public ExitCommand() {
-		super("exit", new String[] { "quit" }, "exit", "stops the application");
-	}
+  public ExitCommand() {
+    super("exit", new String[] {"quit"}, "exit", "stops the application");
+  }
 
-	@Override
-	public void execute(String[] args) {
-		getLogger().info("Shutting down!");
-		try {
-			Router.getInstance().stopAsync();
-			Router.getInstance().awaitTerminated(20, TimeUnit.SECONDS);
-		} catch (TimeoutException e) {
-			Router.getInstance().getLogger().log(Level.SEVERE, "Shutdown Problem!", e);
-		}
-	}
+  @Override
+  public void execute(String[] args) {
+    getLogger().info("Shutting down!");
+    try {
+      Router.getInstance().stopAsync();
+      Router.getInstance().awaitTerminated(20, TimeUnit.SECONDS);
+    } catch (TimeoutException e) {
+      Router.getInstance().getLogger().log(Level.SEVERE, "Shutdown Problem!", e);
+    }
+  }
 
 }

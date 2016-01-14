@@ -18,7 +18,7 @@ public interface SubChannel {
   Channel getParentChannel();
 
   HomeNode getHome();
-  
+
   SubChannelDescriptor<?> getDescriptor();
 
 }

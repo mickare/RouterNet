@@ -10,12 +10,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import jline.console.ConsoleReader;
-import lombok.Getter;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -34,13 +30,11 @@ import de.rennschnitzel.backbone.router.command.CommandManager;
 import de.rennschnitzel.backbone.router.config.ConfigFile;
 import de.rennschnitzel.backbone.router.config.Settings;
 import de.rennschnitzel.backbone.router.netty.PipelineUtils;
-import de.rennschnitzel.backbone.router.netty.WebSocketServer;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
+import jline.console.ConsoleReader;
+import lombok.Getter;
 
 public class Router extends AbstractIdleService implements Owner {
 
@@ -68,6 +62,9 @@ public class Router extends AbstractIdleService implements Owner {
   private HostAndPort hostAndPort;
 
   private EventLoopGroup eventLoops;
+
+  @Getter
+  private final RouterNetwork network;
 
   protected Router(ConsoleReader console, Logger logger) throws IOException {
     Preconditions.checkNotNull(console);
@@ -112,10 +109,13 @@ public class Router extends AbstractIdleService implements Owner {
     logger.info(sb.toString());
 
     // Start Scheduler
-    this.scheduler = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("Niflhel Pool Thread #%1$d").build());
+    this.scheduler = Executors.newCachedThreadPool(
+        new ThreadFactoryBuilder().setNameFormat("Niflhel Pool Thread #%1$d").build());
 
     // Start Socket Server
-    hostAndPort = HostAndPort.fromString(this.configFile.getConfig().getRouterSettings().getHostAndPort()).withDefaultPort(791);
+    hostAndPort =
+        HostAndPort.fromString(this.configFile.getConfig().getRouterSettings().getHostAndPort())
+            .withDefaultPort(791);
 
     // Start Plugins
     List<JavaPlugin> plugs = Lists.newArrayList();
@@ -131,7 +131,8 @@ public class Router extends AbstractIdleService implements Owner {
     }
 
 
-    eventLoops = PipelineUtils.newEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty IO Thread #%1$d").build());
+    eventLoops = PipelineUtils.newEventLoopGroup(0,
+        new ThreadFactoryBuilder().setNameFormat("Netty IO Thread #%1$d").build());
 
 
 
@@ -143,7 +144,8 @@ public class Router extends AbstractIdleService implements Owner {
     b.group(eventLoops);
     b.option(ChannelOption.SO_REUSEADDR, true);
     b.childHandler(new BaseChannelInitializer(getLogger(), new RouterHandshakeHandler(this)));
-    b.localAddress(new InetSocketAddress(this.hostAndPort.getHostText(), this.hostAndPort.getPort()));
+    b.localAddress(
+        new InetSocketAddress(this.hostAndPort.getHostText(), this.hostAndPort.getPort()));
     b.bind();
   }
 

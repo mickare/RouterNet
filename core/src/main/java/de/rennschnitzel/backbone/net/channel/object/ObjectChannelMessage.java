@@ -22,7 +22,8 @@ public class ObjectChannelMessage<T> extends ChannelMessage {
     this.object = objectChannel.getConverter().asObject(cmsg.getData());
   }
 
-  public ObjectChannelMessage(ObjectChannel<T> objectChannel, final Target target, final UUID sender, final T object) throws ConvertObjectChannelException {
+  public ObjectChannelMessage(ObjectChannel<T> objectChannel, final Target target, final UUID sender, final T object)
+      throws ConvertObjectChannelException {
     super(objectChannel.getParentChannel(), target, sender, objectChannel.getConverter().asByteString(object));
     Preconditions.checkNotNull(objectChannel);
     this.objectChannel = objectChannel;

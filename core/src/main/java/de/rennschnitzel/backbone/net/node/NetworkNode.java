@@ -21,7 +21,7 @@ public interface NetworkNode {
   }
 
   NetworkProtocol.ServerMessage.Type getType();
-  
+
   Optional<String> getName();
 
   Set<String> getNamespaces();

@@ -11,6 +11,6 @@ public class NetworkEvent {
   @Getter
   @NonNull
   private final Network network;
-  
+
 
 }

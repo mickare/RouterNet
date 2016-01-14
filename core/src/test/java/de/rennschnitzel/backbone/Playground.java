@@ -15,7 +15,7 @@ public class Playground {
 
   @Test
   public void play() {
-    
+
     Consumer<Integer> c = (i) -> System.out.println(i);
 
     Class<?>[] res = TypeResolver.resolveRawArguments(Consumer.class, c.getClass());

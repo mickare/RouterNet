@@ -30,13 +30,11 @@ public class FutureContainer<V> {
     return value.get();
   }
 
-  public V get(long timeout, TimeUnit unit)
-      throws InterruptedException, TimeoutException, ExecutionException {
+  public V get(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException, ExecutionException {
     return value.get(timeout, unit);
   }
 
-  public synchronized <X, Y extends V> boolean set(ListenableFuture<X> delegate,
-      Function<X, Y> convert) {
+  public synchronized <X, Y extends V> boolean set(ListenableFuture<X> delegate, Function<X, Y> convert) {
     if (this.state != State.UNSET) {
       return false;
     }

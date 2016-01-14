@@ -19,7 +19,7 @@ public interface ProcedureCall<T, R> {
   Procedure<T, R> getProcedure();
 
   Target getTarget();
-  
+
   T getArgument();
 
   void receive(ProcedureMessage message, ProcedureResponseMessage response) throws IllegalArgumentException;

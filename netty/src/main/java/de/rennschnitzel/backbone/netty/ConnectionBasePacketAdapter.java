@@ -26,74 +26,75 @@ public class ConnectionBasePacketAdapter<C extends Connection> extends NettyPack
 
   @Getter
   @NonNull
-  private final C con;
+  private final C connection;
 
   @Getter
   @NonNull
   private final BasePacketHandler<C> handler;
 
-  private ChannelHandlerContext ctx = null;
+  @Getter
+  private ChannelHandlerContext context = null;
 
   @Override
   public synchronized void handlerAdded(ChannelHandlerContext ctx) {
     Preconditions.checkNotNull(ctx);
-    Preconditions.checkState(this.ctx == null);
-    this.ctx = ctx;
+    Preconditions.checkState(this.context == null);
+    this.context = ctx;
   }
 
   @Override
   public void handle(ChannelHandlerContext ctx, ProcedureMessage msg) throws Exception {
-    handler.handle(con, msg);
+    handler.handle(connection, msg);
   }
 
   @Override
   public void handle(ChannelHandlerContext ctx, ChannelRegister msg) throws Exception {
-    handler.handle(con, msg);
+    handler.handle(connection, msg);
   }
 
   @Override
   public void handle(ChannelHandlerContext ctx, ChannelMessage msg) throws Exception {
-    handler.handle(con, msg);
+    handler.handle(connection, msg);
   }
 
   @Override
   public void handle(ChannelHandlerContext ctx, ServerUpdateMessage msg) throws Exception {
-    handler.handle(con, msg);
+    handler.handle(connection, msg);
   }
 
   @Override
   public void handle(ChannelHandlerContext ctx, DisconnectedMessage msg) throws Exception {
-    handler.handle(con, msg);
+    handler.handle(connection, msg);
   }
 
   @Override
   public void handle(ChannelHandlerContext ctx, ConnectedMessage msg) throws Exception {
-    handler.handle(con, msg);
+    handler.handle(connection, msg);
   }
 
   @Override
   public void handle(ChannelHandlerContext ctx, AuthResponseMessage msg) throws Exception {
-    handler.handle(con, msg);
+    handler.handle(connection, msg);
   }
 
   @Override
   public void handle(ChannelHandlerContext ctx, AuthChallengeMessage msg) throws Exception {
-    handler.handle(con, msg);
+    handler.handle(connection, msg);
   }
 
   @Override
   public void handle(ChannelHandlerContext ctx, AuthSuccessMessage msg) throws Exception {
-    handler.handle(con, msg);
+    handler.handle(connection, msg);
   }
 
   @Override
   public void handle(ChannelHandlerContext ctx, LoginMessage msg) throws Exception {
-    handler.handle(con, msg);
+    handler.handle(connection, msg);
   }
 
   @Override
   public void handle(ChannelHandlerContext ctx, CloseMessage msg) throws Exception {
-    handler.handle(con, msg);
+    handler.handle(connection, msg);
   }
 
 }

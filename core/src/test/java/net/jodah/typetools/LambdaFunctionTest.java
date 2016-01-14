@@ -21,7 +21,7 @@ public class LambdaFunctionTest {
     assertArrayEquals(new Class<?>[] {String.class, Integer.class}, TypeResolver.resolveRawArguments(Function.class, func.getClass()));
 
   }
-  
+
   private final AtomicInteger b = new AtomicInteger(0);
 
   @Test

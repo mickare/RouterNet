@@ -40,7 +40,8 @@ public class BaseChannelInitializer extends ChannelInitializer<SocketChannel> {
     pipeline.addLast("frameEncoder", new LengthFieldPrepender(4));
     pipeline.addLast("compressionDecoder", new FastLzFrameDecoder(true));
     pipeline.addLast("compressionEncoder", new FastLzFrameEncoder(true));
-    pipeline.addLast("protoDecoder", new ProtobufDecoder(TransportProtocol.Packet.getDefaultInstance()));
+    pipeline.addLast("protoDecoder",
+        new ProtobufDecoder(TransportProtocol.Packet.getDefaultInstance()));
     pipeline.addLast("protoEncoder", new ProtobufEncoder());
     pipeline.addLast(handshake.getName(), handshake);
     pipeline.addLast("exception", new ExceptionHandler(getLogger()));

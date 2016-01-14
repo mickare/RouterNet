@@ -101,7 +101,7 @@ public class Client extends AbstractScheduledService {
 
 
     FutureUtils.onSuccess(handshake, (con) -> getLogger().info("Connected!"));
-    
+
     return handshake;
   }
 
@@ -109,7 +109,7 @@ public class Client extends AbstractScheduledService {
   protected void startUp() throws Exception {
     group = new NioEventLoopGroup();
   }
-  
+
   protected String serviceName() {
     return "Client";
   }
