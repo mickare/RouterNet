@@ -19,20 +19,28 @@ public abstract class HandshakeHandler extends NettyPacketHandler {
 
   public static final int VERSION = 1;
 
-  
+  @Getter
+  private final String name;
+
+  public HandshakeHandler(String name) {
+    Preconditions.checkArgument(!name.isEmpty());
+    this.name = name;
+  }
+
+
   @RequiredArgsConstructor
   public static enum State {
     NEW(0), LOGIN(1), AUTH(1), SUCCESS(3), FAILED(3);
     @Getter
     private final int step;
   }
-  
+
   private volatile State state = State.NEW;
   @Getter
   private ChannelHandlerContext channelContext = null;
 
   protected abstract void onFail(Throwable cause);
-  
+
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     this.checkState(State.NEW);

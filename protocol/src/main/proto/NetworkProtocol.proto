@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package de.rennschnitzel.backbone.net.protocol;
 
-import "ComponentUUID.proto";
+import "ComponentsProtocol.proto";
 
 message ServerMessage {
 	enum Type {
@@ -12,7 +12,7 @@ message ServerMessage {
 		ROUTER = 3;
 	}
 	Type type = 1;
-	UUID id = 2;
+	UUIDMessage id = 2;
 	string name = 3;
 	repeated string namespaces = 4;
 	int64 timestamp = 5;
@@ -20,7 +20,7 @@ message ServerMessage {
 }
 
 message RouterMessage {
-	UUID id = 1;
+	UUIDMessage id = 1;
 	string name = 2;
 	int64 timestamp = 3;
 	AddressMessage address = 4;

@@ -16,14 +16,14 @@ public class ConnectionForTesting extends Connection {
   @Getter
   private boolean closed = false;
 
-  private final PacketHandler<Connection> handler;
+  private final PacketHandler<ConnectionForTesting> handler;
 
   @Getter
   @NonNull
   private ConnectionForTesting connected = null;
 
 
-  public ConnectionForTesting(Network network, PacketHandler<Connection> handler) {
+  public ConnectionForTesting(Network network, PacketHandler<ConnectionForTesting> handler) {
     super(network);
     Preconditions.checkNotNull(handler);
     this.handler = handler;

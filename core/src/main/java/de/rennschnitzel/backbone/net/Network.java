@@ -17,7 +17,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.MapMaker;
 import com.google.common.collect.Sets;
-import com.google.common.eventbus.EventBus;
 
 import de.rennschnitzel.backbone.ProtocolUtils;
 import de.rennschnitzel.backbone.net.channel.ChannelDescriptors;
@@ -27,7 +26,7 @@ import de.rennschnitzel.backbone.net.node.BaseNetworkNode;
 import de.rennschnitzel.backbone.net.node.HomeNode;
 import de.rennschnitzel.backbone.net.node.NetworkNode;
 import de.rennschnitzel.backbone.net.procedure.ProcedureCall;
-import de.rennschnitzel.backbone.net.protocol.ComponentUUID;
+import de.rennschnitzel.backbone.net.protocol.ComponentsProtocol.UUIDMessage;
 import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.ConnectedMessage;
 import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.DisconnectedMessage;
 import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.ServerMessage;
@@ -121,7 +120,7 @@ public abstract class Network {
   public abstract <T, R> void sendProcedureCall(ProcedureCall<T, R> call);
 
 
-  public void sendProcedureResponse(ComponentUUID.UUID receiver, ProcedureResponseMessage build) {
+  public void sendProcedureResponse(UUIDMessage receiver, ProcedureResponseMessage build) {
     sendProcedureResponse(ProtocolUtils.convert(receiver), build);
   }
 

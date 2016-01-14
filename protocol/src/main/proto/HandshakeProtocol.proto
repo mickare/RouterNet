@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package de.rennschnitzel.backbone.net.protocol;
 
-import "ComponentUUID.proto";
+import "ComponentsProtocol.proto";
 import "NetworkProtocol.proto";
 
 message LoginMessage {
@@ -19,7 +19,7 @@ message FirstLoginMessage {
 }
 
 message SecondLoginMessage {
-	UUID id = 1;
+	UUIDMessage id = 1;
 	repeated string namespaces = 2;
 	ServerMessage.Type type = 3;		
 }
@@ -33,7 +33,7 @@ message AuthResponseMessage {
 }
 
 message AuthSuccessMessage {
-	UUID cliendID = 1;
+	UUIDMessage cliendID = 1;
 	RouterMessage router = 2;
 	NetworkTopologyMessage network = 3;
 }

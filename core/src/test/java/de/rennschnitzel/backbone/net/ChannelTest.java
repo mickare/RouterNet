@@ -49,8 +49,8 @@ public class ChannelTest {
     net_router = new NetworkForTesting();
     net_client = new NetworkForTesting();
 
-    con_router = new ConnectionForTesting(net_router, new BasePacketHandler());
-    con_client = new ConnectionForTesting(net_client, new BasePacketHandler());
+    con_router = new ConnectionForTesting(net_router, new BasePacketHandler<>());
+    con_client = new ConnectionForTesting(net_client, new BasePacketHandler<>());
 
 
     target_client = Target.to(net_client.getHome().getId());

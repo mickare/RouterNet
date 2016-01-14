@@ -7,7 +7,7 @@ import java.util.UUID;
 
 import de.rennschnitzel.backbone.ProtocolUtils;
 import de.rennschnitzel.backbone.net.procedure.ProcedureInformation;
-import de.rennschnitzel.backbone.net.protocol.ComponentUUID;
+import de.rennschnitzel.backbone.net.protocol.ComponentsProtocol.UUIDMessage;
 import de.rennschnitzel.backbone.net.protocol.NetworkProtocol;
 import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.ServerMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.TargetMessage;
@@ -16,7 +16,7 @@ public interface NetworkNode {
 
   UUID getId();
 
-  default ComponentUUID.UUID getIdProto() {
+  default UUIDMessage getIdProto() {
     return ProtocolUtils.convert(getId());
   }
 

@@ -52,8 +52,8 @@ public class ProcedureTest {
     net_router = new NetworkForTesting();
     net_client = new NetworkForTesting();
 
-    con_router = new ConnectionForTesting(net_router, new BasePacketHandler());
-    con_client = new ConnectionForTesting(net_client, new BasePacketHandler());
+    con_router = new ConnectionForTesting(net_router, new BasePacketHandler<>());
+    con_client = new ConnectionForTesting(net_client, new BasePacketHandler<>());
 
     net_router.setConnection(con_router);
     net_client.setConnection(con_client);

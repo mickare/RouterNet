@@ -4,7 +4,7 @@ package de.rennschnitzel.backbone.net.protocol;
 
 import "NetworkProtocol.proto";
 import "HandshakeProtocol.proto";
-import "ComponentUUID.proto";
+import "ComponentsProtocol.proto";
 
 message ErrorMessage {
 	enum Type {
@@ -15,8 +15,7 @@ message ErrorMessage {
 		HANDSHAKE = 4;
 	}
 	Type type = 1;
-	bool fatal = 2;
-	string message = 3;
+	string message = 2;
 }
 
 message CloseMessage {
@@ -29,16 +28,15 @@ message CloseMessage {
 
 message TargetMessage {
 	bool all = 1;
-	repeated UUID serversInclude = 2;
-	repeated UUID serversExclude = 3;
+	repeated UUIDMessage serversInclude = 2;
+	repeated UUIDMessage serversExclude = 3;
 	repeated string namespacesInclude = 4;
 	repeated string namespacesExclude = 5;
 }
 
 message Packet {
 	oneof value {
-		ErrorMessage error = 1;
-		CloseMessage close = 2;
+		CloseMessage close = 1;
 		LoginMessage login = 10;
 		AuthChallengeMessage authChallenge = 11;
 		AuthResponseMessage authResponse = 12;
@@ -55,7 +53,7 @@ message Packet {
 message ChannelMessage {
 	int32 channelId = 1;
 	TargetMessage target = 2;
-	UUID sender = 3;
+	UUIDMessage sender = 3;
 	bytes data = 4;
 }
 
@@ -73,7 +71,7 @@ message ChannelRegister {
 
 message ProcedureMessage {
 	TargetMessage target = 1;
-	UUID sender = 2;
+	UUIDMessage sender = 2;
 	oneof content {
 		ProcedureCallMessage call = 4;
 		ProcedureResponseMessage response = 5;

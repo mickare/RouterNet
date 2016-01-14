@@ -11,7 +11,10 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.protobuf.ByteString;
 
-import de.rennschnitzel.backbone.net.protocol.ComponentUUID;
+import de.rennschnitzel.backbone.exception.ConnectionException;
+import de.rennschnitzel.backbone.exception.HandshakeException;
+import de.rennschnitzel.backbone.exception.ProtocolException;
+import de.rennschnitzel.backbone.net.protocol.ComponentsProtocol.UUIDMessage;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthChallengeMessage;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthResponseMessage;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthSuccessMessage;
@@ -24,9 +27,7 @@ import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.backbone.netty.HandshakeHandler;
 import de.rennschnitzel.backbone.netty.PacketUtil;
-import de.rennschnitzel.backbone.netty.exception.ConnectionException;
-import de.rennschnitzel.backbone.netty.exception.HandshakeException;
-import de.rennschnitzel.backbone.netty.exception.ProtocolException;
+import de.rennschnitzel.backbone.router.netty.NettyConnection;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.Getter;
 
@@ -54,6 +55,7 @@ public class RouterHandshakeHandler extends HandshakeHandler {
   private final ByteString challenge = ByteString.copyFrom(nextChallenge(32));
 
   public RouterHandshakeHandler(Router router) {
+    super("RouterHandshakeHandler");
     Preconditions.checkNotNull(router);
     this.router = router;
 
@@ -96,7 +98,7 @@ public class RouterHandshakeHandler extends HandshakeHandler {
   }
 
   @Override
-  protected void handle(ChannelHandlerContext ctx, ErrorMessage error) throws Exception {
+  public void handle(ChannelHandlerContext ctx, ErrorMessage error) throws Exception {
     ConnectionException e = null;
     switch (error.getType()) {
       case PROTOCOL_ERROR:
@@ -110,7 +112,7 @@ public class RouterHandshakeHandler extends HandshakeHandler {
 
 
   @Override
-  public void handle(ChannelHandlerContext ctx, LoginMessage login) throws HandshakeException {
+  public void handle(ChannelHandlerContext ctx, LoginMessage login) throws ConnectionException {
     this.checkState(State.LOGIN);
 
     switch (login.getLoginCase()) {
@@ -155,11 +157,13 @@ public class RouterHandshakeHandler extends HandshakeHandler {
 
 
   @Override
-  protected void handle(ChannelHandlerContext ctx, AuthSuccessMessage authSuccess) throws Exception {
+  public void handle(ChannelHandlerContext ctx, AuthSuccessMessage authSuccess) throws Exception {
     throw new HandshakeException("Invalid or unknown packet!");
   }
 
-  protected abstract RouterConnection upgrade(ChannelHandlerContext ctx, AuthSuccess authSuccess);
+  protected NettyConnection upgrade(ChannelHandlerContext ctx, AuthSuccessMessage authSuccess) {
+
+  }
 
   @Override
   public void handle(ChannelHandlerContext ctx, CloseMessage msg) throws Exception {

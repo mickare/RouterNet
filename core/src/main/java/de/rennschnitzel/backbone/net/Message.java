@@ -5,7 +5,7 @@ import java.util.UUID;
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.backbone.ProtocolUtils;
-import de.rennschnitzel.backbone.net.protocol.ComponentUUID;
+import de.rennschnitzel.backbone.net.protocol.ComponentsProtocol.UUIDMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.TargetMessage;
 import lombok.Getter;
 
@@ -22,7 +22,7 @@ public class Message {
     this.sender = sender;
   }
 
-  public Message(TargetMessage target, ComponentUUID.UUID sender) {
+  public Message(TargetMessage target, UUIDMessage sender) {
     this(new Target(target), ProtocolUtils.convert(sender));
   }
 

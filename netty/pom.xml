@@ -27,6 +27,12 @@
 			<artifactId>core</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-all</artifactId>
+			<version>4.1.0.Beta8</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
@@ -49,5 +55,5 @@
 			</plugin>
 		</plugins>
 	</build>
-	
+
 </project>

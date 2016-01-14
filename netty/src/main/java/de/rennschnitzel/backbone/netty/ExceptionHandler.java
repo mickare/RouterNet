@@ -19,34 +19,27 @@ public class ExceptionHandler extends ChannelHandlerAdapter {
 
   @Override
   public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
-    boolean fatal = true;
     try {
       ErrorMessage.Type type;
       String text;
       if (cause instanceof ConnectionException) {
         ConnectionException con = (ConnectionException) cause;
-        fatal = con.isFatal();
         type = con.getType();
         text = con.getMessage();
         if (con.isDoLog()) {
-          logger.log(Level.INFO, type.name() + " " + con.getMessage() + (fatal ? " (fatal)" : ""),
-              con);
+          logger.log(Level.INFO, type.name() + " " + con.getMessage(), con);
         }
       } else {
         type = ErrorMessage.Type.SERVER_ERROR;
         text = "Server Error";
       }
       ErrorMessage.Builder error = ErrorMessage.newBuilder().setType(type).setMessage(text);
-      if (fatal) {
-        ChannelFuture f = PacketUtil.writeAndFlush(ctx.channel(), CloseMessage.newBuilder().setError(error));
-        f.addListener(ChannelFutureListener.CLOSE);
-      } else {
-        PacketUtil.writeAndFlush(ctx.channel(), error);
-      }
+
+      ChannelFuture f = PacketUtil.writeAndFlush(ctx.channel(), CloseMessage.newBuilder().setError(error));
+      f.addListener(ChannelFutureListener.CLOSE);
 
     } catch (final Exception ex) {
-      logger.log(Level.SEVERE, "ERROR trying to close socket because we got an unhandled exception",
-          ex);
+      logger.log(Level.SEVERE, "ERROR trying to close socket because we got an unhandled exception", ex);
       ctx.close();
     }
   }

@@ -2,6 +2,7 @@ package de.rennschnitzel.backbone.net.packet;
 
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthChallengeMessage;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthResponseMessage;
+import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthSuccessMessage;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.LoginMessage;
 import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.ConnectedMessage;
 import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.DisconnectedMessage;
@@ -9,7 +10,6 @@ import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.ServerUpdateMessag
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ChannelMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ChannelRegister;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.CloseMessage;
-import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureMessage;
 
 public class SimplePacketHandler<C> implements PacketHandler<C> {
@@ -67,7 +67,7 @@ public class SimplePacketHandler<C> implements PacketHandler<C> {
   }
 
   @Override
-  public void handle(C ctx, ErrorMessage msg) throws Exception {
+  public void handle(C ctx, AuthSuccessMessage msg) throws Exception {
     throw new UnsupportedOperationException("Not implemented!");
   }
 

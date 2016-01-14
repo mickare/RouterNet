@@ -3,6 +3,7 @@ package de.rennschnitzel.backbone.net.packet;
 import de.rennschnitzel.backbone.exception.ProtocolException;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthChallengeMessage;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthResponseMessage;
+import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthSuccessMessage;
 import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.LoginMessage;
 import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.ConnectedMessage;
 import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.DisconnectedMessage;
@@ -10,7 +11,6 @@ import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.ServerUpdateMessag
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ChannelMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ChannelRegister;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.CloseMessage;
-import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureMessage;
 
@@ -18,9 +18,6 @@ public interface PacketHandler<C> {
 
   default void handle(C ctx, Packet packet) throws Exception {
     switch (packet.getValueCase()) {
-      case ERROR:
-        handle(ctx, packet.getError());
-        break;
       case CLOSE:
         handle(ctx, packet.getClose());
         break;
@@ -32,6 +29,9 @@ public interface PacketHandler<C> {
         break;
       case AUTHRESPONSE:
         handle(ctx, packet.getAuthResponse());
+        break;
+      case AUTHSUCCESS:
+        handle(ctx, packet.getAuthSuccess());
         break;
       case CONNECTED:
         handle(ctx, packet.getConnected());
@@ -76,10 +76,10 @@ public interface PacketHandler<C> {
 
   void handle(C ctx, AuthChallengeMessage msg) throws Exception;
 
+  void handle(C ctx, AuthSuccessMessage msg) throws Exception;
+
   void handle(C ctx, LoginMessage msg) throws Exception;
 
   void handle(C ctx, CloseMessage msg) throws Exception;
-
-  void handle(C ctx, ErrorMessage msg) throws Exception;
 
 }

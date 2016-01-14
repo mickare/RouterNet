@@ -3,7 +3,7 @@ syntax = "proto3";
 package de.rennschnitzel.backbone.net.protocol;
 
 // A 128-bit id, transferred as two 64-bit longs
-message UUID {
+message UUIDMessage {
     fixed64 least_significant_bits = 1;
     fixed64 most_significant_bits = 2;
 }
