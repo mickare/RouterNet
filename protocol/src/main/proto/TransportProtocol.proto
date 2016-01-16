@@ -3,7 +3,7 @@ syntax = "proto3";
 package de.rennschnitzel.backbone.net.protocol;
 
 import "NetworkProtocol.proto";
-import "HandshakeProtocol.proto";
+import "LoginProtocol.proto";
 import "ComponentsProtocol.proto";
 
 message ErrorMessage {
@@ -13,6 +13,7 @@ message ErrorMessage {
 		PROTOCOL_ERROR = 2;
 		UNAVAILABLE = 3;
 		HANDSHAKE = 4;
+		ID_ALREADY_USED = 5;
 	}
 	Type type = 1;
 	string message = 2;
@@ -27,25 +28,35 @@ message CloseMessage {
 }
 
 message TargetMessage {
-	bool all = 1;
-	repeated UUIDMessage serversInclude = 2;
-	repeated UUIDMessage serversExclude = 3;
+	bool toAll = 1;
+	repeated UUIDMessage nodesInclude = 2;
+	repeated UUIDMessage nodesExclude = 3;
 	repeated string namespacesInclude = 4;
 	repeated string namespacesExclude = 5;
 }
 
 message Packet {
 	oneof value {
+		// Transport
 		CloseMessage close = 1;
-		LoginMessage login = 10;
-		AuthChallengeMessage authChallenge = 11;
-		AuthResponseMessage authResponse = 12;
-		AuthSuccessMessage authSuccess = 13;
-		ConnectedMessage connected = 20;
-		DisconnectedMessage disconnected = 21;
-		ServerUpdateMessage update = 22;
+		
+		// Login
+		LoginHandshakeMessage loginHandshake = 10;
+		LoginChallengeMessage loginChallenge = 11;
+		LoginResponseMessage loginResponse = 12;
+		LoginSuccessMessage loginSuccess = 13;
+		LoginUpgradeMessage  loginUpgrade = 14;
+		
+		// Network
+		NodeTopologyMessage nodeTopology = 20;
+		NodeUpdateMessage nodeUpdate = 21;
+		NodeRemoveMessage nodeRemove = 22;
+
+		// Channel
 		ChannelMessage channelMessage = 30;
 		ChannelRegister channelRegister = 31;
+				
+		// Procedure
 		ProcedureMessage procedureMessage = 40;
 	}
 }

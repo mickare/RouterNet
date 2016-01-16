@@ -77,7 +77,7 @@
 					<execution>
 						<goals>
 							<goal>compile</goal>
-							<goal>test-compile</goal>
+							<!-- <goal>test-compile</goal> -->
 						</goals>
 						<configuration>
 							<protocArtifact>com.google.protobuf:protoc:3.0.0-beta-1:exe:${os.detected.classifier}</protocArtifact>

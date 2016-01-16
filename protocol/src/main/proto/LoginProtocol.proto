@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package de.rennschnitzel.backbone.net.protocol;
+
+import "ComponentsProtocol.proto";
+import "NetworkProtocol.proto";
+
+// Never change this message!
+message LoginHandshakeMessage {
+	int32 protocolVersion = 1;
+	UUIDMessage id = 2;
+	string name = 3;
+}
+
+message LoginChallengeMessage {
+	bytes token = 1;
+}
+
+message LoginResponseMessage {
+	bytes token = 1;
+}
+
+message LoginSuccessMessage {
+	UUIDMessage routerId = 1;
+	NodeTopologyMessage topology = 2;
+}
+
+message LoginUpgradeMessage {
+	NodeMessage node = 1;
+}
