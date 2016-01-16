@@ -1,12 +1,13 @@
 package de.rennschnitzel.backbone.net.packet;
 
-import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthChallengeMessage;
-import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthResponseMessage;
-import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.AuthSuccessMessage;
-import de.rennschnitzel.backbone.net.protocol.HandshakeProtocol.LoginMessage;
-import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.ConnectedMessage;
-import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.DisconnectedMessage;
-import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.ServerUpdateMessage;
+import de.rennschnitzel.backbone.net.protocol.LoginProtocol.LoginChallengeMessage;
+import de.rennschnitzel.backbone.net.protocol.LoginProtocol.LoginHandshakeMessage;
+import de.rennschnitzel.backbone.net.protocol.LoginProtocol.LoginResponseMessage;
+import de.rennschnitzel.backbone.net.protocol.LoginProtocol.LoginSuccessMessage;
+import de.rennschnitzel.backbone.net.protocol.LoginProtocol.LoginUpgradeMessage;
+import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.NodeRemoveMessage;
+import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.NodeTopologyMessage;
+import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.NodeUpdateMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ChannelMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ChannelRegister;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.CloseMessage;
@@ -17,12 +18,47 @@ public class SimplePacketHandler<C> implements PacketHandler<C> {
   public SimplePacketHandler() {}
 
   @Override
-  public void handle(C ctx, ProcedureMessage msg) throws Exception {
+  public void handle(C ctx, CloseMessage msg) throws Exception {
+
+  }
+
+  @Override
+  public void handle(C ctx, LoginHandshakeMessage msg) throws Exception {
     throw new UnsupportedOperationException("Not implemented!");
   }
 
   @Override
-  public void handle(C ctx, ChannelRegister msg) throws Exception {
+  public void handle(C ctx, LoginResponseMessage msg) throws Exception {
+    throw new UnsupportedOperationException("Not implemented!");
+  }
+
+  @Override
+  public void handle(C ctx, LoginChallengeMessage msg) throws Exception {
+    throw new UnsupportedOperationException("Not implemented!");
+  }
+
+  @Override
+  public void handle(C ctx, LoginSuccessMessage msg) throws Exception {
+    throw new UnsupportedOperationException("Not implemented!");
+  }
+
+  @Override
+  public void handle(C ctx, LoginUpgradeMessage msg) throws Exception {
+    throw new UnsupportedOperationException("Not implemented!");
+  }
+
+  @Override
+  public void handle(C ctx, NodeTopologyMessage msg) throws Exception {
+    throw new UnsupportedOperationException("Not implemented!");
+  }
+
+  @Override
+  public void handle(C ctx, NodeUpdateMessage msg) throws Exception {
+    throw new UnsupportedOperationException("Not implemented!");
+  }
+
+  @Override
+  public void handle(C ctx, NodeRemoveMessage msg) throws Exception {
     throw new UnsupportedOperationException("Not implemented!");
   }
 
@@ -32,42 +68,12 @@ public class SimplePacketHandler<C> implements PacketHandler<C> {
   }
 
   @Override
-  public void handle(C ctx, ServerUpdateMessage msg) throws Exception {
+  public void handle(C ctx, ChannelRegister msg) throws Exception {
     throw new UnsupportedOperationException("Not implemented!");
   }
 
   @Override
-  public void handle(C ctx, DisconnectedMessage msg) throws Exception {
-    throw new UnsupportedOperationException("Not implemented!");
-  }
-
-  @Override
-  public void handle(C ctx, ConnectedMessage msg) throws Exception {
-    throw new UnsupportedOperationException("Not implemented!");
-  }
-
-  @Override
-  public void handle(C ctx, AuthResponseMessage msg) throws Exception {
-    throw new UnsupportedOperationException("Not implemented!");
-  }
-
-  @Override
-  public void handle(C ctx, AuthChallengeMessage msg) throws Exception {
-    throw new UnsupportedOperationException("Not implemented!");
-  }
-
-  @Override
-  public void handle(C ctx, LoginMessage msg) throws Exception {
-    throw new UnsupportedOperationException("Not implemented!");
-  }
-
-  @Override
-  public void handle(C ctx, CloseMessage msg) throws Exception {
-    throw new UnsupportedOperationException("Not implemented!");
-  }
-
-  @Override
-  public void handle(C ctx, AuthSuccessMessage msg) throws Exception {
+  public void handle(C ctx, ProcedureMessage msg) throws Exception {
     throw new UnsupportedOperationException("Not implemented!");
   }
 

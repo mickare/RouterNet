@@ -2,7 +2,7 @@ package de.rennschnitzel.backbone.net.procedure;
 
 import java.util.function.BiConsumer;
 
-import de.rennschnitzel.backbone.net.node.NetworkNode;
+import de.rennschnitzel.backbone.net.Node;
 import de.rennschnitzel.backbone.net.protocol.NetworkProtocol;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureCallMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
@@ -19,8 +19,8 @@ public interface Procedure<T, R> extends Comparable<Procedure<?, ?>> {
   Class<R> getResultClass();
 
   default NetworkProtocol.ProcedureDescription toProtocol() {
-    return NetworkProtocol.ProcedureDescription.newBuilder().setName(getName()).setArgument(getArgClass().getName())
-        .setResult(getResultClass().getName()).build();
+    return NetworkProtocol.ProcedureDescription.newBuilder().setName(getName()).setArgumentType(getArgClass().getName())
+        .setResultType(getResultClass().getName()).build();
   }
 
   boolean isApplicable(NetworkProtocol.ProcedureDescription procedure);
@@ -39,7 +39,7 @@ public interface Procedure<T, R> extends Comparable<Procedure<?, ?>> {
 
   boolean isLocalFunction();
 
-  ProcedureCallResult<T, R> call(NetworkNode server, T argument);
+  ProcedureCallResult<T, R> call(Node node, T argument);
 
   boolean isApplicable(ProcedureInformation info);
 

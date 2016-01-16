@@ -9,8 +9,8 @@ import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.backbone.ProtocolUtils;
 import de.rennschnitzel.backbone.exception.ConnectionException;
+import de.rennschnitzel.backbone.net.Node;
 import de.rennschnitzel.backbone.net.Target;
-import de.rennschnitzel.backbone.net.node.NetworkNode;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
 import lombok.Getter;
@@ -18,17 +18,17 @@ import lombok.Getter;
 public class SingleProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
 
   @Getter
-  private final NetworkNode server;
+  private final Node node;
   @Getter
   private final ProcedureCallResult<T, R> result;
 
-  public SingleProcedureCall(NetworkNode server, Procedure<T, R> procedure, T argument, long maxTimeout) {
-    super(procedure, Target.to(server), argument, maxTimeout);
-    Preconditions.checkNotNull(server);
-    this.server = server;
-    this.result = new ProcedureCallResult<T, R>(this, server);
+  public SingleProcedureCall(Node node, Procedure<T, R> procedure, T argument, long maxTimeout) {
+    super(procedure, Target.to(node), argument, maxTimeout);
+    Preconditions.checkNotNull(node);
+    this.node = node;
+    this.result = new ProcedureCallResult<T, R>(this, node);
 
-    if (!server.hasProcedure(procedure.getInfo())) {
+    if (!node.hasProcedure(procedure.getInfo())) {
       setException(new UndefinedServerProcedure());
     }
 
@@ -39,7 +39,7 @@ public class SingleProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
       throw new IllegalArgumentException("response is not applicable for procedure");
     }
     UUID senderId = ProtocolUtils.convert(message.getSender());
-    Preconditions.checkArgument(senderId.equals(server.getId()), "Wrong response sender");
+    Preconditions.checkArgument(senderId.equals(node.getId()), "Wrong response sender");
     if (response.getCancelled()) {
       result.cancel(true);
       return;

@@ -12,8 +12,8 @@ import com.google.protobuf.ByteString;
 
 import de.rennschnitzel.backbone.Owner;
 import de.rennschnitzel.backbone.net.Connection;
+import de.rennschnitzel.backbone.net.Network;
 import de.rennschnitzel.backbone.net.Target;
-import de.rennschnitzel.backbone.net.node.HomeNode;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ChannelRegister;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.Packet;
@@ -46,6 +46,10 @@ public class Channel {
     this.name = name.toLowerCase();
   }
 
+  public Network getNetwork() {
+    return this.connection.getNetwork();
+  }
+
   public synchronized void registerHandler(ChannelHandler handler) throws IllegalStateException {
     Preconditions.checkNotNull(handler);
     Preconditions.checkState(this.handler == null);
@@ -70,10 +74,6 @@ public class Channel {
     this.closed = true;
   }
 
-  public HomeNode getHome() {
-    return this.connection.getHome();
-  }
-
   public void register() {
     if (isClosed()) {
       return;
@@ -86,6 +86,18 @@ public class Channel {
 
   }
 
+  public void broadcast(ByteBuffer data) throws IOException {
+    this.send(Target.toAll(), data);
+  }
+
+  public void broadcast(byte[] data) throws IOException {
+    this.send(Target.toAll(), data);
+  }
+
+  public void broadcast(ByteString data) throws IOException {
+    this.send(Target.toAll(), data);
+  }
+
   public void send(Target target, ByteBuffer data) throws IOException {
     this.send(target, ByteString.copyFrom(data));
   }
@@ -95,13 +107,13 @@ public class Channel {
   }
 
   public void send(Target target, ByteString data) throws IOException {
-    final ChannelMessage cmsg = new ChannelMessage(this, target, this.getHome().getId(), data);
+    final ChannelMessage cmsg = new ChannelMessage(this, target, getNetwork().getHome().getId(), data);
     this.send(cmsg);
   }
 
   public void send(ChannelMessage cmsg) throws IOException {
     this.sendIgnoreSelf(cmsg);
-    if (cmsg.getTarget().contains(getHome())) {
+    if (cmsg.getTarget().contains(getNetwork().getHome())) {
       this.receive(cmsg);
     }
   }

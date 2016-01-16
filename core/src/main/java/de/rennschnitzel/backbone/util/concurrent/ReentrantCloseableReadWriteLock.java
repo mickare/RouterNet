@@ -7,24 +7,24 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author mickare
  *
  */
-public class CloseableReentrantReadWriteLock implements CloseableReadWriteLock {
+public class ReentrantCloseableReadWriteLock implements CloseableReadWriteLock {
 
   private final CloseableLock readLock;
   private final CloseableLock writeLock;
 
   private final ReentrantReadWriteLock original;
 
-  private CloseableReentrantReadWriteLock(ReentrantReadWriteLock original) {
+  private ReentrantCloseableReadWriteLock(ReentrantReadWriteLock original) {
     this.original = original;
     this.readLock = new WrapperLock(this.original.readLock());
     this.writeLock = new WrapperLock(this.original.writeLock());
   }
 
-  public CloseableReentrantReadWriteLock() {
+  public ReentrantCloseableReadWriteLock() {
     this(new ReentrantReadWriteLock());
   }
 
-  public CloseableReentrantReadWriteLock(boolean fair) {
+  public ReentrantCloseableReadWriteLock(boolean fair) {
     this(new ReentrantReadWriteLock(fair));
   }
 

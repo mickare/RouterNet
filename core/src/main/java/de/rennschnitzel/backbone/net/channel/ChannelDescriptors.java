@@ -2,6 +2,9 @@ package de.rennschnitzel.backbone.net.channel;
 
 import java.io.InvalidClassException;
 import java.io.Serializable;
+import java.util.concurrent.ConcurrentMap;
+
+import com.google.common.collect.MapMaker;
 
 import de.rennschnitzel.backbone.net.channel.object.ObjectChannel;
 import de.rennschnitzel.backbone.net.channel.object.ObjectConverters;

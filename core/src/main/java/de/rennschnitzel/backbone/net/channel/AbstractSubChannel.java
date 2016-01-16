@@ -5,7 +5,8 @@ import java.io.IOException;
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.backbone.Owner;
-import de.rennschnitzel.backbone.net.node.HomeNode;
+import de.rennschnitzel.backbone.net.Network;
+import de.rennschnitzel.backbone.net.Node;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ChannelRegister.Type;
 import lombok.Getter;
 
@@ -50,16 +51,15 @@ public abstract class AbstractSubChannel<SELF extends AbstractSubChannel<SELF, D
   }
 
   @Override
-  public HomeNode getHome() {
-    return this.parentChannel.getHome();
-  }
-
-  @Override
   public Type getType() {
     return this.descriptor.getType();
   }
 
   public abstract void receive(ChannelMessage cmsg) throws IOException;
 
+  @Override
+  public Network getNetwork() {
+    return parentChannel.getNetwork();
+  }
 
 }

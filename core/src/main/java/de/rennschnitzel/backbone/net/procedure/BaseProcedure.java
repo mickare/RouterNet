@@ -5,7 +5,7 @@ import java.util.function.BiConsumer;
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.backbone.net.Network;
-import de.rennschnitzel.backbone.net.node.NetworkNode;
+import de.rennschnitzel.backbone.net.Node;
 import de.rennschnitzel.backbone.net.protocol.NetworkProtocol;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureCallMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
@@ -66,15 +66,15 @@ public class BaseProcedure<T, R> implements Procedure<T, R> {
   public boolean isApplicable(NetworkProtocol.ProcedureDescription procedure) {
     boolean result = true;
     result &= this.getName().equals(procedure.getName());
-    result &= this.argClass.getName().equals(procedure.getArgument());
-    result &= this.resultClass.getName().equals(procedure.getResult());
+    result &= this.argClass.getName().equals(procedure.getArgumentType());
+    result &= this.resultClass.getName().equals(procedure.getResultType());
     return result;
   }
 
   protected final void validate(NetworkProtocol.ProcedureDescription procedure) throws IllegalArgumentException {
     Preconditions.checkArgument(this.getName().equals(procedure.getName()));
-    Preconditions.checkArgument(this.argClass.getName().equals(procedure.getArgument()));
-    Preconditions.checkArgument(this.resultClass.getName().equals(procedure.getResult()));
+    Preconditions.checkArgument(this.argClass.getName().equals(procedure.getArgumentType()));
+    Preconditions.checkArgument(this.resultClass.getName().equals(procedure.getResultType()));
   }
 
   @Override
@@ -100,8 +100,8 @@ public class BaseProcedure<T, R> implements Procedure<T, R> {
   }
 
   @Override
-  public ProcedureCallResult<T, R> call(NetworkNode server, T argument) {
-    return network.getProcedureManager().callProcedure(server, this, argument);
+  public ProcedureCallResult<T, R> call(Node node, T argument) {
+    return network.getProcedureManager().callProcedure(node, this, argument);
   }
 
 

@@ -1,7 +1,7 @@
 package de.rennschnitzel.backbone.net.channel;
 
 import de.rennschnitzel.backbone.Owner;
-import de.rennschnitzel.backbone.net.node.HomeNode;
+import de.rennschnitzel.backbone.net.Network;
 
 public interface SubChannel {
 
@@ -17,8 +17,8 @@ public interface SubChannel {
 
   Channel getParentChannel();
 
-  HomeNode getHome();
-
   SubChannelDescriptor<?> getDescriptor();
+
+  Network getNetwork();
 
 }

@@ -11,9 +11,9 @@ import de.rennschnitzel.backbone.Owner;
 import de.rennschnitzel.backbone.net.channel.Channel;
 import de.rennschnitzel.backbone.net.channel.SubChannel;
 import de.rennschnitzel.backbone.net.channel.SubChannelDescriptor;
-import de.rennschnitzel.backbone.net.node.HomeNode;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ChannelRegister;
+import de.rennschnitzel.backbone.net.protocol.TransportProtocol.CloseMessage;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -32,11 +32,11 @@ public abstract class Connection {
   @NonNull
   private final Network network;
 
-  public Channel getChannel(String name) {
+  public Channel getChannelIfPresent(String name) {
     return this.channelsByName.get(name.toLowerCase());
   }
 
-  public Channel getChannel(int channelId) {
+  public Channel getChannelIfPresent(int channelId) {
     return this.channelsById.get(channelId);
   }
 
@@ -48,11 +48,11 @@ public abstract class Connection {
     return id;
   }
 
-  public Channel getOrCreateChannel(String name) {
-    return getOrCreateChannel(name, true);
+  public Channel getChannel(String name) {
+    return getChannel(name, true);
   }
 
-  public Channel getOrCreateChannel(String name, boolean register) {
+  public Channel getChannel(String name, boolean register) {
     final String key = name.toLowerCase();
     Channel channel = this.channelsByName.get(key);
     if (channel == null) {
@@ -72,21 +72,21 @@ public abstract class Connection {
     return channel;
   }
 
-  public <S extends SubChannel> S getSubChannel(SubChannelDescriptor<S> descriptor) {
+  public <S extends SubChannel> S getChannelIfPresent(SubChannelDescriptor<S> descriptor) {
     Preconditions.checkNotNull(descriptor);
     return descriptor.cast(this.subChannels.get(descriptor));
   }
 
-  public <S extends SubChannel> S getOrCreateSubChannel(SubChannelDescriptor<S> descriptor, Owner owner) {
+  public <S extends SubChannel> S getChannel(SubChannelDescriptor<S> descriptor, Owner owner) {
     Preconditions.checkNotNull(descriptor);
     Preconditions.checkNotNull(owner);
-    S subChannel = getSubChannel(descriptor);
+    S subChannel = getChannelIfPresent(descriptor);
     if (subChannel == null) {
       synchronized (this) {
         // Check again, but in synchronized state!
-        subChannel = getSubChannel(descriptor);
+        subChannel = getChannelIfPresent(descriptor);
         if (subChannel == null) {
-          Channel channel = getOrCreateChannel(descriptor.getName(), false);
+          Channel channel = getChannel(descriptor.getName(), false);
           subChannel = descriptor.create(owner, channel);
           this.subChannels.put(descriptor, subChannel);
           channel.register();
@@ -94,11 +94,6 @@ public abstract class Connection {
       }
     }
     return subChannel;
-  }
-
-
-  public HomeNode getHome() {
-    return this.network.getHome();
   }
 
   public abstract void send(TransportProtocol.Packet packet);
@@ -116,6 +111,8 @@ public abstract class Connection {
   }
 
   public abstract boolean isClosed();
+
+  public abstract boolean remoteClose(CloseMessage msg);
 
   private static boolean isDifferentChannelRegister(Channel dupl, ChannelRegister msg) {
     if (dupl != null) {

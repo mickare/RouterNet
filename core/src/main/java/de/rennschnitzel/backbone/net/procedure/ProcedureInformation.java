@@ -59,7 +59,7 @@ public class ProcedureInformation implements Comparable<ProcedureInformation> {
   });
 
   public ProcedureInformation(final ProcedureDescription msg) throws IllegalArgumentException, NullPointerException {
-    this(msg.getName(), msg.getArgument(), msg.getResult());
+    this(msg.getName(), msg.getArgumentType(), msg.getResultType());
   }
 
   /*
@@ -185,8 +185,8 @@ public class ProcedureInformation implements Comparable<ProcedureInformation> {
   public ProcedureDescription toProtocol() {
     ProcedureDescription.Builder b = ProcedureDescription.newBuilder();
     b.setName(this.name);
-    b.setArgument(this.argumentType);
-    b.setResult(this.resultType);
+    b.setArgumentType(this.argumentType);
+    b.setResultType(this.resultType);
     return b.build();
   }
 

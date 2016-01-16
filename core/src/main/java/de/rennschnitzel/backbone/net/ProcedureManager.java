@@ -19,7 +19,6 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import de.rennschnitzel.backbone.exception.ProtocolException;
-import de.rennschnitzel.backbone.net.node.NetworkNode;
 import de.rennschnitzel.backbone.net.procedure.MultiProcedureCall;
 import de.rennschnitzel.backbone.net.procedure.Procedure;
 import de.rennschnitzel.backbone.net.procedure.ProcedureCall;
@@ -33,7 +32,7 @@ import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureMessage
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
 import de.rennschnitzel.backbone.util.TypeUtils;
 import de.rennschnitzel.backbone.util.concurrent.CloseableLock;
-import de.rennschnitzel.backbone.util.concurrent.CloseableReentrantReadWriteLock;
+import de.rennschnitzel.backbone.util.concurrent.ReentrantCloseableReadWriteLock;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +47,7 @@ public class ProcedureManager {
    */
   public static long PROCEDURE_DEFAULT_TIMEOUT = 60 * 60;
 
-  private final CloseableReentrantReadWriteLock lock = new CloseableReentrantReadWriteLock();
+  private final ReentrantCloseableReadWriteLock lock = new ReentrantCloseableReadWriteLock();
   private final BiMap<ProcedureInformation, RegisteredProcedure<?, ?>> registeredProcedures = HashBiMap.create();
 
   @NonNull
@@ -108,9 +107,6 @@ public class ProcedureManager {
       registeredProcedures.put(proc.getInfo(), proc);
     }
     network.getHome().addRegisteredProcedure(proc);
-    network.scheduleAsyncLater(() -> {
-      network.getHome().publishChanges(network);
-    } , 20, TimeUnit.MILLISECONDS);
     return proc;
   }
 
@@ -120,15 +116,15 @@ public class ProcedureManager {
     }
   }
 
-  public <T, R> ProcedureCallResult<T, R> callProcedure(NetworkNode server, Procedure<T, R> procedure, T argument) {
-    return this.callProcedure(server, procedure, argument, PROCEDURE_DEFAULT_TIMEOUT);
+  public <T, R> ProcedureCallResult<T, R> callProcedure(Node node, Procedure<T, R> procedure, T argument) {
+    return this.callProcedure(node, procedure, argument, PROCEDURE_DEFAULT_TIMEOUT);
   }
 
-  public <T, R> ProcedureCallResult<T, R> callProcedure(NetworkNode server, Procedure<T, R> procedure, T argument, long timeout) {
-    Preconditions.checkNotNull(server);
+  public <T, R> ProcedureCallResult<T, R> callProcedure(Node node, Procedure<T, R> procedure, T argument, long timeout) {
+    Preconditions.checkNotNull(node);
     Preconditions.checkNotNull(procedure);
     Preconditions.checkArgument(timeout > 0);
-    final SingleProcedureCall<T, R> call = new SingleProcedureCall<>(server, procedure, argument, timeout);
+    final SingleProcedureCall<T, R> call = new SingleProcedureCall<>(node, procedure, argument, timeout);
     try (CloseableLock l = lock.readLock().open()) {
       if (!call.isDone()) {
         openCalls.put(call.getId(), call);
@@ -140,18 +136,17 @@ public class ProcedureManager {
     return call.getResult();
   }
 
-  public <T, R> Map<UUID, ? extends ListenableFuture<R>> callProcedure(Collection<NetworkNode> servers, Procedure<T, R> procedure,
-      T argument) {
-    return this.callProcedure(servers, procedure, argument, PROCEDURE_DEFAULT_TIMEOUT);
+  public <T, R> Map<UUID, ? extends ListenableFuture<R>> callProcedure(Collection<Node> nodes, Procedure<T, R> procedure, T argument) {
+    return this.callProcedure(nodes, procedure, argument, PROCEDURE_DEFAULT_TIMEOUT);
   }
 
-  public <T, R> Map<UUID, ? extends ListenableFuture<R>> callProcedure(Collection<NetworkNode> servers, Procedure<T, R> procedure,
-      T argument, long timeout) {
-    Preconditions.checkNotNull(servers);
-    Preconditions.checkArgument(!servers.isEmpty());
+  public <T, R> Map<UUID, ? extends ListenableFuture<R>> callProcedure(Collection<Node> nodes, Procedure<T, R> procedure, T argument,
+      long timeout) {
+    Preconditions.checkNotNull(nodes);
+    Preconditions.checkArgument(!nodes.isEmpty());
     Preconditions.checkNotNull(procedure);
     Preconditions.checkArgument(timeout > 0);
-    final MultiProcedureCall<T, R> call = new MultiProcedureCall<>(servers, procedure, argument, timeout);
+    final MultiProcedureCall<T, R> call = new MultiProcedureCall<>(nodes, procedure, argument, timeout);
     try (CloseableLock l = lock.readLock().open()) {
       if (!call.isDone()) {
         openCalls.put(call.getId(), call);

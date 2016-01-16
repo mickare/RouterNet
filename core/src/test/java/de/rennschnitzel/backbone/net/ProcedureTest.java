@@ -1,9 +1,13 @@
 package de.rennschnitzel.backbone.net;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -17,7 +21,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import de.rennschnitzel.backbone.Owner;
-import de.rennschnitzel.backbone.net.node.NetworkNode;
+import de.rennschnitzel.backbone.net.Node.HomeNode;
+import de.rennschnitzel.backbone.net.dummy.DummyConnection;
+import de.rennschnitzel.backbone.net.dummy.DummyNetwork;
 import de.rennschnitzel.backbone.net.packet.BasePacketHandler;
 import de.rennschnitzel.backbone.net.procedure.Procedure;
 import de.rennschnitzel.backbone.net.procedure.ProcedureCallResult;
@@ -30,11 +36,11 @@ public class ProcedureTest {
 
   Owner testingOwner;
 
-  NetworkForTesting net_router;
-  NetworkForTesting net_client;
+  DummyNetwork net_router;
+  DummyNetwork net_client;
 
-  ConnectionForTesting con_router;
-  ConnectionForTesting con_client;
+  DummyConnection con_router;
+  DummyConnection con_client;
 
   Target target_client;
   Target target_router;
@@ -49,11 +55,11 @@ public class ProcedureTest {
       }
     };
 
-    net_router = new NetworkForTesting();
-    net_client = new NetworkForTesting();
+    net_router = new DummyNetwork(new HomeNode(new UUID(0, 1)));
+    net_client = new DummyNetwork(new HomeNode(new UUID(0, 2)));
 
-    con_router = new ConnectionForTesting(net_router, new BasePacketHandler<>());
-    con_client = new ConnectionForTesting(net_client, new BasePacketHandler<>());
+    con_router = new DummyConnection(net_router, new BasePacketHandler<>());
+    con_client = new DummyConnection(net_client, new BasePacketHandler<>());
 
     net_router.setConnection(con_router);
     net_client.setConnection(con_client);
@@ -91,13 +97,16 @@ public class ProcedureTest {
     ProcedureInformation info2 = ProcedureInformation.of("function", func);
 
     assertEquals(info1, info2);
-
-    assertNotNull(net_client.getProcedureManager().getRegisteredProcedure(info1));
-    assertNotNull(net_client.getProcedureManager().getRegisteredProcedure(info2));
+    assertTrue(info1.equals(info2));
+    assertTrue(info1.compareTo(info2) == 0);
+    RegisteredProcedure<?, ?> p = net_client.getProcedureManager().getRegisteredProcedure(info1);
+    assertNotNull(p);
+    assertTrue(p == net_client.getProcedureManager().getRegisteredProcedure(info2));
     assertTrue(net_client.getHome().hasProcedure(info1));
     assertTrue(net_client.getHome().hasProcedure(info2));
 
-    NetworkNode client_on_router = net_router.getNode(net_client.getHome().getId());
+    Node client_on_router = net_router.getNode(net_client.getHome().getId());
+    assertTrue(client_on_router.getProcedures().size() > 0);
     assertTrue(client_on_router.hasProcedure(info1));
     assertTrue(client_on_router.hasProcedure(info2));
 
@@ -129,12 +138,16 @@ public class ProcedureTest {
     ProcedureInformation info2 = ProcedureInformation.of("function", func);
 
     assertEquals(info1, info2);
-    assertNotNull(net_client.getProcedureManager().getRegisteredProcedure(info1));
-    assertNotNull(net_client.getProcedureManager().getRegisteredProcedure(info2));
+    assertTrue(info1.equals(info2));
+    assertTrue(info1.compareTo(info2) == 0);
+    RegisteredProcedure<?, ?> p = net_client.getProcedureManager().getRegisteredProcedure(info1);
+    assertNotNull(p);
+    assertTrue(p == net_client.getProcedureManager().getRegisteredProcedure(info2));
     assertTrue(net_client.getHome().hasProcedure(info1));
     assertTrue(net_client.getHome().hasProcedure(info2));
 
-    NetworkNode client_on_router = net_router.getNode(net_client.getHome().getId());
+    Node client_on_router = net_router.getNode(net_client.getHome().getId());
+    assertTrue(client_on_router.getProcedures().size() > 0);
     assertTrue(client_on_router.hasProcedure(info1));
     assertTrue(client_on_router.hasProcedure(info2));
 
@@ -163,13 +176,18 @@ public class ProcedureTest {
 
     ProcedureInformation info1 = ProcedureInformation.of("runnable", Void.class, Void.class);
     ProcedureInformation info2 = ProcedureInformation.of("runnable", func);
+
     assertEquals(info1, info2);
-    assertNotNull(net_client.getProcedureManager().getRegisteredProcedure(info1));
-    assertNotNull(net_client.getProcedureManager().getRegisteredProcedure(info2));
+    assertTrue(info1.equals(info2));
+    assertTrue(info1.compareTo(info2) == 0);
+    RegisteredProcedure<?, ?> p = net_client.getProcedureManager().getRegisteredProcedure(info1);
+    assertNotNull(p);
+    assertTrue(p == net_client.getProcedureManager().getRegisteredProcedure(info2));
     assertTrue(net_client.getHome().hasProcedure(info1));
     assertTrue(net_client.getHome().hasProcedure(info2));
 
-    NetworkNode client_on_router = net_router.getNode(net_client.getHome().getId());
+    Node client_on_router = net_router.getNode(net_client.getHome().getId());
+    assertTrue(client_on_router.getProcedures().size() > 0);
     assertTrue(client_on_router.hasProcedure(info1));
     assertTrue(client_on_router.hasProcedure(info2));
 
@@ -200,13 +218,18 @@ public class ProcedureTest {
 
     ProcedureInformation info1 = ProcedureInformation.of("consumer", String.class, Void.class);
     ProcedureInformation info2 = ProcedureInformation.of("consumer", func);
+
     assertEquals(info1, info2);
-    assertNotNull(net_client.getProcedureManager().getRegisteredProcedure(info1));
-    assertNotNull(net_client.getProcedureManager().getRegisteredProcedure(info2));
+    assertTrue(info1.equals(info2));
+    assertTrue(info1.compareTo(info2) == 0);
+    RegisteredProcedure<?, ?> p = net_client.getProcedureManager().getRegisteredProcedure(info1);
+    assertNotNull(p);
+    assertTrue(p == net_client.getProcedureManager().getRegisteredProcedure(info2));
     assertTrue(net_client.getHome().hasProcedure(info1));
     assertTrue(net_client.getHome().hasProcedure(info2));
 
-    NetworkNode client_on_router = net_router.getNode(net_client.getHome().getId());
+    Node client_on_router = net_router.getNode(net_client.getHome().getId());
+    assertTrue(client_on_router.getProcedures().size() > 0);
     assertTrue(client_on_router.hasProcedure(info1));
     assertTrue(client_on_router.hasProcedure(info2));
 
@@ -235,13 +258,18 @@ public class ProcedureTest {
 
     ProcedureInformation info1 = ProcedureInformation.of("supplier", Void.class, String.class);
     ProcedureInformation info2 = ProcedureInformation.of("supplier", func);
+
     assertEquals(info1, info2);
-    assertNotNull(net_client.getProcedureManager().getRegisteredProcedure(info1));
-    assertNotNull(net_client.getProcedureManager().getRegisteredProcedure(info2));
+    assertTrue(info1.equals(info2));
+    assertTrue(info1.compareTo(info2) == 0);
+    RegisteredProcedure<?, ?> p = net_client.getProcedureManager().getRegisteredProcedure(info1);
+    assertNotNull(p);
+    assertTrue(p == net_client.getProcedureManager().getRegisteredProcedure(info2));
     assertTrue(net_client.getHome().hasProcedure(info1));
     assertTrue(net_client.getHome().hasProcedure(info2));
 
-    NetworkNode client_on_router = net_router.getNode(net_client.getHome().getId());
+    Node client_on_router = net_router.getNode(net_client.getHome().getId());
+    assertTrue(client_on_router.getProcedures().size() > 0);
     assertTrue(client_on_router.hasProcedure(info1));
     assertTrue(client_on_router.hasProcedure(info2));
 

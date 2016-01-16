@@ -7,6 +7,9 @@ import java.io.OutputStream;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 import com.Ostermiller.util.CircularByteBuffer;
 import com.google.common.base.Preconditions;
@@ -24,7 +27,7 @@ import de.rennschnitzel.backbone.net.channel.SubChannelDescriptor;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ChannelRegister.Type;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
+import lombok.RequiredArgsConstructor;
 
 public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChannel.Descriptor>implements ChannelHandler, SubChannel {
 
@@ -77,19 +80,13 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
 
   }
 
-  private final OutputStream outputStream;
+  private final Semaphore outputStreamSemaphore = new Semaphore(1);
+  private volatile ChannelOutputStream outputStream = null;
 
   private final Set<ChannelInputStream> inputBuffers = new CopyOnWriteArraySet<>();
 
-
-  @Getter
-  @Setter
-  @NonNull
-  private volatile Target target = Target.toAll();
-
   public StreamChannel(Owner owner, Channel parentChannel, Descriptor descriptor) throws IllegalStateException {
     super(owner, parentChannel, descriptor);
-    this.outputStream = new BufferedOutputStream(new ChannelOutputStream(), this.descriptor.bufferSize);
   }
 
 
@@ -104,9 +101,33 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
     return in;
   }
 
-  public OutputStream getOutputBuffer() throws IOException {
+
+  public OutputStream newOutputBuffer(Target target) throws IOException {
+    return newOutputBuffer(target, 512);
+  }
+
+  public OutputStream newOutputBuffer(Target target, int bufferSize) throws IOException {
+    Preconditions.checkArgument(bufferSize > 0);
+    Preconditions.checkArgument(!target.isEmpty());
     checkChannel();
-    return this.outputStream;
+    try {
+      if (!outputStreamSemaphore.tryAcquire(3, TimeUnit.SECONDS)) {
+        if (this.outputStream != null) {
+          this.getNetwork().getLogger().log(Level.WARNING, "Resource is blocked by a not-closed OutputStream!",
+              this.outputStream.getThrowable());
+        }
+        outputStreamSemaphore.acquire();
+      }
+    } catch (InterruptedException e) {
+      throw new IOException(e);
+    }
+    try {
+      checkChannel();
+      return new ChannelOutputStream(target, bufferSize);
+    } catch (Exception e) {
+      outputStreamSemaphore.release();
+      throw e;
+    }
   }
 
   @Override
@@ -117,10 +138,6 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
         in.close();
       } catch (IOException e) {
       }
-    }
-    try {
-      this.outputStream.close();
-    } catch (IOException e) {
     }
   }
 
@@ -139,15 +156,6 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
         }
       }
     }
-  }
-
-  private void send(byte[] data) throws IOException {
-    this.parentChannel.send(this.target, data);
-
-  }
-
-  private void send(ByteString data) throws IOException {
-    this.parentChannel.send(this.target, data);
   }
 
   private void checkChannel() throws IOException {
@@ -169,14 +177,15 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
 
     @Override
     public int available() throws IOException {
+      checkChannel();
       return buffer.getInputStream().available();
     }
 
     @Override
     public synchronized void close() throws IOException {
       StreamChannel.this.inputBuffers.remove(this);
-      buffer.getInputStream().close();
       buffer.getOutputStream().close();
+      buffer.getInputStream().close();
     }
 
     @Override
@@ -191,51 +200,113 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
 
     @Override
     public int read() throws IOException {
+      checkChannel();
       return buffer.getInputStream().read();
     }
 
     @Override
     public int read(byte[] cbuf) throws IOException {
+      checkChannel();
       return buffer.getInputStream().read(cbuf);
     }
 
     @Override
     public int read(byte[] cbuf, int off, int len) throws IOException {
+      checkChannel();
       return buffer.getInputStream().read(cbuf, off, len);
     }
 
     @Override
     public void reset() throws IOException {
+      checkChannel();
       buffer.getInputStream().reset();
     }
 
     @Override
     public long skip(long n) throws IOException, IllegalArgumentException {
+      checkChannel();
       return buffer.getInputStream().skip(n);
     }
   }
 
   private class ChannelOutputStream extends OutputStream {
 
+    private final BufferedOutputStream out;
+    @Getter
+    private final Throwable throwable;
+
+    public ChannelOutputStream(Target target, int size) {
+      Preconditions.checkNotNull(target);
+      Preconditions.checkArgument(size > 0);
+      this.out = new BufferedOutputStream(new SenderOutputStream(target), size);
+      throwable = new Throwable(); // costly
+    }
+
+    @Override
+    public void close() throws IOException {
+      out.close();
+    }
+
+    @Override
+    public void flush() throws IOException {
+      out.flush();
+    }
+
     @Override
     public void write(byte[] b) throws IOException {
-      checkChannel();
-      send(b);
+      out.write(b);
     }
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-      checkChannel();
-      ByteString data = ByteString.copyFrom(b, off, len);
-      send(data);
+      out.write(b, off, len);
     }
 
     @Override
     public void write(int b) throws IOException {
-      checkChannel();
-      ByteString data = ByteString.copyFrom(new byte[] {(byte) b});
-      send(data);
+      out.write(b);
     }
+
+
+    @RequiredArgsConstructor
+    private class SenderOutputStream extends OutputStream {
+
+      @NonNull
+      private final Target target;
+
+      private boolean closed = false;
+
+      @Override
+      public synchronized void close() throws IOException {
+        boolean old = closed;
+        closed = true;
+        if (!old) {
+          outputStreamSemaphore.release();
+        }
+      }
+
+      @Override
+      public void write(byte[] b) throws IOException {
+        checkChannel();
+        StreamChannel.this.parentChannel.send(this.target, b);
+      }
+
+      @Override
+      public void write(byte[] b, int off, int len) throws IOException {
+        checkChannel();
+        ByteString data = ByteString.copyFrom(b, off, len);
+        StreamChannel.this.parentChannel.send(this.target, data);
+      }
+
+      @Override
+      public void write(int b) throws IOException {
+        checkChannel();
+        ByteString data = ByteString.copyFrom(new byte[] {(byte) b});
+        StreamChannel.this.parentChannel.send(this.target, data);
+      }
+    }
+
   }
+
 
 }

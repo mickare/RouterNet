@@ -2,12 +2,14 @@ package de.rennschnitzel.backbone.net.channel.object;
 
 import java.io.IOException;
 import java.io.InvalidClassException;
+import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 
 import com.google.common.base.Preconditions;
+import com.google.protobuf.ByteString;
 
 import de.rennschnitzel.backbone.Owner;
 import de.rennschnitzel.backbone.net.Target;
@@ -90,8 +92,12 @@ public class ObjectChannel<T> extends AbstractSubChannel<ObjectChannel<T>, Objec
     return this.descriptor.getConverter();
   }
 
+  public void broadcast(T obj) throws ConvertObjectChannelException, IOException {
+    this.send(Target.toAll(), obj);
+  }
+
   public void send(Target target, T obj) throws ConvertObjectChannelException, IOException {
-    send(new ObjectChannelMessage<T>(this, target, getHome().getId(), obj));
+    send(new ObjectChannelMessage<T>(this, target, getNetwork().getHome().getId(), obj));
   }
 
   public void send(ObjectChannelMessage<T> ocmsg) throws IOException {

@@ -14,8 +14,8 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import de.rennschnitzel.backbone.exception.ConnectionException;
+import de.rennschnitzel.backbone.net.Node;
 import de.rennschnitzel.backbone.net.Target;
-import de.rennschnitzel.backbone.net.node.NetworkNode;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
 
@@ -23,19 +23,19 @@ public class MultiProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
 
   private final Map<UUID, ProcedureCallResult<T, R>> results;
 
-  public MultiProcedureCall(Collection<NetworkNode> servers, Procedure<T, R> procedure, T argument, long maxTimeout) {
-    super(procedure, Target.to(servers), argument, maxTimeout);
-    Preconditions.checkArgument(!servers.isEmpty());
+  public MultiProcedureCall(Collection<Node> nodes, Procedure<T, R> procedure, T argument, long maxTimeout) {
+    super(procedure, Target.to(nodes), argument, maxTimeout);
+    Preconditions.checkArgument(!nodes.isEmpty());
 
     ImmutableMap.Builder<UUID, ProcedureCallResult<T, R>> b = ImmutableMap.builder();
-    for (NetworkNode server : Sets.newHashSet(servers)) {
+    for (Node node : Sets.newHashSet(nodes)) {
 
-      ProcedureCallResult<T, R> res = new ProcedureCallResult<>(this, server);
-      if (!server.hasProcedure(procedure.getInfo())) {
+      ProcedureCallResult<T, R> res = new ProcedureCallResult<>(this, node);
+      if (!node.hasProcedure(procedure.getInfo())) {
         res.setException(new UndefinedServerProcedure());
       }
 
-      b.put(server.getId(), res);
+      b.put(node.getId(), res);
     }
     this.results = b.build();
 

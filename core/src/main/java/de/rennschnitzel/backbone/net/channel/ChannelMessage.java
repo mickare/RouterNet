@@ -7,6 +7,7 @@ import com.google.protobuf.ByteString;
 
 import de.rennschnitzel.backbone.ProtocolUtils;
 import de.rennschnitzel.backbone.net.Message;
+import de.rennschnitzel.backbone.net.Network;
 import de.rennschnitzel.backbone.net.Target;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
 import lombok.Getter;
@@ -47,7 +48,7 @@ public class ChannelMessage extends Message {
     final TransportProtocol.ChannelMessage.Builder b = TransportProtocol.ChannelMessage.newBuilder();
     b.setChannelId(channel.getChannelId());
     b.setTarget(this.getTarget().getProtocolMessage());
-    b.setSender(ProtocolUtils.convert(channel.getHome().getId()));
+    b.setSender(ProtocolUtils.convert(channel.getNetwork().getHome().getId()));
     b.setData(this.data);
     return b.build();
   }

@@ -10,51 +10,52 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 import de.rennschnitzel.backbone.ProtocolUtils;
-import de.rennschnitzel.backbone.net.node.NetworkNode;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
 import lombok.Getter;
 
 @Getter
 public class Target {
+  
+  private static Target TO_ALL = Builder.toAll().build();
 
   public static Target toAll() {
-    return Builder.toAll().build();
+    return TO_ALL;
   }
 
   public static Target to(UUID server) {
     return Builder.builder().include(server).build();
   }
 
-  public static Target to(NetworkNode server) {
-    return to(server.getId());
+  public static Target to(Node node) {
+    return to(node.getId());
   }
 
 
-  public static Target to(Collection<NetworkNode> servers) {
-    return Builder.builder().includeAllServers(servers).build();
+  public static Target to(Collection<Node> nodes) {
+    return Builder.builder().includeAllNodes(nodes).build();
   }
 
   private final boolean toAll;
-  private final Set<UUID> serversInclude;
-  private final Set<UUID> serversExclude;
+  private final Set<UUID> nodesInclude;
+  private final Set<UUID> nodesExclude;
   private final Set<String> namespacesInclude;
   private final Set<String> namespacesExclude;
 
   private final TransportProtocol.TargetMessage protocolMessage;
 
-  public Target(boolean toAll, Collection<UUID> serversInclude, Collection<UUID> serversExclude, Collection<String> namespacesInclude,
+  public Target(boolean toAll, Collection<UUID> NodesInclude, Collection<UUID> NodesExclude, Collection<String> namespacesInclude,
       Collection<String> namespacesExclude) {
     this.toAll = toAll;
-    Set<UUID> incServ = Sets.newHashSet(serversInclude);
-    incServ.removeAll(serversExclude);
+    Set<UUID> incServ = Sets.newHashSet(NodesInclude);
+    incServ.removeAll(NodesExclude);
     Set<String> incName = Sets.newHashSet(namespacesInclude);
     incName.removeAll(namespacesExclude);
     if (toAll) {
       incServ.clear();
       incName.clear();
     }
-    this.serversInclude = ImmutableSet.copyOf(incServ);
-    this.serversExclude = ImmutableSet.copyOf(serversExclude);
+    this.nodesInclude = ImmutableSet.copyOf(incServ);
+    this.nodesExclude = ImmutableSet.copyOf(NodesExclude);
     this.namespacesInclude = ImmutableSet.copyOf(incName);
     this.namespacesExclude = ImmutableSet.copyOf(namespacesExclude);
     this.protocolMessage = createProtocolMessage();
@@ -62,16 +63,16 @@ public class Target {
 
   private TransportProtocol.TargetMessage createProtocolMessage() {
     TransportProtocol.TargetMessage.Builder b = TransportProtocol.TargetMessage.newBuilder();
-    b.setAll(toAll);
-    b.addAllServersInclude(ProtocolUtils.convert(this.serversInclude));
-    b.addAllServersExclude(ProtocolUtils.convert(this.serversExclude));
+    b.setToAll(toAll);
+    b.addAllNodesInclude(ProtocolUtils.convert(this.nodesInclude));
+    b.addAllNodesExclude(ProtocolUtils.convert(this.nodesExclude));
     b.addAllNamespacesInclude(this.namespacesInclude);
     b.addAllNamespacesExclude(this.namespacesExclude);
     return b.build();
   }
 
   public Target(TransportProtocol.TargetMessage t) {
-    this(t.getAll(), ProtocolUtils.convertProto(t.getServersIncludeList()), ProtocolUtils.convertProto(t.getServersExcludeList()),
+    this(t.getToAll(), ProtocolUtils.convertProto(t.getNodesIncludeList()), ProtocolUtils.convertProto(t.getNodesExcludeList()),
         t.getNamespacesIncludeList(), t.getNamespacesExcludeList());
   }
 
@@ -84,27 +85,27 @@ public class Target {
     return false;
   }
 
-  public boolean contains(NetworkNode server) {
+  public boolean contains(Node node) {
     if (toAll) {
-      if (serversExclude.contains(server.getId())) {
+      if (nodesExclude.contains(node.getId())) {
         return false;
       }
-      if (overlaps(this.namespacesExclude, server.getNamespaces())) {
+      if (overlaps(this.namespacesExclude, node.getNamespaces())) {
         return false;
       }
       return true;
     }
-    if (serversInclude.contains(server.getId())) {
+    if (nodesInclude.contains(node.getId())) {
       return true;
     }
-    if (overlaps(this.namespacesInclude, server.getNamespaces())) {
+    if (overlaps(this.namespacesInclude, node.getNamespaces())) {
       return true;
     }
     return false;
   }
 
   public boolean isEmpty() {
-    return this.toAll ? false : this.serversInclude.isEmpty() && this.namespacesInclude.isEmpty();
+    return this.toAll ? false : this.nodesInclude.isEmpty() && this.namespacesInclude.isEmpty();
   }
 
   @Override
@@ -113,9 +114,9 @@ public class Target {
     sb.append("Target[");
     if (toAll) {
       sb.append("toAll");
-      if (!this.serversExclude.isEmpty()) {
-        sb.append(", excludedServers:[");
-        sb.append(this.serversExclude.stream().map(UUID::toString).collect(Collectors.joining(", ")));
+      if (!this.nodesExclude.isEmpty()) {
+        sb.append(", excludedNodes:[");
+        sb.append(this.nodesExclude.stream().map(UUID::toString).collect(Collectors.joining(", ")));
         sb.append("]");
       }
       if (!this.namespacesExclude.isEmpty()) {
@@ -124,9 +125,9 @@ public class Target {
         sb.append("]");
       }
     } else {
-      if (!this.serversInclude.isEmpty()) {
-        sb.append("servers:[");
-        sb.append(this.serversInclude.stream().map(UUID::toString).collect(Collectors.joining(", ")));
+      if (!this.nodesInclude.isEmpty()) {
+        sb.append("Nodes:[");
+        sb.append(this.nodesInclude.stream().map(UUID::toString).collect(Collectors.joining(", ")));
         sb.append("]");
 
 
@@ -158,8 +159,8 @@ public class Target {
     }
 
     private boolean toAll = false;
-    private final Set<UUID> serversInclude = Sets.newHashSet();
-    private final Set<UUID> serversExclude = Sets.newHashSet();
+    private final Set<UUID> nodesInclude = Sets.newHashSet();
+    private final Set<UUID> nodesExclude = Sets.newHashSet();
     private final Set<String> namespacesInclude = Sets.newHashSet();
     private final Set<String> namespacesExclude = Sets.newHashSet();
 
@@ -170,48 +171,48 @@ public class Target {
     }
 
 
-    public Builder include(NetworkNode server) {
+    public Builder include(Node server) {
       return this.include(server.getId());
     }
 
     public Builder include(UUID server) {
       Preconditions.checkNotNull(server);
-      this.serversInclude.add(server);
-      this.serversExclude.remove(server);
+      this.nodesInclude.add(server);
+      this.nodesExclude.remove(server);
       return this;
     }
 
-    public Builder include(UUID... servers) {
-      for (int i = 0; i < servers.length; ++i) {
-        include(servers[i]);
+    public Builder include(UUID... nodes) {
+      for (int i = 0; i < nodes.length; ++i) {
+        include(nodes[i]);
       }
       return this;
     }
 
-    public Builder includeAllServers(Collection<NetworkNode> c) {
+    public Builder includeAllNodes(Collection<Node> c) {
       c.forEach(this::include);
       return this;
     }
 
-    public Builder exclude(NetworkNode server) {
+    public Builder exclude(Node server) {
       return this.exclude(server.getId());
     }
 
     public Builder exclude(UUID server) {
       Preconditions.checkNotNull(server);
-      this.serversExclude.add(server);
-      this.serversInclude.remove(server);
+      this.nodesExclude.add(server);
+      this.nodesInclude.remove(server);
       return this;
     }
 
-    public Builder exclude(UUID... servers) {
-      for (int i = 0; i < servers.length; ++i) {
-        exclude(servers[i]);
+    public Builder exclude(UUID... nodes) {
+      for (int i = 0; i < nodes.length; ++i) {
+        exclude(nodes[i]);
       }
       return this;
     }
 
-    public Builder excludeAllServers(Collection<NetworkNode> c) {
+    public Builder excludeAllNodes(Collection<Node> c) {
       c.forEach(this::exclude);
       return this;
     }
@@ -255,9 +256,9 @@ public class Target {
     }
 
     public Target build() {
-      this.serversInclude.removeAll(this.serversExclude);
+      this.nodesInclude.removeAll(this.nodesExclude);
       this.namespacesInclude.removeAll(this.namespacesExclude);
-      return new Target(this.toAll, this.serversInclude, this.serversExclude, this.namespacesInclude, this.namespacesExclude);
+      return new Target(this.toAll, this.nodesInclude, this.nodesExclude, this.namespacesInclude, this.namespacesExclude);
     }
 
   }

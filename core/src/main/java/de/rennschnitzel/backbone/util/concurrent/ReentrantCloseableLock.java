@@ -9,7 +9,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author mickare
  *
  */
-public class CloseableReentrantLock extends ReentrantLock implements CloseableLock {
+public class ReentrantCloseableLock extends ReentrantLock implements CloseableLock {
 
   /**
    * 
@@ -17,7 +17,7 @@ public class CloseableReentrantLock extends ReentrantLock implements CloseableLo
   private static final long serialVersionUID = -4139432594795219762L;
 
   @Override
-  public CloseableReentrantLock open() {
+  public ReentrantCloseableLock open() {
     this.lock();
     return this;
   }
@@ -28,7 +28,7 @@ public class CloseableReentrantLock extends ReentrantLock implements CloseableLo
   }
 
   @Override
-  public CloseableReentrantLock open(long time, TimeUnit unit) throws TimeoutException, InterruptedException {
+  public ReentrantCloseableLock open(long time, TimeUnit unit) throws TimeoutException, InterruptedException {
     if (!this.tryLock(time, unit)) {
       throw new TimeoutException();
     }
