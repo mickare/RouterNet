@@ -2,9 +2,6 @@ package de.rennschnitzel.backbone.net.channel;
 
 import java.io.InvalidClassException;
 import java.io.Serializable;
-import java.util.concurrent.ConcurrentMap;
-
-import com.google.common.collect.MapMaker;
 
 import de.rennschnitzel.backbone.net.channel.object.ObjectChannel;
 import de.rennschnitzel.backbone.net.channel.object.ObjectConverters;
@@ -30,10 +27,5 @@ public class ChannelDescriptors {
   public static StreamChannel.Descriptor getStreamChannel(String name) {
     return new StreamChannel.Descriptor(name);
   }
-
-  public static StreamChannel.Descriptor getStreamChannel(String name, int bufferSize) {
-    return new StreamChannel.Descriptor(name, bufferSize);
-  }
-
 
 }

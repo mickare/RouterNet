@@ -12,7 +12,7 @@ import com.google.protobuf.ByteString;
 
 import de.rennschnitzel.backbone.Owner;
 import de.rennschnitzel.backbone.net.Connection;
-import de.rennschnitzel.backbone.net.Network;
+import de.rennschnitzel.backbone.net.AbstractNetwork;
 import de.rennschnitzel.backbone.net.Target;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ChannelRegister;
@@ -36,7 +36,6 @@ public class Channel {
 
   private final CopyOnWriteArraySet<RegisteredMessageListener> listeners = new CopyOnWriteArraySet<>();
 
-
   public Channel(Connection connection, int channelId, String name) {
     Preconditions.checkNotNull(connection);
     Preconditions.checkArgument(!name.isEmpty());
@@ -46,7 +45,7 @@ public class Channel {
     this.name = name.toLowerCase();
   }
 
-  public Network getNetwork() {
+  public AbstractNetwork getNetwork() {
     return this.connection.getNetwork();
   }
 
@@ -132,7 +131,7 @@ public class Channel {
       try {
         this.handler.receive(cmsg);
       } catch (Exception e) {
-        this.handler.getOwner().getLogger().log(Level.SEVERE, "Channel handler exception: " + e.getMessage(), e);
+        this.getNetwork().getLogger().log(Level.SEVERE, "Channel handler exception: " + e.getMessage(), e);
       }
     }
   }

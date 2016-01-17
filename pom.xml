@@ -18,8 +18,8 @@
 	<modules>
 		<module>protocol</module>
 		<module>core</module>
-		<module>client</module>
 		<module>client-api</module>
+		<module>client-bukkit</module>
 		<module>router</module>
 		<module>netty</module>
 	</modules>

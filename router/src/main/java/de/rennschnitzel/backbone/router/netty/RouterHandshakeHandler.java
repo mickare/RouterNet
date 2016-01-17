@@ -1,4 +1,4 @@
-package de.rennschnitzel.backbone.router;
+package de.rennschnitzel.backbone.router.netty;
 
 import java.security.SecureRandom;
 import java.util.UUID;
@@ -27,7 +27,7 @@ import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.backbone.netty.HandshakeHandler;
 import de.rennschnitzel.backbone.netty.PacketUtil;
-import de.rennschnitzel.backbone.router.netty.NettyConnection;
+import de.rennschnitzel.backbone.router.Router;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.Getter;
 

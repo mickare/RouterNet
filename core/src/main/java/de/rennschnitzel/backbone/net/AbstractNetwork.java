@@ -34,14 +34,14 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 
-public abstract class Network {
+public abstract class AbstractNetwork {
 
   public static FSTConfiguration SERIALIZATION = FSTConfiguration.createDefaultConfiguration();
 
   @Getter
   @NonNull
   @Setter(AccessLevel.PACKAGE)
-  private static Network instance = null;
+  private static AbstractNetwork instance = null;
 
   // static end
   // ******************************************************************************************
@@ -59,7 +59,7 @@ public abstract class Network {
   @Getter
   private final EventBus eventBus = new EventBus();
 
-  protected Network(HomeNode home) {
+  protected AbstractNetwork(HomeNode home) {
     Preconditions.checkNotNull(home);
     home.setNetwork(this);
     this.home = home;

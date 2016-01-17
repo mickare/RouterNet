@@ -9,7 +9,7 @@ import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.backbone.ProtocolUtils;
 import de.rennschnitzel.backbone.net.Connection;
-import de.rennschnitzel.backbone.net.Network;
+import de.rennschnitzel.backbone.net.AbstractNetwork;
 import de.rennschnitzel.backbone.net.Node.HomeNode;
 import de.rennschnitzel.backbone.net.ProcedureManager;
 import de.rennschnitzel.backbone.net.Target;
@@ -24,7 +24,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 
-public class DummyNetwork extends Network {
+public class DummyNetwork extends AbstractNetwork {
 
   @Getter
   @Setter

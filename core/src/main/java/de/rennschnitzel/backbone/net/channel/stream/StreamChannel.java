@@ -15,7 +15,6 @@ import com.Ostermiller.util.CircularByteBuffer;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 
-import de.rennschnitzel.backbone.Owner;
 import de.rennschnitzel.backbone.net.Target;
 import de.rennschnitzel.backbone.net.channel.AbstractSubChannel;
 import de.rennschnitzel.backbone.net.channel.AbstractSubChannelDescriptor;
@@ -34,17 +33,8 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
   public static class Descriptor extends AbstractSubChannelDescriptor<Descriptor, StreamChannel>
       implements SubChannelDescriptor<StreamChannel> {
 
-    @Getter
-    private final int bufferSize;
-
     public Descriptor(String name) {
-      this(name, 1 * (1 << 20)); // 1 MiB Buffer
-    }
-
-    public Descriptor(String name, int bufferSize) {
       super(name, Type.STREAM);
-      Preconditions.checkNotNull(bufferSize > 32);
-      this.bufferSize = bufferSize;
     }
 
     @Override
@@ -56,7 +46,7 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
         return false;
       }
       Descriptor d = (Descriptor) o;
-      return this.name.equals(d.name) && this.bufferSize == d.bufferSize;
+      return this.name.equals(d.name);
     }
 
     @Override
@@ -65,8 +55,8 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
     }
 
     @Override
-    public StreamChannel create(Owner owner, Channel parentChannel) {
-      return new StreamChannel(owner, parentChannel, this);
+    public StreamChannel create(Channel parentChannel) {
+      return new StreamChannel(parentChannel, this);
     }
 
     @Override
@@ -85,8 +75,8 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
 
   private final Set<ChannelInputStream> inputBuffers = new CopyOnWriteArraySet<>();
 
-  public StreamChannel(Owner owner, Channel parentChannel, Descriptor descriptor) throws IllegalStateException {
-    super(owner, parentChannel, descriptor);
+  public StreamChannel(Channel parentChannel, Descriptor descriptor) throws IllegalStateException {
+    super(parentChannel, descriptor);
   }
 
 
@@ -136,6 +126,12 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
     for (ChannelInputStream in : this.inputBuffers) {
       try {
         in.close();
+      } catch (IOException e) {
+      }
+    }
+    if (outputStream != null) {
+      try {
+        outputStream.close();
       } catch (IOException e) {
       }
     }

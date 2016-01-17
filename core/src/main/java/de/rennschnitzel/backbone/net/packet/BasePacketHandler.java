@@ -46,7 +46,7 @@ public class BasePacketHandler<C extends Connection> implements PacketHandler<C>
 
   @Override
   public void handle(C con, CloseMessage msg) throws Exception {
-    con.remoteClose(msg);
+    con.remoteClosed(msg);
   }
 
   @Override

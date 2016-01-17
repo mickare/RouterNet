@@ -7,7 +7,6 @@ import com.google.protobuf.ByteString;
 
 import de.rennschnitzel.backbone.ProtocolUtils;
 import de.rennschnitzel.backbone.net.Message;
-import de.rennschnitzel.backbone.net.Network;
 import de.rennschnitzel.backbone.net.Target;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
 import lombok.Getter;

@@ -52,7 +52,7 @@ public class ProcedureManager {
 
   @NonNull
   @Getter
-  private final Network network;
+  private final AbstractNetwork network;
 
   private final Cache<Integer, ProcedureCall<?, ?>> openCalls = CacheBuilder.newBuilder()//
       .expireAfterWrite(1, TimeUnit.HOURS)//

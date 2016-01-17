@@ -47,6 +47,10 @@ public class ChannelTest {
       public Logger getLogger() {
         return Logger.getLogger("ChannelTest");
       }
+      @Override
+      public String getName() {
+        return "ChannelTestOwner";
+      }
     };
 
     net_router = new DummyNetwork();
@@ -126,8 +130,8 @@ public class ChannelTest {
 
     ObjectChannel.Descriptor<String> desc = ChannelDescriptors.getObjectChannel("object", String.class);
 
-    ObjectChannel<String> ch_client = con_client.getChannel(desc, testingOwner);
-    ObjectChannel<String> ch_router = con_router.getChannel(desc, testingOwner);
+    ObjectChannel<String> ch_client = con_client.getChannel(desc);
+    ObjectChannel<String> ch_router = con_router.getChannel(desc);
 
     byte[] data = new byte[128];
     rand.nextBytes(data);
@@ -153,14 +157,14 @@ public class ChannelTest {
     StreamChannel.Descriptor descIn = ChannelDescriptors.getStreamChannel("stream");
     StreamChannel.Descriptor descOut = ChannelDescriptors.getStreamChannel("stream");
 
-    StreamChannel client = con_client.getChannel(descOut, testingOwner);
-    StreamChannel router = con_router.getChannel(descIn, testingOwner);
+    StreamChannel client = con_client.getChannel(descOut);
+    StreamChannel router = con_router.getChannel(descIn);
 
     try (InputStream routerIn = router.newInputBuffer()) {
       try (InputStream clientIn = client.newInputBuffer()) {
 
         byte[][] data = new byte[10][128];
-        
+
         try (OutputStream out = client.newOutputBuffer(Target.toAll())) {
           for (int i = 0; i < data.length; ++i) {
             rand.nextBytes(data[i]);

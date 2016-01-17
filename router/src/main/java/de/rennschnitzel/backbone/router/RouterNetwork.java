@@ -4,23 +4,26 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import de.rennschnitzel.backbone.net.Network;
-import de.rennschnitzel.backbone.net.ProcedureManager;
-import de.rennschnitzel.backbone.net.node.HomeNode;
+import com.google.common.base.Preconditions;
+
+import de.rennschnitzel.backbone.net.HomeNode;
+import de.rennschnitzel.backbone.net.AbstractNetwork;
 import de.rennschnitzel.backbone.net.procedure.ProcedureCall;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
 
-public class RouterNetwork extends Network {
+public class RouterNetwork extends AbstractNetwork {
 
-  public RouterNetwork(HomeNode home) {
+  private final Router router;
+
+  public RouterNetwork(Router router, HomeNode home) {
     super(home);
-    // TODO Auto-generated constructor stub
+    Preconditions.checkNotNull(router);
+    this.router = router;
   }
 
   @Override
   public Logger getLogger() {
-    // TODO Auto-generated method stub
-    return null;
+    return router.getLogger();
   }
 
   @Override
@@ -36,12 +39,6 @@ public class RouterNetwork extends Network {
   }
 
   @Override
-  public ProcedureManager getProcedureManager() {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
   public void publishChanges(HomeNode homeNode) {
     // TODO Auto-generated method stub
 
@@ -52,5 +49,6 @@ public class RouterNetwork extends Network {
     // TODO Auto-generated method stub
 
   }
+
 
 }

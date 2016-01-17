@@ -3,7 +3,7 @@ package de.rennschnitzel.backbone.net.dummy;
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.backbone.net.Connection;
-import de.rennschnitzel.backbone.net.Network;
+import de.rennschnitzel.backbone.net.AbstractNetwork;
 import de.rennschnitzel.backbone.net.packet.PacketHandler;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.Packet;
@@ -25,7 +25,7 @@ public class DummyConnection extends Connection {
   private DummyConnection connected = null;
 
 
-  public DummyConnection(Network network, PacketHandler<DummyConnection> handler) {
+  public DummyConnection(AbstractNetwork network, PacketHandler<DummyConnection> handler) {
     super(network);
     Preconditions.checkNotNull(handler);
     this.handler = handler;
@@ -78,7 +78,7 @@ public class DummyConnection extends Connection {
   }
 
   @Override
-  public boolean remoteClose(CloseMessage msg) {
+  public boolean remoteClosed(CloseMessage msg) {
     synchronized (lockObj) {
       if (this.closed) {
         return false;

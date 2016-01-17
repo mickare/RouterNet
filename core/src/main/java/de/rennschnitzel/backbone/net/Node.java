@@ -178,7 +178,7 @@ public class Node {
     @Getter
     @Setter(AccessLevel.PACKAGE)
     @NonNull
-    private Network network = null;
+    private AbstractNetwork network = null;
 
     public HomeNode(UUID id) {
       super(id);
@@ -247,7 +247,7 @@ public class Node {
       } , 100, TimeUnit.MICROSECONDS);
     }
 
-    public void publishChanges(Network network) {
+    public void publishChanges(AbstractNetwork network) {
       Preconditions.checkArgument(network.getHome() == this);
       if (!this.dirty) {
         return;

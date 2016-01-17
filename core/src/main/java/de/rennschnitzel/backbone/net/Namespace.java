@@ -8,11 +8,11 @@ import lombok.Getter;
 
 public class Namespace {
 
-  private final Network network;
+  private final AbstractNetwork network;
   @Getter
   private final String name;
 
-  public Namespace(Network network, String name) {
+  public Namespace(AbstractNetwork network, String name) {
     Preconditions.checkNotNull(network);
     Preconditions.checkArgument(!name.isEmpty());
     this.network = network;

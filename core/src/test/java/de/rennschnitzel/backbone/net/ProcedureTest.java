@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -32,8 +31,6 @@ import de.rennschnitzel.backbone.net.procedure.RegisteredProcedure;
 
 public class ProcedureTest {
 
-  private final Random rand = new Random();
-
   Owner testingOwner;
 
   DummyNetwork net_router;
@@ -51,7 +48,12 @@ public class ProcedureTest {
     testingOwner = new Owner() {
       @Override
       public Logger getLogger() {
-        return Logger.getLogger("ChannelTest");
+        return Logger.getLogger("ProcedureTest");
+      }
+
+      @Override
+      public String getName() {
+        return "ProcedureTestOwner";
       }
     };
 
@@ -91,7 +93,7 @@ public class ProcedureTest {
       int i = runCount.incrementAndGet();
       return i;
     };
-    RegisteredProcedure<String, Integer> regProc = net_client.getProcedureManager().registerProcedure("function", func);
+    net_client.getProcedureManager().registerProcedure("function", func);
 
     ProcedureInformation info1 = ProcedureInformation.of("function", String.class, Integer.class);
     ProcedureInformation info2 = ProcedureInformation.of("function", func);
@@ -132,7 +134,7 @@ public class ProcedureTest {
       return t;
     };
 
-    RegisteredProcedure<String, String> regProc = net_client.getProcedureManager().registerProcedure("function", func);
+    net_client.getProcedureManager().registerProcedure("function", func);
 
     ProcedureInformation info1 = ProcedureInformation.of("function", String.class, String.class);
     ProcedureInformation info2 = ProcedureInformation.of("function", func);

@@ -12,7 +12,7 @@ import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.ByteString.Output;
 
-import de.rennschnitzel.backbone.net.Network;
+import de.rennschnitzel.backbone.net.AbstractNetwork;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +27,9 @@ public class ObjectConverters {
     if (byte[].class.isAssignableFrom(dataClass)) {
       return TransportProtocol.ChannelRegister.Type.BYTES;
     }
+    if (Void.class.equals(dataClass)) {
+      return TransportProtocol.ChannelRegister.Type.OBJECT;
+    }
     if (Serializable.class.isAssignableFrom(dataClass)) {
       return TransportProtocol.ChannelRegister.Type.OBJECT;
     }
@@ -38,6 +41,9 @@ public class ObjectConverters {
     Preconditions.checkNotNull(dataClass);
     if (byte[].class.isAssignableFrom(dataClass)) {
       return (ObjectConverter<T>) BYTE_ARRAY;
+    }
+    if (Void.class.equals(dataClass)) {
+      return (ObjectConverter<T>) VOID;
     }
     if (Serializable.class.isAssignableFrom(dataClass)) {
       return (ObjectConverter<T>) SerializableObjectConverter.of((Class<? extends Serializable>) dataClass);
@@ -74,7 +80,7 @@ public class ObjectConverters {
     @Override
     public final ByteString asByteString(final T obj) throws ConvertObjectChannelException {
       try (final Output stream = ByteString.newOutput()) {
-        final FSTObjectOutput out = Network.SERIALIZATION.getObjectOutput(stream);
+        final FSTObjectOutput out = AbstractNetwork.SERIALIZATION.getObjectOutput(stream);
         out.writeObject(obj, this.dataClass);
         out.flush();
         return stream.toByteString();
@@ -87,7 +93,7 @@ public class ObjectConverters {
     @Override
     public final T asObject(final ByteString byteData) throws ConvertObjectChannelException {
       try (final InputStream stream = byteData.newInput()) {
-        final FSTObjectInput in = Network.SERIALIZATION.getObjectInput(stream);
+        final FSTObjectInput in = AbstractNetwork.SERIALIZATION.getObjectInput(stream);
         return (T) in.readObject(this.dataClass);
       } catch (final Exception e) {
         throw new ConvertObjectChannelException(e);
@@ -105,6 +111,21 @@ public class ObjectConverters {
     @Override
     public final byte[] asObject(final ByteString byteData) throws ConvertObjectChannelException {
       return byteData.toByteArray();
+    }
+  };
+
+  public static final ObjectConverter<Void> VOID = new AbstractObjectConverter<Void>(Void.class) {
+    @Override
+    public final ByteString asByteString(final Void obj) throws ConvertObjectChannelException {
+      return ByteString.copyFrom(new byte[0]);
+    }
+
+    @Override
+    public final Void asObject(final ByteString byteData) throws ConvertObjectChannelException {
+      if (byteData.size() > 0) {
+        throw new ConvertObjectChannelException("unexpected byte data");
+      }
+      return null;
     }
   };
 

@@ -1,6 +1,6 @@
 package de.rennschnitzel.backbone.event;
 
-import de.rennschnitzel.backbone.net.Network;
+import de.rennschnitzel.backbone.net.AbstractNetwork;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +10,7 @@ public class NetworkEvent {
 
   @Getter
   @NonNull
-  private final Network network;
+  private final AbstractNetwork network;
 
 
 }

@@ -2,14 +2,12 @@ package de.rennschnitzel.backbone.net.channel.object;
 
 import java.io.IOException;
 import java.io.InvalidClassException;
-import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 
 import com.google.common.base.Preconditions;
-import com.google.protobuf.ByteString;
 
 import de.rennschnitzel.backbone.Owner;
 import de.rennschnitzel.backbone.net.Target;
@@ -66,8 +64,8 @@ public class ObjectChannel<T> extends AbstractSubChannel<ObjectChannel<T>, Objec
     }
 
     @Override
-    public ObjectChannel<T> create(Owner owner, Channel parentChannel) {
-      return new ObjectChannel<>(owner, parentChannel, this);
+    public ObjectChannel<T> create(Channel parentChannel) {
+      return new ObjectChannel<>(parentChannel, this);
     }
 
     @SuppressWarnings("unchecked")
@@ -84,8 +82,8 @@ public class ObjectChannel<T> extends AbstractSubChannel<ObjectChannel<T>, Objec
 
   private final CopyOnWriteArraySet<RegisteredMessageListener> listeners = new CopyOnWriteArraySet<>();
 
-  public ObjectChannel(Owner owner, Channel parentChannel, Descriptor<T> descriptor) throws IllegalStateException {
-    super(owner, parentChannel, descriptor);
+  public ObjectChannel(Channel parentChannel, Descriptor<T> descriptor) throws IllegalStateException {
+    super(parentChannel, descriptor);
   }
 
   public final ObjectConverter<T> getConverter() {

@@ -1,5 +1,7 @@
 package de.rennschnitzel.backbone.router.netty;
 
+import java.util.UUID;
+
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.backbone.net.Connection;
@@ -15,13 +17,17 @@ public class NettyConnection extends Connection {
   private final Router router;
 
   @Getter
+  private final UUID id;
+
+  @Getter
   private final RouterPacketHandler packetHandler = new RouterPacketHandler();
   @Getter
   private final ConnectionBasePacketAdapter<NettyConnection> protocolHandler;
 
-  public NettyConnection(Router router) {
+  public NettyConnection(Router router, UUID id) {
     super(router.getNetwork());
     this.router = router;
+    this.id = id;
     protocolHandler = new ConnectionBasePacketAdapter<>(this, packetHandler);
 
   }

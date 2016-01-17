@@ -4,9 +4,7 @@ import java.io.IOException;
 
 import com.google.common.base.Preconditions;
 
-import de.rennschnitzel.backbone.Owner;
-import de.rennschnitzel.backbone.net.Network;
-import de.rennschnitzel.backbone.net.Node;
+import de.rennschnitzel.backbone.net.AbstractNetwork;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ChannelRegister.Type;
 import lombok.Getter;
 
@@ -14,17 +12,13 @@ public abstract class AbstractSubChannel<SELF extends AbstractSubChannel<SELF, D
     implements ChannelHandler, SubChannel {
 
   @Getter
-  protected final Owner owner;
-  @Getter
   protected final Channel parentChannel;
   @Getter
   protected final D descriptor;
 
-  public AbstractSubChannel(Owner owner, Channel parentChannel, D descriptor) {
-    Preconditions.checkNotNull(owner);
+  public AbstractSubChannel(Channel parentChannel, D descriptor) {
     Preconditions.checkNotNull(parentChannel);
     Preconditions.checkNotNull(descriptor);
-    this.owner = owner;
     this.parentChannel = parentChannel;
     this.descriptor = descriptor;
     this.parentChannel.registerHandler(this);
@@ -58,7 +52,7 @@ public abstract class AbstractSubChannel<SELF extends AbstractSubChannel<SELF, D
   public abstract void receive(ChannelMessage cmsg) throws IOException;
 
   @Override
-  public Network getNetwork() {
+  public AbstractNetwork getNetwork() {
     return parentChannel.getNetwork();
   }
 

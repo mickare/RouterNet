@@ -7,7 +7,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.base.Preconditions;
 
-import de.rennschnitzel.backbone.Owner;
 import de.rennschnitzel.backbone.net.channel.Channel;
 import de.rennschnitzel.backbone.net.channel.SubChannel;
 import de.rennschnitzel.backbone.net.channel.SubChannelDescriptor;
@@ -30,7 +29,7 @@ public abstract class Connection {
 
   @Getter
   @NonNull
-  private final Network network;
+  private final AbstractNetwork network;
 
   public Channel getChannelIfPresent(String name) {
     return this.channelsByName.get(name.toLowerCase());
@@ -52,7 +51,7 @@ public abstract class Connection {
     return getChannel(name, true);
   }
 
-  public Channel getChannel(String name, boolean register) {
+  private Channel getChannel(String name, boolean register) {
     final String key = name.toLowerCase();
     Channel channel = this.channelsByName.get(key);
     if (channel == null) {
@@ -77,9 +76,8 @@ public abstract class Connection {
     return descriptor.cast(this.subChannels.get(descriptor));
   }
 
-  public <S extends SubChannel> S getChannel(SubChannelDescriptor<S> descriptor, Owner owner) {
+  public <S extends SubChannel> S getChannel(SubChannelDescriptor<S> descriptor) {
     Preconditions.checkNotNull(descriptor);
-    Preconditions.checkNotNull(owner);
     S subChannel = getChannelIfPresent(descriptor);
     if (subChannel == null) {
       synchronized (this) {
@@ -87,7 +85,7 @@ public abstract class Connection {
         subChannel = getChannelIfPresent(descriptor);
         if (subChannel == null) {
           Channel channel = getChannel(descriptor.getName(), false);
-          subChannel = descriptor.create(owner, channel);
+          subChannel = descriptor.create(channel);
           this.subChannels.put(descriptor, subChannel);
           channel.register();
         }
@@ -112,7 +110,7 @@ public abstract class Connection {
 
   public abstract boolean isClosed();
 
-  public abstract boolean remoteClose(CloseMessage msg);
+  public abstract boolean remoteClosed(CloseMessage msg);
 
   private static boolean isDifferentChannelRegister(Channel dupl, ChannelRegister msg) {
     if (dupl != null) {
@@ -132,6 +130,7 @@ public abstract class Connection {
       if (isDifferentChannelRegister(old, msg)) {
         old.close();
         this.channelsByName.remove(key, old);
+        this.channelsById.remove(old.getChannelId(), old);
       }
 
       // There could be one with a different id... find it!

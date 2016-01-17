@@ -4,7 +4,7 @@ import java.util.function.Function;
 
 import com.google.common.base.Preconditions;
 
-import de.rennschnitzel.backbone.net.Network;
+import de.rennschnitzel.backbone.net.AbstractNetwork;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureCallMessage;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureResponseMessage;
 import lombok.Getter;
@@ -23,11 +23,11 @@ public class RegisteredProcedure<T, R> extends BaseProcedure<T, R> {
    * (Class<R>) typeArgs[1], function); }
    */
 
-  public RegisteredProcedure(Network network, String name, Class<T> argClass, Class<R> resultClass, Function<T, R> function) {
+  public RegisteredProcedure(AbstractNetwork network, String name, Class<T> argClass, Class<R> resultClass, Function<T, R> function) {
     this(network, new ProcedureInformation(name, argClass.getName(), resultClass.getName()), argClass, resultClass, function);
   }
 
-  public RegisteredProcedure(Network network, ProcedureInformation info, Class<T> argClass, Class<R> resultClass, Function<T, R> function) {
+  public RegisteredProcedure(AbstractNetwork network, ProcedureInformation info, Class<T> argClass, Class<R> resultClass, Function<T, R> function) {
     super(network, info, argClass, resultClass);
     Preconditions.checkNotNull(function);
     this.function = function;

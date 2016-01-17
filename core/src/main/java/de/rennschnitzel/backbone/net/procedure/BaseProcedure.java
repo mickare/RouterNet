@@ -4,7 +4,7 @@ import java.util.function.BiConsumer;
 
 import com.google.common.base.Preconditions;
 
-import de.rennschnitzel.backbone.net.Network;
+import de.rennschnitzel.backbone.net.AbstractNetwork;
 import de.rennschnitzel.backbone.net.Node;
 import de.rennschnitzel.backbone.net.protocol.NetworkProtocol;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol.ProcedureCallMessage;
@@ -24,12 +24,12 @@ public class BaseProcedure<T, R> implements Procedure<T, R> {
   private final CheckedFunction<ProcedureResponseMessage, R> responseReader;
   private final BiConsumer<ProcedureResponseMessage.Builder, R> responseWriter;
 
-  private final Network network;
+  private final AbstractNetwork network;
 
   @Setter
   private CheckedFunction<T, R> localFunction = null;
 
-  public BaseProcedure(final Network network, final ProcedureInformation info, final Class<T> argClass, final Class<R> resultClass) {
+  public BaseProcedure(final AbstractNetwork network, final ProcedureInformation info, final Class<T> argClass, final Class<R> resultClass) {
     Preconditions.checkNotNull(network);
     Preconditions.checkNotNull(info);
     Preconditions.checkNotNull(argClass);

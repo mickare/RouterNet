@@ -2,10 +2,6 @@ package de.rennschnitzel.backbone.net.channel;
 
 import com.google.common.base.Preconditions;
 
-import de.rennschnitzel.backbone.Owner;
-import de.rennschnitzel.backbone.net.channel.Channel;
-import de.rennschnitzel.backbone.net.channel.SubChannel;
-import de.rennschnitzel.backbone.net.channel.SubChannelDescriptor;
 import de.rennschnitzel.backbone.net.protocol.TransportProtocol;
 import lombok.Getter;
 
@@ -25,7 +21,7 @@ public abstract class AbstractSubChannelDescriptor<SELF extends AbstractSubChann
   }
 
   @Override
-  public abstract C create(Owner owner, Channel parentChannel);
+  public abstract C create(Channel parentChannel);
 
   @SuppressWarnings("unchecked")
   @Override

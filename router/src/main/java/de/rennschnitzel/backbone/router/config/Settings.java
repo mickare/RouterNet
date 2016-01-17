@@ -63,7 +63,7 @@ public class Settings {
   @Data
   public static class RouterConfig {
     private UUID uuid = UUID.randomUUID();
-    private String hostAndPort = "localhost:1010";
+    private String address = "localhost:1010";
   }
 
   private RouterConfig routerSettings = new RouterConfig();

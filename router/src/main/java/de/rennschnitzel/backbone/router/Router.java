@@ -3,34 +3,44 @@ package de.rennschnitzel.backbone.router;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
 import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import de.rennschnitzel.backbone.Owner;
+import de.rennschnitzel.backbone.net.Connection;
+import de.rennschnitzel.backbone.net.HomeNode;
 import de.rennschnitzel.backbone.netty.BaseChannelInitializer;
-import de.rennschnitzel.backbone.router.api.JavaPlugin;
 import de.rennschnitzel.backbone.router.command.CommandManager;
 import de.rennschnitzel.backbone.router.config.ConfigFile;
 import de.rennschnitzel.backbone.router.config.Settings;
+import de.rennschnitzel.backbone.router.netty.NettyConnection;
 import de.rennschnitzel.backbone.router.netty.PipelineUtils;
+import de.rennschnitzel.backbone.router.netty.RouterHandshakeHandler;
+import de.rennschnitzel.backbone.router.plugin.PluginManager;
+import de.rennschnitzel.backbone.util.concurrent.CloseableLock;
+import de.rennschnitzel.backbone.util.concurrent.CloseableReadWriteLock;
+import de.rennschnitzel.backbone.util.concurrent.ReentrantCloseableReadWriteLock;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelException;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import jline.console.ConsoleReader;
@@ -53,18 +63,25 @@ public class Router extends AbstractIdleService implements Owner {
   @Getter
   private final ConfigFile<Settings> configFile;
   @Getter
-  private ExecutorService scheduler = null;
-  private final Map<String, JavaPlugin> plugins = Maps.newHashMap();
+  private final ScheduledExecutorService scheduler;
   @Getter
   private final EventBus eventBus = new EventBus();
 
   @Getter
-  private HostAndPort hostAndPort;
+  private final PluginManager pluginManager = new PluginManager(this);
 
-  private EventLoopGroup eventLoops;
+  @Getter
+  private HostAndPort address;
+
 
   @Getter
   private final RouterNetwork network;
+
+  private final Map<UUID, NettyConnection> connections = new HashMap<>();
+  private final CloseableReadWriteLock connectionLock = new ReentrantCloseableReadWriteLock();
+
+  private EventLoopGroup eventLoops = null;
+  private Channel listener = null;
 
   protected Router(ConsoleReader console, Logger logger) throws IOException {
     Preconditions.checkNotNull(console);
@@ -90,11 +107,14 @@ public class Router extends AbstractIdleService implements Owner {
     this.name = this.properties.getProperty("project.name");
     this.version = this.properties.getProperty("project.version");
     this.builddate = this.properties.getProperty("project.builddate");;
-  }
 
-  @Override
-  protected Executor executor() {
-    return MoreExecutors.directExecutor();
+    this.scheduler = MoreExecutors.getExitingScheduledExecutorService(
+        new ScheduledThreadPoolExecutor(0,
+            new ThreadFactoryBuilder().setNameFormat("Router Pool Thread #%1$d").build()),
+        10, TimeUnit.SECONDS);
+
+    HomeNode home = new HomeNode(this.configFile.getConfig().getRouterSettings().getUuid());
+    this.network = new RouterNetwork(this, home);
   }
 
   @Override
@@ -108,35 +128,22 @@ public class Router extends AbstractIdleService implements Owner {
     sb.append("\n****************************************************");
     logger.info(sb.toString());
 
-    // Start Scheduler
-    this.scheduler = Executors.newCachedThreadPool(
-        new ThreadFactoryBuilder().setNameFormat("Niflhel Pool Thread #%1$d").build());
+    // Load plugins
+    this.pluginManager.loadPlugins();
 
     // Start Socket Server
-    hostAndPort =
-        HostAndPort.fromString(this.configFile.getConfig().getRouterSettings().getHostAndPort())
-            .withDefaultPort(791);
+    address = HostAndPort//
+        .fromString(this.configFile.getConfig().getRouterSettings().getAddress())
+        .withDefaultPort(791);
 
-    // Start Plugins
-    List<JavaPlugin> plugs = Lists.newArrayList();
-
-    for (JavaPlugin p : plugs) {
-      p.startAsync();
-      p.awaitRunning(10, TimeUnit.SECONDS);
-      if (p.state() == Service.State.FAILED) {
-        getLogger().log(Level.SEVERE, "Plugin failed", p.failureCause());
-        continue;
-      }
-      this.plugins.put(p.getName(), p);
-    }
-
+    // Enable plugins
+    this.pluginManager.enablePlugins();
 
     eventLoops = PipelineUtils.newEventLoopGroup(0,
         new ThreadFactoryBuilder().setNameFormat("Netty IO Thread #%1$d").build());
+    startNetty();
 
-
-
-    logger.info("Server started");
+    logger.info("Router started.");
   }
 
   private void startNetty() {
@@ -144,30 +151,53 @@ public class Router extends AbstractIdleService implements Owner {
     b.group(eventLoops);
     b.option(ChannelOption.SO_REUSEADDR, true);
     b.childHandler(new BaseChannelInitializer(getLogger(), new RouterHandshakeHandler(this)));
-    b.localAddress(
-        new InetSocketAddress(this.hostAndPort.getHostText(), this.hostAndPort.getPort()));
-    b.bind();
+    b.localAddress(new InetSocketAddress(this.address.getHostText(), this.address.getPort()));
+    b.bind().addListener(new ChannelFutureListener() {
+      @Override
+      public void operationComplete(ChannelFuture future) throws Exception {
+        if (future.isSuccess()) {
+          listener = future.channel();
+          getLogger().log(Level.INFO, "Listening on {0}", getAddress());
+        } else {
+          getLogger().log(Level.WARNING, "Could not bind to host " + getAddress(), future.cause());
+        }
+      }
+    });
+    logger.info("Server started");
+  }
+
+  private void stopNetty() {
+
+    // Close main server socket
+    getLogger().log(Level.INFO, "Closing listener {0}", listener);
+    try {
+      listener.close().syncUninterruptibly();
+    } catch (ChannelException ex) {
+      getLogger().severe("Could not close listen thread");
+    }
+
+    getLogger().info("Closing IO threads");
+    eventLoops.shutdownGracefully();
+    try {
+      eventLoops.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+    } catch (InterruptedException ex) {
+    }
+
   }
 
   @Override
   protected void shutDown() throws Exception {
     logger.info("Stopping...");
 
-    // Stop Plugins
-    for (JavaPlugin p : this.plugins.values()) {
-      p.stopAsync();
-      p.awaitTerminated(5, TimeUnit.SECONDS);
-      if (p.state() == Service.State.FAILED) {
-        getLogger().log(Level.SEVERE, "Plugin failed", p.failureCause());
-      }
-    }
+    stopNetty();
 
-    // Stop Scheduler
-    if (this.scheduler != null) {
-      this.scheduler.shutdown();
-      if (!this.scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
-        this.scheduler.shutdownNow();
-      }
+    // Disable plugins
+    getLogger().info("Disabling plugins");
+    this.pluginManager.disablePlugins();
+    scheduler.shutdown();
+    try {
+      scheduler.awaitTermination(5, TimeUnit.SECONDS);
+    } catch (InterruptedException ie) {
     }
 
     StringBuilder sb = new StringBuilder();
@@ -177,8 +207,33 @@ public class Router extends AbstractIdleService implements Owner {
     logger.info(sb.toString());
   }
 
-  public JavaPlugin getPlugin(String name) {
-    return this.plugins.get(name);
+  public Set<Connection> getConnections() {
+    try (CloseableLock l = connectionLock.readLock().open()) {
+      return ImmutableSet.copyOf(connections.values());
+    }
+  }
+
+  public Connection getConnection(UUID id) {
+    try (CloseableLock l = connectionLock.readLock().open()) {
+      return connections.get(id);
+    }
+  }
+
+  public boolean isConnected(UUID id) {
+    Connection con = getConnection(id);
+    return !con.isClosed();
+  }
+
+  public void addConnection(NettyConnection connection) {
+    try (CloseableLock l = connectionLock.writeLock().open()) {
+      connections.put(connection.getId(), connection);
+    }
+  }
+
+  public void removeConnection(NettyConnection connection) {
+    try (CloseableLock l = connectionLock.writeLock().open()) {
+      connections.remove(connection.getId(), connection);
+    }
   }
 
 }

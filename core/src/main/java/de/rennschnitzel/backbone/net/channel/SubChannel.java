@@ -1,11 +1,8 @@
 package de.rennschnitzel.backbone.net.channel;
 
-import de.rennschnitzel.backbone.Owner;
-import de.rennschnitzel.backbone.net.Network;
+import de.rennschnitzel.backbone.net.AbstractNetwork;
 
 public interface SubChannel {
-
-  Owner getOwner();
 
   void close();
 
@@ -19,6 +16,6 @@ public interface SubChannel {
 
   SubChannelDescriptor<?> getDescriptor();
 
-  Network getNetwork();
+  AbstractNetwork getNetwork();
 
 }

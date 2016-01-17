@@ -7,7 +7,7 @@ import de.rennschnitzel.backbone.net.channel.SubChannelDescriptor;
 
 public interface ConnectionInterface {
 
-  Network getNetwork();
+  AbstractNetwork getNetwork();
 
   Channel getChannel(String name);
 

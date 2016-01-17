@@ -7,7 +7,7 @@ import java.util.function.Supplier;
 
 import com.google.common.base.Preconditions;
 
-import de.rennschnitzel.backbone.net.Network;
+import de.rennschnitzel.backbone.net.AbstractNetwork;
 import de.rennschnitzel.backbone.net.protocol.NetworkProtocol.ProcedureDescription;
 import de.rennschnitzel.backbone.util.LazyCache;
 import de.rennschnitzel.backbone.util.TypeUtils;
@@ -88,34 +88,34 @@ public class ProcedureInformation implements Comparable<ProcedureInformation> {
 
 
   public <T, R> Procedure<T, R> getProcedure(Function<T, R> function) throws RuntimeException {
-    return getProcedure(Network.getInstance(), function);
+    return getProcedure(AbstractNetwork.getInstance(), function);
   }
 
   public <T, R> Procedure<T, R> getProcedure(final Class<T> argument, final Class<R> result) throws RuntimeException {
-    return getProcedure(Network.getInstance(), argument, result);
+    return getProcedure(AbstractNetwork.getInstance(), argument, result);
   }
 
   @SuppressWarnings("unchecked")
-  public <T, R> Procedure<T, R> getProcedure(Network network, Function<T, R> function) throws RuntimeException {
+  public <T, R> Procedure<T, R> getProcedure(AbstractNetwork network, Function<T, R> function) throws RuntimeException {
     Class<?>[] typeArgs = TypeUtils.resolveArgumentClass(function);
     return getProcedure(network, (Class<T>) typeArgs[0], (Class<R>) typeArgs[1]);
   }
 
   @SuppressWarnings("unchecked")
-  public <T> Procedure<T, Void> getProcedure(Network network, Consumer<T> function) throws RuntimeException {
+  public <T> Procedure<T, Void> getProcedure(AbstractNetwork network, Consumer<T> function) throws RuntimeException {
     return getProcedure(network, (Class<T>) TypeUtils.resolveArgumentClass(function), Void.class);
   }
 
   @SuppressWarnings("unchecked")
-  public <R> Procedure<Void, R> getProcedure(Network network, Supplier<R> function) throws RuntimeException {
+  public <R> Procedure<Void, R> getProcedure(AbstractNetwork network, Supplier<R> function) throws RuntimeException {
     return getProcedure(network, Void.class, (Class<R>) TypeUtils.resolveArgumentClass(function));
   }
 
-  public Procedure<Void, Void> getProcedure(Network network, Runnable function) throws RuntimeException {
+  public Procedure<Void, Void> getProcedure(AbstractNetwork network, Runnable function) throws RuntimeException {
     return getProcedure(network, Void.class, Void.class);
   }
 
-  public <T, R> Procedure<T, R> getProcedure(Network network, final Class<T> argumentType, final Class<R> resultType)
+  public <T, R> Procedure<T, R> getProcedure(AbstractNetwork network, final Class<T> argumentType, final Class<R> resultType)
       throws RuntimeException {
     checkApplicable(argumentType, resultType);
     return new BaseProcedure<>(network, this, argumentType, resultType);

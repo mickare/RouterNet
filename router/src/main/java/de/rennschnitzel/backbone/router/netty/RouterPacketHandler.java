@@ -20,7 +20,7 @@ public class RouterPacketHandler extends BasePacketHandler<NettyConnection> {
   public void handle(NettyConnection con, ChannelMessage msg) throws Exception {
 
     if (isReceiver(con, msg.getTarget())) {
-      Channel channel = con.getChannel(msg.getChannelId());
+      Channel channel = con.getChannelIfPresent(msg.getChannelId());
       if (channel != null && !channel.isClosed()) {
         channel.receiveProto(msg);
       }
