@@ -3,13 +3,13 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>de.rennschnitzel.backbone</groupId>
+		<groupId>de.rennschnitzel.net</groupId>
 		<artifactId>parent</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>netty</artifactId>
-	<name>RS-Backbone-netty</name>
+	<name>RS-Net-netty</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -23,7 +23,7 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>de.rennschnitzel.backbone</groupId>
+			<groupId>de.rennschnitzel.net</groupId>
 			<artifactId>core</artifactId>
 			<version>${project.version}</version>
 		</dependency>

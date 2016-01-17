@@ -3,18 +3,18 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>de.rennschnitzel.backbone</groupId>
+		<groupId>de.rennschnitzel.net</groupId>
 		<artifactId>parent</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
 	<artifactId>core</artifactId>
-	<name>RS-Backbone-core</name>
+	<name>RS-Net-core</name>
 
 	<dependencies>
 		<dependency>
-			<groupId>de.rennschnitzel.backbone</groupId>
+			<groupId>de.rennschnitzel.net</groupId>
 			<artifactId>protocol</artifactId>
 			<version>${project.version}</version>
 		</dependency>

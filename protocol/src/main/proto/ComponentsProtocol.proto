@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package de.rennschnitzel.backbone.net.protocol;
+package de.rennschnitzel.net.protocol;
 
 // A 128-bit id, transferred as two 64-bit longs
 message UUIDMessage {

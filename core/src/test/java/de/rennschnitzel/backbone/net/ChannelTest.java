@@ -14,15 +14,16 @@ import java.util.logging.Logger;
 import org.junit.Before;
 import org.junit.Test;
 
-import de.rennschnitzel.backbone.Owner;
-import de.rennschnitzel.backbone.net.channel.Channel;
-import de.rennschnitzel.backbone.net.channel.ChannelDescriptors;
-import de.rennschnitzel.backbone.net.channel.object.ConvertObjectChannelException;
-import de.rennschnitzel.backbone.net.channel.object.ObjectChannel;
-import de.rennschnitzel.backbone.net.channel.stream.StreamChannel;
-import de.rennschnitzel.backbone.net.dummy.DummyConnection;
-import de.rennschnitzel.backbone.net.dummy.DummyNetwork;
-import de.rennschnitzel.backbone.net.packet.BasePacketHandler;
+import de.rennschnitzel.net.Owner;
+import de.rennschnitzel.net.core.Target;
+import de.rennschnitzel.net.core.channel.Channel;
+import de.rennschnitzel.net.core.channel.ChannelDescriptors;
+import de.rennschnitzel.net.core.channel.object.ConvertObjectChannelException;
+import de.rennschnitzel.net.core.channel.object.ObjectChannel;
+import de.rennschnitzel.net.core.channel.stream.StreamChannel;
+import de.rennschnitzel.net.core.dummy.DummyConnection;
+import de.rennschnitzel.net.core.dummy.DummyNetwork;
+import de.rennschnitzel.net.core.packet.BasePacketHandler;
 
 public class ChannelTest {
 

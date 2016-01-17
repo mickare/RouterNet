@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package de.rennschnitzel.backbone.net.protocol;
+package de.rennschnitzel.net.protocol;
 
 import "ComponentsProtocol.proto";
 import "NetworkProtocol.proto";

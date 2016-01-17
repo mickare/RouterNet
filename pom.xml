@@ -3,12 +3,12 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>de.rennschnitzel.backbone</groupId>
+	<groupId>de.rennschnitzel.net</groupId>
 	<artifactId>parent</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
-	<name>RS-Backbone-parent</name>
+	<name>RS-Net-parent</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -18,8 +18,8 @@
 	<modules>
 		<module>protocol</module>
 		<module>core</module>
-		<module>client-api</module>
-		<module>client-bukkit</module>
+		<module>client</module>
+		<module>bukkit</module>
 		<module>router</module>
 		<module>netty</module>
 	</modules>
@@ -28,12 +28,12 @@
 		<repository>
 			<id>rs-private</id>
 			<name>Internal Releases</name>
-			<url>http://repo.rennschnitzel.de:8081/nexus/content/repositories/rs-public/</url>
+			<url>http://repo.rennschnitzel.de:8081/nexus/content/repositories/rs-protected/</url>
 		</repository>
 		<snapshotRepository>
 			<id>rs-private</id>
 			<name>Internal Releases</name>
-			<url>http://repo.rennschnitzel.de:8081/nexus/content/repositories/rs-public/</url>
+			<url>http://repo.rennschnitzel.de:8081/nexus/content/repositories/rs-protected/</url>
 		</snapshotRepository>
 	</distributionManagement>
 
