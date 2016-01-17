@@ -1,4 +1,4 @@
-package de.rennschnitzel.net.router.config;
+package de.rennschnitzel.net.client;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -15,17 +15,20 @@ import com.google.gson.GsonBuilder;
 
 public class ConfigFile<T> {
 
-  private static final Gson GSON;
+  private static final Gson GSON_DEFAULT;
 
   static {
     GsonBuilder b = new GsonBuilder();
     b.serializeNulls();
-    GSON = b.create();
+    b.setPrettyPrinting();
+    GSON_DEFAULT = b.create();
   }
 
   public static <T> ConfigFile<T> create(final File file, final Class<T> configClass) {
     return new ConfigFile<T>(file, configClass);
   }
+
+  private final Gson gson;
 
   @Getter
   private final File file;
@@ -36,6 +39,11 @@ public class ConfigFile<T> {
 
 
   public ConfigFile(final File file, final Class<T> configClass) {
+    this(file, configClass, GSON_DEFAULT);
+  }
+
+  public ConfigFile(final File file, final Class<T> configClass, Gson gson) {
+    Preconditions.checkNotNull(gson);
     Preconditions.checkNotNull(file);
     Preconditions.checkNotNull(configClass);
     Preconditions.checkArgument(!file.isDirectory(), "file is not a file");
@@ -44,8 +52,10 @@ public class ConfigFile<T> {
     } catch (final NoSuchMethodException | SecurityException e) {
       throw new IllegalArgumentException("config class has not an empty constructor", e);
     }
+    this.gson = gson;
     this.file = file;
     this.configClass = configClass;
+
   }
 
   private T _createInstance() {
@@ -73,14 +83,14 @@ public class ConfigFile<T> {
       return;
     }
     try (final BufferedReader reader = Files.newReader(this.file, Charsets.UTF_8)) {
-      this.config = GSON.fromJson(reader, this.configClass);
+      this.config = gson.fromJson(reader, this.configClass);
     }
   }
 
   private synchronized void _save(final T config) throws IOException {
     final File tmp = File.createTempFile(this.file.getName(), ".tmp", this.file.getParentFile());
     try (final BufferedWriter writer = Files.newWriter(tmp, Charsets.UTF_8)) {
-      GSON.toJson(config, writer);
+      gson.toJson(config, writer);
     }
     Files.move(tmp, this.file);
   }
@@ -89,13 +99,9 @@ public class ConfigFile<T> {
     this._save(this.config);
   }
 
-  public synchronized void saveDefault() {
+  public synchronized void saveDefault() throws IOException {
     if (!this.file.exists()) {
-      try {
-        this._save(this._createInstance());
-      } catch (final IOException e) {
-        throw new RuntimeException(e);
-      }
+      this._save(this._createInstance());
     }
   }
 }

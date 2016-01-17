@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -29,10 +30,8 @@ import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
 import de.rennschnitzel.net.util.concurrent.CloseableLock;
 import de.rennschnitzel.net.util.concurrent.CloseableReadWriteLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 
 public abstract class AbstractNetwork {
 
@@ -40,7 +39,6 @@ public abstract class AbstractNetwork {
 
   @Getter
   @NonNull
-  @Setter(AccessLevel.PACKAGE)
   private static AbstractNetwork instance = null;
 
   // static end
@@ -65,11 +63,12 @@ public abstract class AbstractNetwork {
     this.home = home;
     this.nodes.put(home.getId(), home);
     this.nodesCache.put(home.getId(), home);
+    AbstractNetwork.instance = this;
   }
 
   public abstract Logger getLogger();
 
-  public abstract void scheduleAsyncLater(Runnable run, long timeout, TimeUnit unit);
+  public abstract ScheduledFuture<?> scheduleAsyncLater(Runnable run, long timeout, TimeUnit unit);
 
   // ***************************************************************************
   // Connection (sending)

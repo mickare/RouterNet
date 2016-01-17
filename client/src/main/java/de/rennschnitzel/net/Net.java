@@ -17,16 +17,16 @@ import de.rennschnitzel.net.core.channel.Channel;
 import de.rennschnitzel.net.exception.NotConnectedException;
 import lombok.Getter;
 
-public class Backbone {
+public class Net {
 
   @Getter
   private static Network network = null;
 
   public synchronized void setNetwork(Network network) {
-    if (Backbone.network != null) {
+    if (Net.network != null) {
       throw new UnsupportedOperationException("Cannot redefine singleton Network");
     }
-    Backbone.network = network;
+    Net.network = network;
   }
 
   public static HomeNode getHome() {

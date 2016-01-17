@@ -25,8 +25,13 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.3.1</version>
+		</dependency>
+		<dependency>
 			<groupId>de.rennschnitzel.net</groupId>
-			<artifactId>core</artifactId>
+			<artifactId>netty</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 	</dependencies>

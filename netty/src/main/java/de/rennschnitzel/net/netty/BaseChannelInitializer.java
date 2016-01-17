@@ -25,7 +25,7 @@ public class BaseChannelInitializer extends ChannelInitializer<SocketChannel> {
   private final Logger logger;
 
   @NonNull
-  private final HandshakeHandler handshake;
+  private final AbstractHandshakeHandler handshake;
 
   @Override
   public void initChannel(SocketChannel ch) throws Exception {

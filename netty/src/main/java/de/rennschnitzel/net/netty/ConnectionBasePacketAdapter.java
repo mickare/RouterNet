@@ -4,9 +4,14 @@ import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.packet.BasePacketHandler;
-import de.rennschnitzel.net.netty.NettyPacketHandler;
-import de.rennschnitzel.net.protocol.LoginProtocol.*;
-import de.rennschnitzel.net.protocol.NetworkProtocol.*;
+import de.rennschnitzel.net.protocol.LoginProtocol.LoginChallengeMessage;
+import de.rennschnitzel.net.protocol.LoginProtocol.LoginHandshakeMessage;
+import de.rennschnitzel.net.protocol.LoginProtocol.LoginResponseMessage;
+import de.rennschnitzel.net.protocol.LoginProtocol.LoginSuccessMessage;
+import de.rennschnitzel.net.protocol.LoginProtocol.LoginUpgradeMessage;
+import de.rennschnitzel.net.protocol.NetworkProtocol.NodeRemoveMessage;
+import de.rennschnitzel.net.protocol.NetworkProtocol.NodeTopologyMessage;
+import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ChannelMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ChannelRegister;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
@@ -53,42 +58,47 @@ public class ConnectionBasePacketAdapter<C extends Connection> extends NettyPack
   }
 
   @Override
-  public void handle(ChannelHandlerContext ctx, ServerUpdateMessage msg) throws Exception {
-    handler.handle(connection, msg);
-  }
-
-  @Override
-  public void handle(ChannelHandlerContext ctx, DisconnectedMessage msg) throws Exception {
-    handler.handle(connection, msg);
-  }
-
-  @Override
-  public void handle(ChannelHandlerContext ctx, ConnectedMessage msg) throws Exception {
-    handler.handle(connection, msg);
-  }
-
-  @Override
-  public void handle(ChannelHandlerContext ctx, AuthResponseMessage msg) throws Exception {
-    handler.handle(connection, msg);
-  }
-
-  @Override
-  public void handle(ChannelHandlerContext ctx, AuthChallengeMessage msg) throws Exception {
-    handler.handle(connection, msg);
-  }
-
-  @Override
-  public void handle(ChannelHandlerContext ctx, AuthSuccessMessage msg) throws Exception {
-    handler.handle(connection, msg);
-  }
-
-  @Override
-  public void handle(ChannelHandlerContext ctx, LoginMessage msg) throws Exception {
-    handler.handle(connection, msg);
-  }
-
-  @Override
   public void handle(ChannelHandlerContext ctx, CloseMessage msg) throws Exception {
+    handler.handle(connection, msg);
+  }
+
+  @Override
+  public void handle(ChannelHandlerContext ctx, LoginHandshakeMessage msg) throws Exception {
+    handler.handle(connection, msg);
+  }
+
+  @Override
+  public void handle(ChannelHandlerContext ctx, LoginResponseMessage msg) throws Exception {
+    handler.handle(connection, msg);
+  }
+
+  @Override
+  public void handle(ChannelHandlerContext ctx, LoginChallengeMessage msg) throws Exception {
+    handler.handle(connection, msg);
+  }
+
+  @Override
+  public void handle(ChannelHandlerContext ctx, LoginSuccessMessage msg) throws Exception {
+    handler.handle(connection, msg);
+  }
+
+  @Override
+  public void handle(ChannelHandlerContext ctx, LoginUpgradeMessage msg) throws Exception {
+    handler.handle(connection, msg);
+  }
+
+  @Override
+  public void handle(ChannelHandlerContext ctx, NodeTopologyMessage msg) throws Exception {
+    handler.handle(connection, msg);
+  }
+
+  @Override
+  public void handle(ChannelHandlerContext ctx, NodeUpdateMessage msg) throws Exception {
+    handler.handle(connection, msg);
+  }
+
+  @Override
+  public void handle(ChannelHandlerContext ctx, NodeRemoveMessage msg) throws Exception {
     handler.handle(connection, msg);
   }
 

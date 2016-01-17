@@ -1,11 +1,12 @@
 package de.rennschnitzel.net.netty;
 
-import de.rennschnitzel.net.protocol.HandshakeProtocol.AuthChallengeMessage;
-import de.rennschnitzel.net.protocol.HandshakeProtocol.AuthResponseMessage;
-import de.rennschnitzel.net.protocol.HandshakeProtocol.AuthSuccessMessage;
-import de.rennschnitzel.net.protocol.HandshakeProtocol.LoginMessage;
-import de.rennschnitzel.net.protocol.NetworkProtocol.ConnectedMessage;
-import de.rennschnitzel.net.protocol.NetworkProtocol.DisconnectedMessage;
+import de.rennschnitzel.net.protocol.LoginProtocol.LoginChallengeMessage;
+import de.rennschnitzel.net.protocol.LoginProtocol.LoginHandshakeMessage;
+import de.rennschnitzel.net.protocol.LoginProtocol.LoginResponseMessage;
+import de.rennschnitzel.net.protocol.LoginProtocol.LoginSuccessMessage;
+import de.rennschnitzel.net.protocol.NetworkProtocol.NodeRemoveMessage;
+import de.rennschnitzel.net.protocol.NetworkProtocol.NodeTopologyMessage;
+import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ChannelMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
@@ -55,46 +56,46 @@ public final class PacketUtil {
   // ******************************************************************************
   // Handshake
   public static final ChannelFuture writeAndFlush(final Channel ch, //
-      final LoginMessage.Builder value) {
-    return writeAndFlush(ch, Packet.newBuilder().setLogin(value));
+      final LoginHandshakeMessage.Builder value) {
+    return writeAndFlush(ch, Packet.newBuilder().setLoginHandshake(value));
   }
 
   public static final ChannelFuture writeAndFlush(final Channel ch, //
-      final LoginMessage value) {
-    return writeAndFlush(ch, Packet.newBuilder().setLogin(value));
-  }
-
-  public static final ChannelFuture writeAndFlush(final Channel ch, //
-
-  final AuthChallengeMessage.Builder value) {
-    return writeAndFlush(ch, Packet.newBuilder().setAuthChallenge(value));
-  }
-
-  public static final ChannelFuture writeAndFlush(final Channel ch, //
-      final AuthChallengeMessage value) {
-    return writeAndFlush(ch, Packet.newBuilder().setAuthChallenge(value));
+      final LoginHandshakeMessage value) {
+    return writeAndFlush(ch, Packet.newBuilder().setLoginHandshake(value));
   }
 
   public static final ChannelFuture writeAndFlush(final Channel ch, //
 
-  final AuthResponseMessage.Builder value) {
-    return writeAndFlush(ch, Packet.newBuilder().setAuthResponse(value));
+  final LoginChallengeMessage.Builder value) {
+    return writeAndFlush(ch, Packet.newBuilder().setLoginChallenge(value));
   }
 
   public static final ChannelFuture writeAndFlush(final Channel ch, //
-      final AuthResponseMessage value) {
-    return writeAndFlush(ch, Packet.newBuilder().setAuthResponse(value));
+      final LoginChallengeMessage value) {
+    return writeAndFlush(ch, Packet.newBuilder().setLoginChallenge(value));
   }
 
   public static final ChannelFuture writeAndFlush(final Channel ch, //
 
-  final AuthSuccessMessage.Builder value) {
-    return writeAndFlush(ch, Packet.newBuilder().setAuthSuccess(value));
+  final LoginResponseMessage.Builder value) {
+    return writeAndFlush(ch, Packet.newBuilder().setLoginResponse(value));
   }
 
   public static final ChannelFuture writeAndFlush(final Channel ch, //
-      final AuthSuccessMessage value) {
-    return writeAndFlush(ch, Packet.newBuilder().setAuthSuccess(value));
+      final LoginResponseMessage value) {
+    return writeAndFlush(ch, Packet.newBuilder().setLoginResponse(value));
+  }
+
+  public static final ChannelFuture writeAndFlush(final Channel ch, //
+
+  final LoginSuccessMessage.Builder value) {
+    return writeAndFlush(ch, Packet.newBuilder().setLoginSuccess(value));
+  }
+
+  public static final ChannelFuture writeAndFlush(final Channel ch, //
+      final LoginSuccessMessage value) {
+    return writeAndFlush(ch, Packet.newBuilder().setLoginSuccess(value));
   }
 
   // ******************************************************************************
@@ -114,24 +115,36 @@ public final class PacketUtil {
   // Network
 
   public static final ChannelFuture writeAndFlush(final Channel ch, //
-      final ConnectedMessage.Builder value) {
-    return writeAndFlush(ch, Packet.newBuilder().setConnected(value));
+      final NodeTopologyMessage.Builder value) {
+    return writeAndFlush(ch, Packet.newBuilder().setNodeTopology(value));
   }
 
   public static final ChannelFuture writeAndFlush(final Channel ch, //
-      final ConnectedMessage value) {
-    return writeAndFlush(ch, Packet.newBuilder().setConnected(value));
+      final NodeTopologyMessage value) {
+    return writeAndFlush(ch, Packet.newBuilder().setNodeTopology(value));
   }
 
   public static final ChannelFuture writeAndFlush(final Channel ch, //
-
-  final DisconnectedMessage.Builder value) {
-    return writeAndFlush(ch, Packet.newBuilder().setDisconnected(value));
+      final NodeUpdateMessage.Builder value) {
+    return writeAndFlush(ch, Packet.newBuilder().setNodeUpdate(value));
   }
 
   public static final ChannelFuture writeAndFlush(final Channel ch, //
-      final DisconnectedMessage value) {
-    return writeAndFlush(ch, Packet.newBuilder().setDisconnected(value));
+      final NodeUpdateMessage value) {
+    return writeAndFlush(ch, Packet.newBuilder().setNodeUpdate(value));
   }
+
+
+  public static final ChannelFuture writeAndFlush(final Channel ch, //
+      final NodeRemoveMessage.Builder value) {
+    return writeAndFlush(ch, Packet.newBuilder().setNodeRemove(value));
+  }
+
+  public static final ChannelFuture writeAndFlush(final Channel ch, //
+      final NodeRemoveMessage value) {
+    return writeAndFlush(ch, Packet.newBuilder().setNodeRemove(value));
+  }
+
+
 
 }

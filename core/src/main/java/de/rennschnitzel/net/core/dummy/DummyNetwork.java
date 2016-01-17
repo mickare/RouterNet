@@ -2,6 +2,7 @@ package de.rennschnitzel.net.core.dummy;
 
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -76,8 +77,8 @@ public class DummyNetwork extends AbstractNetwork {
   }
 
   @Override
-  public void scheduleAsyncLater(Runnable run, long timeout, TimeUnit unit) {
-    executor.schedule(run, timeout, unit);
+  public ScheduledFuture<?> scheduleAsyncLater(Runnable run, long timeout, TimeUnit unit) {
+    return executor.schedule(run, timeout, unit);
   }
 
   @Override

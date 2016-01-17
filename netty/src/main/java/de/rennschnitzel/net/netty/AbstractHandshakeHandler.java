@@ -4,9 +4,9 @@ import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.exception.ConnectionException;
 import de.rennschnitzel.net.exception.HandshakeException;
-import de.rennschnitzel.net.protocol.NetworkProtocol.ConnectedMessage;
-import de.rennschnitzel.net.protocol.NetworkProtocol.DisconnectedMessage;
-import de.rennschnitzel.net.protocol.NetworkProtocol.ServerUpdateMessage;
+import de.rennschnitzel.net.protocol.NetworkProtocol.NodeRemoveMessage;
+import de.rennschnitzel.net.protocol.NetworkProtocol.NodeTopologyMessage;
+import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ChannelMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ChannelRegister;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
@@ -15,14 +15,14 @@ import io.netty.channel.ChannelHandlerContext;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-public abstract class HandshakeHandler extends NettyPacketHandler {
+public abstract class AbstractHandshakeHandler extends NettyPacketHandler {
 
   public static final int VERSION = 1;
 
   @Getter
   private final String name;
 
-  public HandshakeHandler(String name) {
+  public AbstractHandshakeHandler(String name) {
     Preconditions.checkArgument(!name.isEmpty());
     this.name = name;
   }
@@ -91,14 +91,17 @@ public abstract class HandshakeHandler extends NettyPacketHandler {
   }
 
   @Override
-  public void handle(ChannelHandlerContext ctx, ConnectedMessage connected)
-      throws HandshakeException {
+  public void handle(ChannelHandlerContext ctx, NodeUpdateMessage msg) throws HandshakeException {
     throw new HandshakeException("Invalid or unknown packet!");
   }
 
   @Override
-  public void handle(ChannelHandlerContext ctx, DisconnectedMessage disconnected)
-      throws HandshakeException {
+  public void handle(ChannelHandlerContext ctx, NodeRemoveMessage msg) throws HandshakeException {
+    throw new HandshakeException("Invalid or unknown packet!");
+  }
+
+  @Override
+  public void handle(ChannelHandlerContext ctx, NodeTopologyMessage msg) throws HandshakeException {
     throw new HandshakeException("Invalid or unknown packet!");
   }
 
@@ -117,11 +120,5 @@ public abstract class HandshakeHandler extends NettyPacketHandler {
   public void handle(ChannelHandlerContext ctx, ChannelRegister msg) throws HandshakeException {
     throw new HandshakeException("Invalid or unknown packet!");
   }
-
-  @Override
-  public void handle(ChannelHandlerContext ctx, ServerUpdateMessage msg) throws HandshakeException {
-    throw new HandshakeException("Invalid or unknown packet!");
-  }
-
 
 }
