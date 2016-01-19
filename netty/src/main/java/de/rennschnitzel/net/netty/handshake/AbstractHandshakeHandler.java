@@ -1,10 +1,19 @@
-package de.rennschnitzel.net.netty;
+package de.rennschnitzel.net.netty.handshake;
+
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import com.google.common.base.Preconditions;
+import com.google.common.util.concurrent.SettableFuture;
 
 import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.exception.ConnectionException;
 import de.rennschnitzel.net.exception.HandshakeException;
+import de.rennschnitzel.net.netty.ConnectionFuture;
+import de.rennschnitzel.net.netty.NettyPacketHandler;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeRemoveMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeTopologyMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
@@ -19,17 +28,6 @@ import lombok.RequiredArgsConstructor;
 public abstract class AbstractHandshakeHandler<C extends Connection> extends NettyPacketHandler
     implements ConnectionFuture<C> {
 
-  public static final int VERSION = 1;
-
-  @Getter
-  private final String name;
-
-  public AbstractHandshakeHandler(String name) {
-    Preconditions.checkArgument(!name.isEmpty());
-    this.name = name;
-  }
-
-
   @RequiredArgsConstructor
   public static enum State {
     NEW(0), LOGIN(1), AUTH(1), SUCCESS(3), FAILED(3);
@@ -37,9 +35,22 @@ public abstract class AbstractHandshakeHandler<C extends Connection> extends Net
     private final int step;
   }
 
+
+  public static final int VERSION = 1;
+
+  @Getter
+  private final String name;
+  @Getter
   private volatile State state = State.NEW;
   @Getter
   private ChannelHandlerContext channelContext = null;
+
+  private final SettableFuture<C> delegate = SettableFuture.create();
+
+  public AbstractHandshakeHandler(String name) {
+    Preconditions.checkArgument(!name.isEmpty());
+    this.name = name;
+  }
 
   protected abstract void onFail(Throwable cause);
 
@@ -50,18 +61,24 @@ public abstract class AbstractHandshakeHandler<C extends Connection> extends Net
     this.channelContext = ctx;
   }
 
-  public final State state() {
-    return this.state;
-  }
-
   protected synchronized final void setState(final State state) throws HandshakeException {
     Preconditions.checkArgument(state != State.FAILED);
+    Preconditions.checkArgument(state != State.SUCCESS);
     if (this.state.step < state.step) {
       throw new HandshakeException("Can only increase state step!");
     }
     this.state = state;
   }
 
+  protected synchronized final void setSuccess(final C connection) throws HandshakeException {
+    if (this.state.step < State.SUCCESS.step) {
+      throw new HandshakeException("Can only increase state step!");
+    }
+    if (!this.delegate.set(connection)) {
+      throw new HandshakeException("handshake already set or cancelled");
+    }
+    this.state = State.SUCCESS;
+  }
 
 
   public synchronized final void fail(Throwable cause) {
@@ -69,6 +86,7 @@ public abstract class AbstractHandshakeHandler<C extends Connection> extends Net
       return;
     }
     this.state = State.FAILED;
+    this.delegate.setException(cause);
     onFail(cause);
   }
 
@@ -133,4 +151,46 @@ public abstract class AbstractHandshakeHandler<C extends Connection> extends Net
     throw new HandshakeException("Invalid or unknown packet!");
   }
 
+
+  // Future stuff
+
+  @Override
+  public synchronized boolean cancel(boolean mayInterruptIfRunning) {
+    if (delegate.cancel(mayInterruptIfRunning)) {
+      this.fail(new CancellationException());
+      return true;
+    }
+    return false;
+  }
+
+  @Override
+  public boolean isCancelled() {
+    return delegate.isCancelled();
+  }
+
+  @Override
+  public boolean isDone() {
+    return delegate.isDone();
+  }
+
+  @Override
+  public C get() throws InterruptedException, ExecutionException {
+    return delegate.get();
+  }
+
+  @Override
+  public C get(long timeout, TimeUnit unit)
+      throws InterruptedException, ExecutionException, TimeoutException {
+    return delegate.get(timeout, unit);
+  }
+
+  @Override
+  public boolean isOpen() {
+    return this.channelContext.channel().isOpen() && !delegate.isDone();
+  }
+
+  @Override
+  public void addListener(Runnable listener, Executor exec) {
+    delegate.addListener(listener, exec);
+  }
 }

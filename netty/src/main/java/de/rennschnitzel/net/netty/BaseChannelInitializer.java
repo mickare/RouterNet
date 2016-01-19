@@ -2,6 +2,7 @@ package de.rennschnitzel.net.netty;
 
 import java.util.logging.Logger;
 
+import de.rennschnitzel.net.netty.handshake.AbstractHandshakeHandler;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelInitializer;
