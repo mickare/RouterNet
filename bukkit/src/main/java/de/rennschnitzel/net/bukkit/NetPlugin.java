@@ -1,32 +1,39 @@
 package de.rennschnitzel.net.bukkit;
 
+import java.util.concurrent.Executors;
+
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import de.rennschnitzel.net.Network;
+import de.rennschnitzel.net.NetClient;
 
 public class NetPlugin extends JavaPlugin {
 
-  private static final Gson GSON = new GsonBuilder().create();
+  private final NetClient client = new NetClient();
 
-  private Network network;
-
+  @Override
+  public void onLoad() {
+    client.init(getLogger(), getDataFolder(), Executors.newScheduledThreadPool(1,
+        new ThreadFactoryBuilder().setNameFormat("net-pool-%d").build()));
+  }
 
   @Override
   public void onEnable() {
-
-
-
-    network = new Network();
-
-
+    try {
+      client.enable();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
   public void onDisable() {
-
+    try {
+      client.disable();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
 }

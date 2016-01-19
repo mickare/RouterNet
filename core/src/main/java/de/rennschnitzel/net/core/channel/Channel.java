@@ -73,7 +73,7 @@ public class Channel {
     this.closed = true;
   }
 
-  public void register() {
+  public void sendRegisterMessage() {
     if (isClosed()) {
       return;
     }

@@ -8,6 +8,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +28,8 @@ public class DirectScheduledExecutorService extends DirectExecutorService implem
   private static void warn() {
     if (!warned) {
       warned = true;
-      System.out.println("Waring! Don't use this scheduler, only if you know what you are doing!");
+      Logger.getGlobal()
+          .warning("Don't use this scheduler " + DirectScheduledExecutorService.class.getName() + ", only if you know what you are doing!");
       Thread.dumpStack();
     }
   }

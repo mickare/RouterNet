@@ -21,9 +21,10 @@ import de.rennschnitzel.net.core.channel.ChannelDescriptors;
 import de.rennschnitzel.net.core.channel.object.ConvertObjectChannelException;
 import de.rennschnitzel.net.core.channel.object.ObjectChannel;
 import de.rennschnitzel.net.core.channel.stream.StreamChannel;
-import de.rennschnitzel.net.core.dummy.DummyConnection;
-import de.rennschnitzel.net.core.dummy.DummyNetwork;
 import de.rennschnitzel.net.core.packet.BasePacketHandler;
+import de.rennschnitzel.net.dummy.DummyConnection;
+import de.rennschnitzel.net.dummy.DummyNetwork;
+import de.rennschnitzel.net.util.SimpleOwner;
 
 public class ChannelTest {
 
@@ -43,16 +44,7 @@ public class ChannelTest {
   @Before
   public void setup() {
 
-    testingOwner = new Owner() {
-      @Override
-      public Logger getLogger() {
-        return Logger.getLogger("ChannelTest");
-      }
-      @Override
-      public String getName() {
-        return "ChannelTestOwner";
-      }
-    };
+    testingOwner = new SimpleOwner("ChannelTestOwner",  Logger.getLogger("ChannelTest"));
 
     net_router = new DummyNetwork();
     do {

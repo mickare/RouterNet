@@ -1,4 +1,4 @@
-package de.rennschnitzel.net.client;
+package de.rennschnitzel.net;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,24 +8,27 @@ import java.util.logging.Logger;
 
 import com.google.common.base.Preconditions;
 
-import de.rennschnitzel.net.Network;
+import de.rennschnitzel.net.client.ClientSettings;
+import de.rennschnitzel.net.client.ConfigFile;
+import de.rennschnitzel.net.client.connection.ConnectionService;
+import de.rennschnitzel.net.client.testing.TestingConnectionService;
+import de.rennschnitzel.net.client.testing.TestingFramework;
 import de.rennschnitzel.net.core.Node.HomeNode;
 import lombok.Getter;
 
+@Getter
 public class NetClient {
 
-  @Getter
   private Logger logger = Logger.getGlobal();
-  @Getter
   private File directory;
-  @Getter
   private ConfigFile<ClientSettings> configFile;
 
-  @Getter
   private HomeNode home;
-
-  @Getter
+  private Network network;
+  private ConnectionService connectionService;
   private ScheduledExecutorService executor;
+
+  private TestingFramework test = null;
 
   public NetClient() {}
 
@@ -70,14 +73,22 @@ public class NetClient {
 
   public void enable() throws Exception {
     this.configFile.reload();
-    
-    this.home = new HomeNode(getConfig().getNode().getId());    
-    Network network = new Network(this);
-    Net.
+
+    this.home = new HomeNode(getConfig().getNode().getId());
+    network = new Network(this);
+    Net.setNetwork(network);
+
+    TestingFramework.Mode testMode = this.getConfig().getConnection().getTesting();
+    if (testMode != null && testMode != TestingFramework.Mode.NONE) {
+      this.test = new TestingFramework(this, testMode);
+      this.connectionService = new TestingConnectionService(this.test);
+      this.connectionService.startAsync();
+    }
+
   }
 
   public void disable() throws Exception {
-
+    this.connectionService.stopAsync();
   }
 
 }

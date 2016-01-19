@@ -1,4 +1,4 @@
-package de.rennschnitzel.net.core.dummy;
+package de.rennschnitzel.net.dummy;
 
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;

@@ -25,7 +25,7 @@ public class BasePacketHandler<C extends Connection> implements PacketHandler<C>
     if (!isReceiver(con, msg.getTarget())) {
       return; // drop packet
     }
-    con.getNetwork().getProcedureManager().handle(msg);
+    con.getNetwork().getProcedureManager().handle(con, msg);
   }
 
   @Override
@@ -46,7 +46,7 @@ public class BasePacketHandler<C extends Connection> implements PacketHandler<C>
 
   @Override
   public void handle(C con, CloseMessage msg) throws Exception {
-    con.remoteClosed(msg);
+    con.setCloseMessage(msg);
   }
 
   @Override

@@ -1,17 +1,19 @@
 package de.rennschnitzel.net.client.connection;
 
-import java.io.IOException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.AbstractScheduledService;
+import com.google.common.util.concurrent.ListenableFuture;
 
 import de.rennschnitzel.net.Net;
 import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.exception.NotConnectedException;
+import de.rennschnitzel.net.netty.ConnectionFuture;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.net.util.concurrent.CloseableLock;
@@ -28,7 +30,19 @@ public abstract class AbstractConnectionService<F extends ConnectionFuture<?>>
 
   private final CloseableReadWriteLock lock = new ReentrantCloseableReadWriteLock(true);
 
-  private F connection;
+  private F connection = null;
+
+  private final ScheduledExecutorService executor;
+
+  public AbstractConnectionService(ScheduledExecutorService executor) {
+    Preconditions.checkArgument(!executor.isShutdown());
+    this.executor = executor;
+  }
+
+  @Override
+  protected ScheduledExecutorService executor() {
+    return executor;
+  }
 
   @Override
   public Connection getConnection(long timeout, TimeUnit unit) throws NotConnectedException {
@@ -50,6 +64,11 @@ public abstract class AbstractConnectionService<F extends ConnectionFuture<?>>
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
       throw new NotConnectedException(e);
     }
+  }
+
+  @Override
+  public ListenableFuture<? extends Connection> getConnectionFuture() {
+    return connection;
   }
 
   protected abstract F connect();
@@ -86,60 +105,43 @@ public abstract class AbstractConnectionService<F extends ConnectionFuture<?>>
 
     try (CloseableLock l = lock.writeLock().open()) {
 
-      if (!this.connection.isActive()) {
-        disconnect(this.connection, CLOSEMSG_NORMAL_INACTIVE);
-        reconnect = true;
+      if (this.connection != null) {
+        if (!this.connection.isOpen()) {
+          disconnect(this.connection, CLOSEMSG_NORMAL_INACTIVE);
+          reconnect = true;
 
-      } else {
+        } else {
 
-        try {
-          Connection con = connection.get(3, TimeUnit.SECONDS);
-          if (con.isClosed()) {
+          try {
+            Connection con = connection.get(3, TimeUnit.SECONDS);
+            if (con.isClosed()) {
+              reconnect = true;
+            }
+          } catch (ExecutionException | TimeoutException e) {
+            severe(e, "Failed to get connection");
+            disconnectError(connection, e);
             reconnect = true;
           }
-        } catch (ExecutionException | TimeoutException e) {
-          severe(e, "Failed to get connection");
-          disconnectError(connection, e);
-          reconnect = true;
-        }
 
+        }
       }
 
       if (reconnect) {
         reconnect();
       }
-      int retry = 3;
-      while (isRunning() && reconnect && retry-- > 0) {
-        try {
-          connection = connect();
-          reconnect = false;
-        } catch (Exception e) {
-          severe(e, "Failed to connect");
-          Thread.sleep(1);
-        }
-      }
-
     }
 
   }
 
-  public void reconnect() throws InterruptedException {
+  public void reconnect() {
     try (CloseableLock l = lock.writeLock().open()) {
-      if (connection.isActive()) {
+      if (!isRunning()) {
+        return;
+      }
+      if (this.connection != null && this.connection.isOpen()) {
         this.disconnectNormal(connection, "reconnect");
       }
-      boolean reconnect = true;
-      int retry = 3;
-      while (isRunning() && reconnect && retry-- > 0) {
-        try {
-          connection = connect();
-          reconnect = false;
-        } catch (Exception e) {
-          severe(e, "Failed to connect");
-          connection.cancel(true);
-          Thread.sleep(1);
-        }
-      }
+      this.connection = connect();
     }
   }
 
@@ -152,7 +154,7 @@ public abstract class AbstractConnectionService<F extends ConnectionFuture<?>>
   protected void startUp() {
     try {
       this.connection = connect();
-    } catch (IOException e) {
+    } catch (Exception e) {
       Net.getLogger().log(Level.WARNING, "Exception while connecting:\n" + e.getMessage(), e);
     }
   }
@@ -161,7 +163,7 @@ public abstract class AbstractConnectionService<F extends ConnectionFuture<?>>
   protected void shutDown() {
     try {
       this.disconnectShutDown(connection);
-    } catch (IOException e) {
+    } catch (Exception e) {
       severe(e, "Failed to disconnect");
     }
   }

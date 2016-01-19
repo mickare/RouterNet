@@ -159,13 +159,13 @@ public class ProcedureManager {
   }
 
 
-  public void handle(ProcedureMessage msg) throws Exception {
+  public void handle(Connection con, ProcedureMessage msg) throws Exception {
     switch (msg.getContentCase()) {
       case CALL:
-        handle(msg, msg.getCall());
+        handle(con, msg, msg.getCall());
         break;
       case RESPONSE:
-        handle(msg, msg.getResponse());
+        handle(con, msg, msg.getResponse());
         break;
       default:
         throw new ProtocolException("Unknown content!");
@@ -173,7 +173,7 @@ public class ProcedureManager {
   }
 
 
-  private void handle(ProcedureMessage msg, ProcedureResponseMessage response) {
+  private void handle(Connection con, ProcedureMessage msg, ProcedureResponseMessage response) {
     ProcedureCall<?, ?> call = this.openCalls.getIfPresent(response.getId());
     if (call != null) {
       call.receive(msg, response);
@@ -188,7 +188,7 @@ public class ProcedureManager {
     return b;
   }
 
-  private void sendFail(ProcedureMessage msg, ProcedureCallMessage call, ErrorMessage.Builder error) {
+  private void sendFail(Connection con, ProcedureMessage msg, ProcedureCallMessage call, ErrorMessage.Builder error) {
     ProcedureResponseMessage.Builder b = newResponse(call);
     b.setSuccess(false);
     b.setCancelled(false);
@@ -196,12 +196,12 @@ public class ProcedureManager {
     network.sendProcedureResponse(msg.getSender(), b.build());
   }
 
-  private void handle(ProcedureMessage msg, ProcedureCallMessage call) {
+  private void handle(Connection con, ProcedureMessage msg, ProcedureCallMessage call) {
     try {
       ProcedureInformation key = new ProcedureInformation(call.getProcedure());
       RegisteredProcedure<?, ?> proc = this.registeredProcedures.get(key);
       if (proc == null) {
-        sendFail(msg, call, ErrorMessage.newBuilder().setType(ErrorMessage.Type.UNDEFINED).setMessage("unregistered procedure"));
+        sendFail(con, msg, call, ErrorMessage.newBuilder().setType(ErrorMessage.Type.UNDEFINED).setMessage("unregistered procedure"));
       }
 
       ProcedureResponseMessage.Builder out = newResponse(call);
@@ -212,7 +212,7 @@ public class ProcedureManager {
 
     } catch (Exception e) {
       network.getLogger().log(Level.SEVERE, "Procedure handling failed\n" + e.getMessage(), e);
-      sendFail(msg, call, ErrorMessage.newBuilder().setType(ErrorMessage.Type.UNDEFINED)
+      sendFail(con, msg, call, ErrorMessage.newBuilder().setType(ErrorMessage.Type.UNDEFINED)
           .setMessage("exception in procedure call + (" + e.getMessage() + ")"));
     }
   }

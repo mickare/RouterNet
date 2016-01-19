@@ -9,7 +9,7 @@ import de.rennschnitzel.net.protocol.LoginProtocol.LoginUpgradeMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import io.netty.channel.ChannelHandlerContext;
 
-public class ClientHandshakeHandler extends AbstractHandshakeHandler {
+public class ClientHandshakeHandler extends AbstractHandshakeHandler<ClientConnection> {
 
   public ClientHandshakeHandler() {
     super("ClientHandshake");

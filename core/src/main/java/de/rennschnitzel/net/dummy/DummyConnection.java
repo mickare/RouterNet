@@ -1,10 +1,11 @@
-package de.rennschnitzel.net.core.dummy;
+package de.rennschnitzel.net.dummy;
 
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.core.AbstractNetwork;
 import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.packet.PacketHandler;
+import de.rennschnitzel.net.event.ConnectionEvent;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import lombok.Getter;
@@ -42,19 +43,35 @@ public class DummyConnection extends Connection {
 
       this.getNetwork().getHome().publishChanges();
       connection.getNetwork().getHome().publishChanges();
+
+
+      this.getNetwork().getEventBus().post(new ConnectionEvent.OpenConnectionEvent(this));
+      connection.getNetwork().getEventBus().post(new ConnectionEvent.OpenConnectionEvent(connection));
+
     }
   }
 
+
   public void disconnect() {
+    disconnect(CloseMessage.newBuilder().setNormal("normal disconnect").build());
+  }
+
+  public void disconnect(CloseMessage msg) {
+    Preconditions.checkNotNull(msg);
     synchronized (lockObj) {
       if (this.closed) {
         return;
       }
       this.closed = true;
       if (this.connected != null) {
-        this.connected.receive(Packet.newBuilder().setClose(CloseMessage.newBuilder().setNormal("normal disconnect")).build());
+        this.setCloseMessage(msg);
+        this.connected.receive(Packet.newBuilder().setClose(msg).build());
+        this.connected.closed = true;
+        this.connected.connected = null;
+        this.connected.getNetwork().getEventBus().post(new ConnectionEvent.ClosedConnectionEvent(this.connected));
       }
       this.connected = null;
+      this.getNetwork().getEventBus().post(new ConnectionEvent.ClosedConnectionEvent(this));
     }
   }
 
@@ -75,18 +92,6 @@ public class DummyConnection extends Connection {
       return;
     }
     connected.receive(packet);
-  }
-
-  @Override
-  public boolean remoteClosed(CloseMessage msg) {
-    synchronized (lockObj) {
-      if (this.closed) {
-        return false;
-      }
-      this.closed = true;
-      this.connected = null;
-    }
-    return true;
   }
 
 }

@@ -23,13 +23,13 @@ import de.rennschnitzel.net.Owner;
 import de.rennschnitzel.net.core.Node;
 import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.core.Node.HomeNode;
-import de.rennschnitzel.net.core.dummy.DummyConnection;
-import de.rennschnitzel.net.core.dummy.DummyNetwork;
 import de.rennschnitzel.net.core.packet.BasePacketHandler;
 import de.rennschnitzel.net.core.procedure.Procedure;
 import de.rennschnitzel.net.core.procedure.ProcedureCallResult;
 import de.rennschnitzel.net.core.procedure.ProcedureInformation;
 import de.rennschnitzel.net.core.procedure.RegisteredProcedure;
+import de.rennschnitzel.net.dummy.DummyConnection;
+import de.rennschnitzel.net.dummy.DummyNetwork;
 
 public class ProcedureTest {
 

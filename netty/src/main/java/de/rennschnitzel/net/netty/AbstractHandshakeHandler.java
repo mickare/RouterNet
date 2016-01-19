@@ -2,6 +2,7 @@ package de.rennschnitzel.net.netty;
 
 import com.google.common.base.Preconditions;
 
+import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.exception.ConnectionException;
 import de.rennschnitzel.net.exception.HandshakeException;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeRemoveMessage;
@@ -15,7 +16,8 @@ import io.netty.channel.ChannelHandlerContext;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-public abstract class AbstractHandshakeHandler extends NettyPacketHandler {
+public abstract class AbstractHandshakeHandler<C extends Connection> extends NettyPacketHandler
+    implements ConnectionFuture<C> {
 
   public static final int VERSION = 1;
 
@@ -78,6 +80,14 @@ public abstract class AbstractHandshakeHandler extends NettyPacketHandler {
   }
 
   @Override
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    if (this.state != State.FAILED && this.state != State.SUCCESS) {
+      this.fail(cause);
+    }
+    super.exceptionCaught(ctx, cause);
+  }
+
+  @Override
   protected void channelRead0(final ChannelHandlerContext ctx, final Packet packet)
       throws Exception {
     try {
@@ -89,6 +99,8 @@ public abstract class AbstractHandshakeHandler extends NettyPacketHandler {
       throw e;
     }
   }
+
+
 
   @Override
   public void handle(ChannelHandlerContext ctx, NodeUpdateMessage msg) throws HandshakeException {

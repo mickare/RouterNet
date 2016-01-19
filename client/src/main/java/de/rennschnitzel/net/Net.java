@@ -22,10 +22,10 @@ public class Net {
   @Getter
   private static Network network = null;
 
-  public synchronized void setNetwork(Network network) {
-    if (Net.network != null) {
-      throw new UnsupportedOperationException("Cannot redefine singleton Network");
-    }
+  protected static synchronized void setNetwork(Network network) {
+    //if (Net.network != null) {
+   //   throw new UnsupportedOperationException("Cannot redefine singleton Network");
+   // }
     Net.network = network;
   }
 

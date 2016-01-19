@@ -16,6 +16,7 @@ import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
 @RequiredArgsConstructor
 public abstract class Connection {
@@ -31,6 +32,11 @@ public abstract class Connection {
   @NonNull
   private final AbstractNetwork network;
 
+  @Getter
+  @Setter
+  @NonNull
+  private CloseMessage closeMessage = null;
+  
   public Channel getChannelIfPresent(String name) {
     return this.channelsByName.get(name.toLowerCase());
   }
@@ -63,7 +69,7 @@ public abstract class Connection {
           this.channelsByName.put(channel.getName(), channel);
           this.channelsById.put(channel.getChannelId(), channel);
           if (register) {
-            channel.register();
+            channel.sendRegisterMessage();
           }
         }
       }
@@ -87,7 +93,7 @@ public abstract class Connection {
           Channel channel = getChannel(descriptor.getName(), false);
           subChannel = descriptor.create(channel);
           this.subChannels.put(descriptor, subChannel);
-          channel.register();
+          channel.sendRegisterMessage();
         }
       }
     }
@@ -109,8 +115,6 @@ public abstract class Connection {
   }
 
   public abstract boolean isClosed();
-
-  public abstract boolean remoteClosed(CloseMessage msg);
 
   private static boolean isDifferentChannelRegister(Channel dupl, ChannelRegister msg) {
     if (dupl != null) {
