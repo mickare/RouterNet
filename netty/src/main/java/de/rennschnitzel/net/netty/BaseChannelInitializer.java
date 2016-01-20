@@ -2,9 +2,11 @@ package de.rennschnitzel.net.netty;
 
 import java.util.logging.Logger;
 
-import de.rennschnitzel.net.netty.handshake.AbstractHandshakeHandler;
+import de.rennschnitzel.net.core.handshake.AbstractHandshakeHandler;
+import de.rennschnitzel.net.netty.handshake.NettyHandshakeAdapter;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -26,7 +28,7 @@ public class BaseChannelInitializer extends ChannelInitializer<SocketChannel> {
   private final Logger logger;
 
   @NonNull
-  private final AbstractHandshakeHandler handshake;
+  private final NettyHandshakeAdapter<?> handshake;
 
   @Override
   public void initChannel(SocketChannel ch) throws Exception {

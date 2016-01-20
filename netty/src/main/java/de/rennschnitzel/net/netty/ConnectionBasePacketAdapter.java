@@ -3,7 +3,7 @@ package de.rennschnitzel.net.netty;
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.core.Connection;
-import de.rennschnitzel.net.core.packet.BasePacketHandler;
+import de.rennschnitzel.net.core.packet.PacketHandler;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginChallengeMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginHandshakeMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginResponseMessage;
@@ -30,7 +30,7 @@ public class ConnectionBasePacketAdapter<C extends Connection> extends NettyPack
 
   @Getter
   @NonNull
-  private final BasePacketHandler<C> handler;
+  private final PacketHandler<C> handler;
 
   @Getter
   private ChannelHandlerContext context = null;
@@ -40,6 +40,12 @@ public class ConnectionBasePacketAdapter<C extends Connection> extends NettyPack
     Preconditions.checkNotNull(ctx);
     Preconditions.checkState(this.context == null);
     this.context = ctx;
+  }
+
+
+  @Override
+  public void contextActive(ChannelHandlerContext ctx) throws Exception {
+
   }
 
   @Override

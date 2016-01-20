@@ -4,6 +4,7 @@ import de.rennschnitzel.net.protocol.LoginProtocol.LoginChallengeMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginHandshakeMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginResponseMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginSuccessMessage;
+import de.rennschnitzel.net.protocol.LoginProtocol.LoginUpgradeMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeRemoveMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeTopologyMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
@@ -88,14 +89,23 @@ public final class PacketUtil {
   }
 
   public static final ChannelFuture writeAndFlush(final Channel ch, //
-
-  final LoginSuccessMessage.Builder value) {
+      final LoginSuccessMessage.Builder value) {
     return writeAndFlush(ch, Packet.newBuilder().setLoginSuccess(value));
   }
 
   public static final ChannelFuture writeAndFlush(final Channel ch, //
       final LoginSuccessMessage value) {
     return writeAndFlush(ch, Packet.newBuilder().setLoginSuccess(value));
+  }
+
+  public static final ChannelFuture writeAndFlush(final Channel ch, //
+      final LoginUpgradeMessage.Builder value) {
+    return writeAndFlush(ch, Packet.newBuilder().setLoginUpgrade(value));
+  }
+
+  public static final ChannelFuture writeAndFlush(final Channel ch, //
+      final LoginUpgradeMessage value) {
+    return writeAndFlush(ch, Packet.newBuilder().setLoginUpgrade(value));
   }
 
   // ******************************************************************************
