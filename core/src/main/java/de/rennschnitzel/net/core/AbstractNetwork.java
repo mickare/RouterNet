@@ -1,5 +1,6 @@
 package de.rennschnitzel.net.core;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -17,6 +18,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.common.eventbus.EventBus;
 
 import de.rennschnitzel.net.ProtocolUtils;
@@ -62,7 +64,7 @@ public abstract class AbstractNetwork {
     home.setNetwork(this);
     this.home = home;
     this.nodes.put(home.getId(), home);
-    this.nodesCache.put(home.getId(), home);
+    // this.nodesCache.put(home.getId(), home);
     AbstractNetwork.instance = this;
   }
 
@@ -73,15 +75,15 @@ public abstract class AbstractNetwork {
   // ***************************************************************************
   // Connection (sending)
 
-  protected abstract <T, R> void sendProcedureCall(ProcedureCall<T, R> call);
+  protected abstract <T, R> void sendProcedureCall(ProcedureCall<T, R> call) throws IOException;
 
-  protected abstract void sendProcedureResponse(UUID receiver, ProcedureResponseMessage build);
+  protected abstract void sendProcedureResponse(UUID receiver, ProcedureResponseMessage build) throws IOException;
 
-  protected void sendProcedureResponse(UUIDMessage receiver, ProcedureResponseMessage build) {
+  protected void sendProcedureResponse(UUIDMessage receiver, ProcedureResponseMessage build) throws IOException {
     sendProcedureResponse(ProtocolUtils.convert(receiver), build);
   }
 
-  protected abstract void sendHomeNodeUpdate();
+  protected abstract void sendHomeNodeUpdate() throws IOException;
 
   // ***************************************************************************
   // Nodes
@@ -150,6 +152,14 @@ public abstract class AbstractNetwork {
     if (id.equals(this.getHome().getId())) {
       throw new IllegalArgumentException("Forbidden to update home node!");
     }
+    return updateNodeSilent(msg);
+  }
+
+  private Node updateNodeSilent(NodeMessage msg) {
+    UUID id = ProtocolUtils.convert(msg.getId());
+    if (id.equals(this.getHome().getId())) {
+      return this.getHome();
+    }
     Node node = nodesCache.getUnchecked(id);
     node.connected(msg);
     Node old = this.nodes.put(id, node);
@@ -162,8 +172,14 @@ public abstract class AbstractNetwork {
   }
 
   public void updateNodes(NodeTopologyMessage msg) {
-    // TODO Auto-generated method stub
-
+    try (CloseableLock l = nodeLock.readLock().open()) {
+      Set<Node> retain = Sets.newHashSet();
+      for (NodeMessage node : msg.getNodesList()) {
+        retain.add(updateNodeSilent(node));
+      }
+      retain.add(this.getHome());
+      this.nodes.values().retainAll(retain);
+    }
   }
 
   public void removeNode(UUID id) {
@@ -177,5 +193,14 @@ public abstract class AbstractNetwork {
     }
   }
 
+  public NodeTopologyMessage getTopologyMessage() {
+    NodeTopologyMessage.Builder b = NodeTopologyMessage.newBuilder();
+    try (CloseableLock l = nodeLock.readLock().open()) {
+      for (Node node : this.nodes.values()) {
+        b.addNodes(node.toProtocol());
+      }
+    }
+    return b.build();
+  }
 
 }

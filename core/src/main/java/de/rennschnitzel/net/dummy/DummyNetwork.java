@@ -1,5 +1,6 @@
 package de.rennschnitzel.net.dummy;
 
+import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -57,7 +58,7 @@ public class DummyNetwork extends AbstractNetwork {
   }
 
   @Override
-  public <T, R> void sendProcedureCall(ProcedureCall<T, R> call) {
+  public <T, R> void sendProcedureCall(ProcedureCall<T, R> call) throws IOException {
     ProcedureMessage.Builder b = ProcedureMessage.newBuilder();
     b.setTarget(call.getTarget().getProtocolMessage());
     b.setSender(ProtocolUtils.convert(getHome().getId()));
@@ -71,7 +72,7 @@ public class DummyNetwork extends AbstractNetwork {
   }
 
   @Override
-  public void sendProcedureResponse(UUID receiver, ProcedureResponseMessage msg) {
+  public void sendProcedureResponse(UUID receiver, ProcedureResponseMessage msg) throws IOException {
     connection.send(Packet.newBuilder().setProcedureMessage(ProcedureMessage.newBuilder()
         .setSender(ProtocolUtils.convert(getHome().getId())).setTarget(Target.to(receiver).getProtocolMessage()).setResponse(msg)));
   }
@@ -82,7 +83,7 @@ public class DummyNetwork extends AbstractNetwork {
   }
 
   @Override
-  public void sendHomeNodeUpdate() {
+  public void sendHomeNodeUpdate() throws IOException {
     this.connection.send(Packet.newBuilder().setNodeUpdate(NodeUpdateMessage.newBuilder().setNode(this.getHome().toProtocol())));
   }
 

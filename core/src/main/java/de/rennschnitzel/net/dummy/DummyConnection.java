@@ -1,5 +1,7 @@
 package de.rennschnitzel.net.dummy;
 
+import java.io.IOException;
+
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.core.AbstractNetwork;
@@ -10,6 +12,7 @@ import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 public class DummyConnection extends Connection {
 
@@ -19,7 +22,9 @@ public class DummyConnection extends Connection {
   @Getter
   private boolean closed = false;
 
-  private final PacketHandler<DummyConnection> handler;
+  @Setter
+  @NonNull
+  private PacketHandler<DummyConnection> handler;
 
   @Getter
   @NonNull
@@ -30,6 +35,11 @@ public class DummyConnection extends Connection {
     super(network);
     Preconditions.checkNotNull(handler);
     this.handler = handler;
+    try {
+      handler.handlerAdded(this);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public void connect(DummyConnection connection) {
@@ -41,6 +51,13 @@ public class DummyConnection extends Connection {
       this.connected = connection;
       connection.connected = this;
 
+      try {
+        this.connected.handler.contextActive(this.connected);
+        this.handler.contextActive(this);
+      } catch (Exception e) {
+        throw new RuntimeException(e.getMessage(), e);
+      }
+
       this.getNetwork().getHome().publishChanges();
       connection.getNetwork().getHome().publishChanges();
 
@@ -51,6 +68,9 @@ public class DummyConnection extends Connection {
     }
   }
 
+  public boolean isActive() {
+    return !this.isClosed() && this.connected != null;
+  }
 
   public void disconnect() {
     disconnect(CloseMessage.newBuilder().setNormal("normal disconnect").build());
@@ -58,40 +78,47 @@ public class DummyConnection extends Connection {
 
   public void disconnect(CloseMessage msg) {
     Preconditions.checkNotNull(msg);
-    synchronized (lockObj) {
-      if (this.closed) {
-        return;
+    try {
+      synchronized (lockObj) {
+        if (this.closed) {
+          return;
+        }
+        this.closed = true;
+        if (this.connected != null) {
+          this.setCloseMessage(msg);
+          this.connected.receive(Packet.newBuilder().setClose(msg).build());
+
+          this.connected.closed = true;
+          this.connected.connected = null;
+          this.connected.getNetwork().getEventBus().post(new ConnectionEvent.ClosedConnectionEvent(this.connected));
+        }
+        this.connected = null;
+        this.getNetwork().getEventBus().post(new ConnectionEvent.ClosedConnectionEvent(this));
       }
-      this.closed = true;
-      if (this.connected != null) {
-        this.setCloseMessage(msg);
-        this.connected.receive(Packet.newBuilder().setClose(msg).build());
-        this.connected.closed = true;
-        this.connected.connected = null;
-        this.connected.getNetwork().getEventBus().post(new ConnectionEvent.ClosedConnectionEvent(this.connected));
-      }
-      this.connected = null;
-      this.getNetwork().getEventBus().post(new ConnectionEvent.ClosedConnectionEvent(this));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
   }
 
-  public void receive(Packet packet) {
+  public void receive(Packet packet) throws Exception {
+    if (closed) {
+      return;
+    }
+    handler.handle(this, packet);
+  }
+
+  @Override
+  public void send(Packet packet) throws IOException {
     if (closed) {
       return;
     }
     try {
-      handler.handle(this, packet);
-    } catch (Exception pe) {
-      throw new RuntimeException(pe);
+      connected.receive(packet);
+    } catch (IOException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new IOException(e);
     }
-  }
-
-  @Override
-  public void send(Packet packet) {
-    if (closed) {
-      return;
-    }
-    connected.receive(packet);
   }
 
 }

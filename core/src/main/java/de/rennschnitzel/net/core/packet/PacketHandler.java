@@ -13,6 +13,10 @@ import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
 
 public interface PacketHandler<C> {
 
+  void contextActive(C ctx) throws Exception;
+
+  void handlerAdded(C ctx) throws Exception;
+
   default void handle(C ctx, Packet packet) throws Exception {
     switch (packet.getValueCase()) {
       // Transport

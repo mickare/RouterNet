@@ -23,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 
 public class Channel {
 
+  @Getter
   private final Connection connection;
   @Getter
   private volatile boolean closed;
@@ -73,7 +74,7 @@ public class Channel {
     this.closed = true;
   }
 
-  public void sendRegisterMessage() {
+  public void sendRegisterMessage() throws IOException {
     if (isClosed()) {
       return;
     }

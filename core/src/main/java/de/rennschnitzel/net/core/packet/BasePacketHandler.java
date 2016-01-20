@@ -16,6 +16,12 @@ import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
 
 public class BasePacketHandler<C extends Connection> implements PacketHandler<C> {
 
+  @Override
+  public void handlerAdded(C ctx) throws Exception {}
+
+  @Override
+  public void contextActive(C ctx) throws Exception {}
+
   public boolean isReceiver(C con, TransportProtocol.TargetMessage target) {
     return con.getNetwork().getHome().isPart(target);
   }
@@ -89,5 +95,7 @@ public class BasePacketHandler<C extends Connection> implements PacketHandler<C>
     UUID id = ProtocolUtils.convert(msg.getId());
     con.getNetwork().removeNode(id);
   }
+
+
 
 }

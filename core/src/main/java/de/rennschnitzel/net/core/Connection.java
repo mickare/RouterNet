@@ -36,7 +36,7 @@ public abstract class Connection {
   @Setter
   @NonNull
   private CloseMessage closeMessage = null;
-  
+
   public Channel getChannelIfPresent(String name) {
     return this.channelsByName.get(name.toLowerCase());
   }
@@ -53,11 +53,11 @@ public abstract class Connection {
     return id;
   }
 
-  public Channel getChannel(String name) {
+  public Channel getChannel(String name) throws IOException {
     return getChannel(name, true);
   }
 
-  private Channel getChannel(String name, boolean register) {
+  private Channel getChannel(String name, boolean register) throws IOException {
     final String key = name.toLowerCase();
     Channel channel = this.channelsByName.get(key);
     if (channel == null) {
@@ -82,7 +82,7 @@ public abstract class Connection {
     return descriptor.cast(this.subChannels.get(descriptor));
   }
 
-  public <S extends SubChannel> S getChannel(SubChannelDescriptor<S> descriptor) {
+  public <S extends SubChannel> S getChannel(SubChannelDescriptor<S> descriptor) throws IOException {
     Preconditions.checkNotNull(descriptor);
     S subChannel = getChannelIfPresent(descriptor);
     if (subChannel == null) {
@@ -100,9 +100,9 @@ public abstract class Connection {
     return subChannel;
   }
 
-  public abstract void send(TransportProtocol.Packet packet);
+  public abstract void send(TransportProtocol.Packet packet) throws IOException;
 
-  public void send(TransportProtocol.Packet.Builder packet) {
+  public void send(TransportProtocol.Packet.Builder packet) throws IOException {
     send(packet.build());
   }
 
@@ -110,11 +110,13 @@ public abstract class Connection {
     send(TransportProtocol.Packet.newBuilder().setChannelMessage(msg).build());
   }
 
-  public void sendChannelMessage(TransportProtocol.ChannelMessage.Builder msg) {
+  public void sendChannelMessage(TransportProtocol.ChannelMessage.Builder msg) throws IOException {
     send(TransportProtocol.Packet.newBuilder().setChannelMessage(msg).build());
   }
 
   public abstract boolean isClosed();
+
+  public abstract boolean isActive();
 
   private static boolean isDifferentChannelRegister(Channel dupl, ChannelRegister msg) {
     if (dupl != null) {

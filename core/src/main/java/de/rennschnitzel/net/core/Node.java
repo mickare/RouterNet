@@ -1,5 +1,6 @@
 package de.rennschnitzel.net.core;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -7,6 +8,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import com.google.common.base.Preconditions;
@@ -168,6 +170,22 @@ public class Node {
 
   }
 
+
+  public NodeMessage toProtocol() {
+    NodeMessage.Builder b = NodeMessage.newBuilder();
+    b.setType(this.type);
+    this.getData().put(b);
+    b.setId(ProtocolUtils.convert(this.getId()));
+    if (name.isPresent()) {
+      b.setName(this.name.get());
+    }
+    b.setStartTimestamp(this.startTimestamp);
+    b.addAllNamespaces(this.namespaces);
+    this.procedures.stream().map(ProcedureInformation::toProtocol).forEach(b::addProcedures);
+    return b.build();
+  }
+
+
   // Home Node
 
   public static class HomeNode extends Node {
@@ -243,11 +261,15 @@ public class Node {
         throw new IllegalStateException();
       }
       network.scheduleAsyncLater(() -> {
-        publishChanges(network);
+        try {
+          publishChanges(network);
+        } catch (Exception e) {
+          network.getLogger().log(Level.SEVERE, "Failed to publish home node updates", e);
+        }
       } , 100, TimeUnit.MICROSECONDS);
     }
 
-    public void publishChanges(AbstractNetwork network) {
+    public void publishChanges(AbstractNetwork network) throws IOException {
       Preconditions.checkArgument(network.getHome() == this);
       if (!this.dirty) {
         return;
@@ -269,20 +291,6 @@ public class Node {
     @Override
     protected synchronized void disconnected() {
       throw new UnsupportedOperationException();
-    }
-
-    public NodeMessage toProtocol() {
-      NodeMessage.Builder b = NodeMessage.newBuilder();
-      b.setType(this.type);
-      this.getData().put(b);
-      b.setId(ProtocolUtils.convert(this.getId()));
-      if (name.isPresent()) {
-        b.setName(this.name.get());
-      }
-      b.setStartTimestamp(this.startTimestamp);
-      b.addAllNamespaces(this.namespaces);
-      this.procedures.stream().map(ProcedureInformation::toProtocol).forEach(b::addProcedures);
-      return b.build();
     }
 
     @Override

@@ -1,5 +1,6 @@
 package de.rennschnitzel.net.core;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
@@ -188,7 +189,7 @@ public class ProcedureManager {
     return b;
   }
 
-  private void sendFail(Connection con, ProcedureMessage msg, ProcedureCallMessage call, ErrorMessage.Builder error) {
+  private void sendFail(Connection con, ProcedureMessage msg, ProcedureCallMessage call, ErrorMessage.Builder error) throws IOException {
     ProcedureResponseMessage.Builder b = newResponse(call);
     b.setSuccess(false);
     b.setCancelled(false);
@@ -212,8 +213,13 @@ public class ProcedureManager {
 
     } catch (Exception e) {
       network.getLogger().log(Level.SEVERE, "Procedure handling failed\n" + e.getMessage(), e);
-      sendFail(con, msg, call, ErrorMessage.newBuilder().setType(ErrorMessage.Type.UNDEFINED)
-          .setMessage("exception in procedure call + (" + e.getMessage() + ")"));
+      try {
+        sendFail(con, msg, call, ErrorMessage.newBuilder().setType(ErrorMessage.Type.UNDEFINED)
+            .setMessage("exception in procedure call + (" + e.getMessage() + ")"));
+      } catch (IOException e1) {
+        // not anything we can do here anymore...
+        this.getNetwork().getLogger().log(Level.SEVERE, "Unrecoverable exception: " + e1.getMessage(), e1);
+      }
     }
   }
 

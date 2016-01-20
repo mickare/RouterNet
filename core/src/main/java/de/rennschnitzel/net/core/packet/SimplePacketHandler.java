@@ -18,8 +18,14 @@ public class SimplePacketHandler<C> implements PacketHandler<C> {
   public SimplePacketHandler() {}
 
   @Override
-  public void handle(C ctx, CloseMessage msg) throws Exception {
+  public void handlerAdded(C ctx) throws Exception {}
 
+  @Override
+  public void contextActive(C ctx) throws Exception {}
+
+  @Override
+  public void handle(C ctx, CloseMessage msg) throws Exception {
+    throw new UnsupportedOperationException("Not implemented!");
   }
 
   @Override
