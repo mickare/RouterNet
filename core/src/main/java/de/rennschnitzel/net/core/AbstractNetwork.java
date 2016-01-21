@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -24,6 +26,9 @@ import com.google.common.eventbus.EventBus;
 import de.rennschnitzel.net.ProtocolUtils;
 import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.procedure.ProcedureCall;
+import de.rennschnitzel.net.core.tunnel.TunnelMessage;
+import de.rennschnitzel.net.core.tunnel.SubTunnel;
+import de.rennschnitzel.net.core.tunnel.SubChannelDescriptor;
 import de.rennschnitzel.net.event.NetworkNodeEvent;
 import de.rennschnitzel.net.protocol.ComponentsProtocol.UUIDMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
@@ -31,6 +36,7 @@ import de.rennschnitzel.net.protocol.NetworkProtocol.NodeTopologyMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
 import de.rennschnitzel.net.util.concurrent.CloseableLock;
 import de.rennschnitzel.net.util.concurrent.CloseableReadWriteLock;
+import de.rennschnitzel.net.util.concurrent.ReentrantCloseableLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
 import lombok.Getter;
 import lombok.NonNull;
@@ -55,6 +61,10 @@ public abstract class AbstractNetwork {
 
   @Getter
   private final ProcedureManager procedureManager = new ProcedureManager(this);
+
+  private final CloseableLock channelLock = new ReentrantCloseableLock();
+  private final ConcurrentMap<String, Tunnel> channelsByName = new ConcurrentHashMap<>();
+  private final ConcurrentMap<SubChannelDescriptor<?>, SubTunnel> subChannels = new ConcurrentHashMap<>();
 
   @Getter
   private final EventBus eventBus = new EventBus();
@@ -84,6 +94,57 @@ public abstract class AbstractNetwork {
   }
 
   protected abstract void sendHomeNodeUpdate() throws IOException;
+
+  protected abstract void sendChannelMessage(TunnelMessage cmsg) throws IOException;
+
+
+  // ***************************************************************************
+  // Nodes
+
+  public Tunnel getChannelIfPresent(String name) {
+    return this.channelsByName.get(name.toLowerCase());
+  }
+
+
+
+  public Tunnel getChannel(String name) throws IOException {
+    final String key = name.toLowerCase();
+    Tunnel channel = this.channelsByName.get(key);
+    if (channel == null) {
+      try (CloseableLock l = channelLock.open()) {
+        // Check again, but in synchronized state!
+        channel = this.channelsByName.get(key);
+        if (channel == null) {
+          channel = new Tunnel(this, key);
+          this.channelsByName.put(channel.getName(), channel);
+        }
+      }
+    }
+    return channel;
+  }
+
+  public <S extends SubTunnel> S getChannelIfPresent(SubChannelDescriptor<S> descriptor) {
+    Preconditions.checkNotNull(descriptor);
+    return descriptor.cast(this.subChannels.get(descriptor));
+  }
+
+  public <S extends SubTunnel> S getChannel(SubChannelDescriptor<S> descriptor) throws IOException {
+    Preconditions.checkNotNull(descriptor);
+    S subChannel = getChannelIfPresent(descriptor);
+    if (subChannel == null) {
+      try (CloseableLock l = channelLock.open()) {
+        // Check again, but in synchronized state!
+        subChannel = getChannelIfPresent(descriptor);
+        if (subChannel == null) {
+          Tunnel channel = getChannel(descriptor.getName());
+          subChannel = descriptor.create(channel);
+          this.subChannels.put(descriptor, subChannel);
+        }
+      }
+    }
+    return subChannel;
+  }
+
 
   // ***************************************************************************
   // Nodes

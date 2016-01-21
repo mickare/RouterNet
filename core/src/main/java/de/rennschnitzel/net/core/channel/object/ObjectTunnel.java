@@ -10,24 +10,24 @@ import java.util.logging.Level;
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.Owner;
+import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.Target;
-import de.rennschnitzel.net.core.channel.AbstractSubChannel;
-import de.rennschnitzel.net.core.channel.AbstractSubChannelDescriptor;
-import de.rennschnitzel.net.core.channel.Channel;
-import de.rennschnitzel.net.core.channel.ChannelHandler;
-import de.rennschnitzel.net.core.channel.ChannelMessage;
-import de.rennschnitzel.net.core.channel.SubChannel;
-import de.rennschnitzel.net.core.channel.SubChannelDescriptor;
+import de.rennschnitzel.net.core.tunnel.AbstractSubTunnel;
+import de.rennschnitzel.net.core.tunnel.AbstractSubTunnelDescriptor;
+import de.rennschnitzel.net.core.tunnel.TunnelHandler;
+import de.rennschnitzel.net.core.tunnel.TunnelMessage;
+import de.rennschnitzel.net.core.tunnel.SubTunnel;
+import de.rennschnitzel.net.core.tunnel.SubChannelDescriptor;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-public class ObjectChannel<T> extends AbstractSubChannel<ObjectChannel<T>, ObjectChannel.Descriptor<T>>
-    implements ChannelHandler, SubChannel {
+public class ObjectTunnel<T> extends AbstractSubTunnel<ObjectTunnel<T>, ObjectTunnel.Descriptor<T>>
+    implements TunnelHandler, SubTunnel {
 
-  public static class Descriptor<T> extends AbstractSubChannelDescriptor<Descriptor<T>, ObjectChannel<T>>
-      implements SubChannelDescriptor<ObjectChannel<T>> {
+  public static class Descriptor<T> extends AbstractSubTunnelDescriptor<Descriptor<T>, ObjectTunnel<T>>
+      implements SubChannelDescriptor<ObjectTunnel<T>> {
 
     @Getter
     private final Class<T> dataClass;
@@ -39,7 +39,7 @@ public class ObjectChannel<T> extends AbstractSubChannel<ObjectChannel<T>, Objec
     }
 
     public Descriptor(String name, Class<T> dataClass, ObjectConverter<T> converter) {
-      super(name, TransportProtocol.ChannelRegister.Type.OBJECT);
+      super(name, TransportProtocol.TunnelRegister.Type.OBJECT);
       Preconditions.checkNotNull(dataClass);
       Preconditions.checkNotNull(converter);
       this.dataClass = dataClass;
@@ -64,25 +64,25 @@ public class ObjectChannel<T> extends AbstractSubChannel<ObjectChannel<T>, Objec
     }
 
     @Override
-    public ObjectChannel<T> create(Channel parentChannel) {
-      return new ObjectChannel<>(parentChannel, this);
+    public ObjectTunnel<T> create(Tunnel parentChannel) {
+      return new ObjectTunnel<>(parentChannel, this);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public ObjectChannel<T> cast(SubChannel channel) {
+    public ObjectTunnel<T> cast(SubTunnel channel) {
       if (channel == null) {
         return null;
       }
       Preconditions.checkArgument(channel.getDescriptor() == this);
-      return (ObjectChannel<T>) channel;
+      return (ObjectTunnel<T>) channel;
     }
 
   }
 
   private final CopyOnWriteArraySet<RegisteredMessageListener> listeners = new CopyOnWriteArraySet<>();
 
-  public ObjectChannel(Channel parentChannel, Descriptor<T> descriptor) throws IllegalStateException {
+  public ObjectTunnel(Tunnel parentChannel, Descriptor<T> descriptor) throws IllegalStateException {
     super(parentChannel, descriptor);
   }
 
@@ -99,11 +99,11 @@ public class ObjectChannel<T> extends AbstractSubChannel<ObjectChannel<T>, Objec
   }
 
   public void send(ObjectChannelMessage<T> ocmsg) throws IOException {
-    this.parentChannel.send(ocmsg);
+    this.parentTunnel.send(ocmsg);
   }
 
   @Override
-  public void receive(ChannelMessage cmsg) throws ConvertObjectChannelException {
+  public void receive(TunnelMessage cmsg) throws ConvertObjectChannelException {
     this.receive(new ObjectChannelMessage<T>(this, cmsg));
   }
 

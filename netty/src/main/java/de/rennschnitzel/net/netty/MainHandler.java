@@ -8,6 +8,7 @@ import com.google.common.base.Preconditions;
 import de.rennschnitzel.net.core.AbstractNetwork;
 import de.rennschnitzel.net.core.login.LoginHandler;
 import de.rennschnitzel.net.core.packet.PacketHandler;
+import de.rennschnitzel.net.event.ConnectionEvent;
 import de.rennschnitzel.net.exception.ConnectionException;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
@@ -30,6 +31,7 @@ public class MainHandler<N extends AbstractNetwork> extends SimpleChannelInbound
   @Getter(AccessLevel.PROTECTED)
   private ChannelHandlerContext context;
 
+  @Getter
   private volatile State state = State.NEW;
 
   private LoginHandler<ChannelHandlerContext> loginHandler = null;
@@ -89,7 +91,6 @@ public class MainHandler<N extends AbstractNetwork> extends SimpleChannelInbound
     this.state = State.CLOSED;
   }
 
-
   @Override
   protected void channelRead0(ChannelHandlerContext ctx, Packet packet) throws Exception {
 
@@ -100,6 +101,7 @@ public class MainHandler<N extends AbstractNetwork> extends SimpleChannelInbound
           this.state = State.RUNNING;
           this.connection =
               new NettyConnection<N>(network, loginHandler.getId(), this, this.packetHandler);
+          this.network.getEventBus().post(new ConnectionEvent.OpenConnectionEvent(connection));
         } else {
 
           this.state = State.CLOSED;

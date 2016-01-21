@@ -15,13 +15,13 @@ import org.junit.Before;
 import org.junit.Test;
 
 import de.rennschnitzel.net.Owner;
+import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.Target;
-import de.rennschnitzel.net.core.channel.Channel;
-import de.rennschnitzel.net.core.channel.ChannelDescriptors;
 import de.rennschnitzel.net.core.channel.object.ConvertObjectChannelException;
-import de.rennschnitzel.net.core.channel.object.ObjectChannel;
-import de.rennschnitzel.net.core.channel.stream.StreamChannel;
+import de.rennschnitzel.net.core.channel.object.ObjectTunnel;
+import de.rennschnitzel.net.core.channel.stream.StreamTunnel;
 import de.rennschnitzel.net.core.packet.BasePacketHandler;
+import de.rennschnitzel.net.core.tunnel.TunnelDescriptors;
 import de.rennschnitzel.net.dummy.DummyConnection;
 import de.rennschnitzel.net.dummy.DummyNetwork;
 import de.rennschnitzel.net.util.SimpleOwner;
@@ -67,9 +67,9 @@ public class ChannelTest {
   @Test
   public void testChannel() throws IOException {
 
-    Channel base0 = con_client.getChannel("base0");
+    Tunnel base0 = con_client.getChannel("base0");
     assertTrue(con_router.getChannelIfPresent("base0").getChannelId() == base0.getChannelId());
-    Channel base1 = con_router.getChannel("base1");
+    Tunnel base1 = con_router.getChannel("base1");
     assertTrue(con_client.getChannelIfPresent("base1").getChannelId() == base1.getChannelId());
 
     byte[] data0 = new byte[128];
@@ -121,10 +121,10 @@ public class ChannelTest {
   @Test
   public void testObjectChannel() throws ConvertObjectChannelException, IOException {
 
-    ObjectChannel.Descriptor<String> desc = ChannelDescriptors.getObjectChannel("object", String.class);
+    ObjectTunnel.Descriptor<String> desc = TunnelDescriptors.getObjectTunnel("object", String.class);
 
-    ObjectChannel<String> ch_client = con_client.getChannel(desc);
-    ObjectChannel<String> ch_router = con_router.getChannel(desc);
+    ObjectTunnel<String> ch_client = con_client.getChannel(desc);
+    ObjectTunnel<String> ch_router = con_router.getChannel(desc);
 
     byte[] data = new byte[128];
     rand.nextBytes(data);
@@ -147,11 +147,11 @@ public class ChannelTest {
   @Test
   public void testStreamChannel() throws IOException {
 
-    StreamChannel.Descriptor descIn = ChannelDescriptors.getStreamChannel("stream");
-    StreamChannel.Descriptor descOut = ChannelDescriptors.getStreamChannel("stream");
+    StreamTunnel.Descriptor descIn = TunnelDescriptors.getStreamTunnel("stream");
+    StreamTunnel.Descriptor descOut = TunnelDescriptors.getStreamTunnel("stream");
 
-    StreamChannel client = con_client.getChannel(descOut);
-    StreamChannel router = con_router.getChannel(descIn);
+    StreamTunnel client = con_client.getChannel(descOut);
+    StreamTunnel router = con_router.getChannel(descIn);
 
     try (InputStream routerIn = router.newInputBuffer()) {
       try (InputStream clientIn = client.newInputBuffer()) {

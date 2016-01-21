@@ -8,13 +8,13 @@ import java.util.logging.Logger;
 
 import com.google.common.eventbus.EventBus;
 
+import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.Namespace;
 import de.rennschnitzel.net.core.Node;
 import de.rennschnitzel.net.core.ProcedureManager;
 import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.core.Node.HomeNode;
-import de.rennschnitzel.net.core.channel.Channel;
 import de.rennschnitzel.net.exception.NotConnectedException;
 import lombok.Getter;
 
@@ -53,11 +53,11 @@ public class Net {
     return network.getConnection();
   }
 
-  public static Channel getChannel(String name) throws IOException {
+  public static Tunnel getChannel(String name) throws IOException {
     return getConnection().getChannel(name);
   }
 
-  public static Channel getChannelIfPresent(String name) throws NotConnectedException {
+  public static Tunnel getChannelIfPresent(String name) throws NotConnectedException {
     return getConnection().getChannelIfPresent(name);
   }
 

@@ -11,12 +11,12 @@ import de.rennschnitzel.net.exception.ProtocolException;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeRemoveMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeTopologyMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
-import de.rennschnitzel.net.protocol.TransportProtocol.ChannelMessage;
-import de.rennschnitzel.net.protocol.TransportProtocol.ChannelRegister;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
+import de.rennschnitzel.net.protocol.TransportProtocol.TunnelMessage;
+import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -137,7 +137,7 @@ public abstract class LoginHandler<C> implements PacketHandler<C> {
   }
 
   @Override
-  public void handle(C ctx, ChannelMessage message) throws HandshakeException {
+  public void handle(C ctx, TunnelMessage message) throws HandshakeException {
     throw new HandshakeException("Invalid or unknown packet!");
   }
 
@@ -148,7 +148,7 @@ public abstract class LoginHandler<C> implements PacketHandler<C> {
   }
 
   @Override
-  public void handle(C ctx, ChannelRegister msg) throws HandshakeException {
+  public void handle(C ctx, TunnelRegister msg) throws HandshakeException {
     throw new HandshakeException("Invalid or unknown packet!");
   }
 

@@ -16,25 +16,25 @@ import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 
 import de.rennschnitzel.net.core.Target;
-import de.rennschnitzel.net.core.channel.AbstractSubChannel;
-import de.rennschnitzel.net.core.channel.AbstractSubChannelDescriptor;
-import de.rennschnitzel.net.core.channel.Channel;
-import de.rennschnitzel.net.core.channel.ChannelHandler;
-import de.rennschnitzel.net.core.channel.ChannelMessage;
-import de.rennschnitzel.net.core.channel.SubChannel;
-import de.rennschnitzel.net.core.channel.SubChannelDescriptor;
-import de.rennschnitzel.net.protocol.TransportProtocol.ChannelRegister.Type;
+import de.rennschnitzel.net.core.Tunnel;
+import de.rennschnitzel.net.core.tunnel.AbstractSubTunnel;
+import de.rennschnitzel.net.core.tunnel.AbstractSubTunnelDescriptor;
+import de.rennschnitzel.net.core.tunnel.SubChannelDescriptor;
+import de.rennschnitzel.net.core.tunnel.SubTunnel;
+import de.rennschnitzel.net.core.tunnel.TunnelHandler;
+import de.rennschnitzel.net.core.tunnel.TunnelMessage;
+import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChannel.Descriptor>implements ChannelHandler, SubChannel {
+public class StreamTunnel extends AbstractSubTunnel<StreamTunnel, StreamTunnel.Descriptor>implements TunnelHandler, SubTunnel {
 
-  public static class Descriptor extends AbstractSubChannelDescriptor<Descriptor, StreamChannel>
-      implements SubChannelDescriptor<StreamChannel> {
+  public static class Descriptor extends AbstractSubTunnelDescriptor<Descriptor, StreamTunnel>
+      implements SubChannelDescriptor<StreamTunnel> {
 
     public Descriptor(String name) {
-      super(name, Type.STREAM);
+      super(name, TunnelRegister.Type.STREAM);
     }
 
     @Override
@@ -55,17 +55,17 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
     }
 
     @Override
-    public StreamChannel create(Channel parentChannel) {
-      return new StreamChannel(parentChannel, this);
+    public StreamTunnel create(Tunnel parentChannel) {
+      return new StreamTunnel(parentChannel, this);
     }
 
     @Override
-    public StreamChannel cast(SubChannel channel) {
+    public StreamTunnel cast(SubTunnel channel) {
       if (channel == null) {
         return null;
       }
       Preconditions.checkArgument(channel.getDescriptor() == this);
-      return (StreamChannel) channel;
+      return (StreamTunnel) channel;
     }
 
   }
@@ -75,7 +75,7 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
 
   private final Set<ChannelInputStream> inputBuffers = new CopyOnWriteArraySet<>();
 
-  public StreamChannel(Channel parentChannel, Descriptor descriptor) throws IllegalStateException {
+  public StreamTunnel(Tunnel parentChannel, Descriptor descriptor) throws IllegalStateException {
     super(parentChannel, descriptor);
   }
 
@@ -138,7 +138,7 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
   }
 
   @Override
-  public void receive(ChannelMessage cmsg) throws IOException {
+  public void receive(TunnelMessage cmsg) throws IOException {
     this.receive(cmsg.getData().toByteArray());
   }
 
@@ -179,7 +179,7 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
 
     @Override
     public synchronized void close() throws IOException {
-      StreamChannel.this.inputBuffers.remove(this);
+      StreamTunnel.this.inputBuffers.remove(this);
       buffer.getOutputStream().close();
       buffer.getInputStream().close();
     }
@@ -284,21 +284,21 @@ public class StreamChannel extends AbstractSubChannel<StreamChannel, StreamChann
       @Override
       public void write(byte[] b) throws IOException {
         checkChannel();
-        StreamChannel.this.parentChannel.send(this.target, b);
+        StreamTunnel.this.parentTunnel.send(this.target, b);
       }
 
       @Override
       public void write(byte[] b, int off, int len) throws IOException {
         checkChannel();
         ByteString data = ByteString.copyFrom(b, off, len);
-        StreamChannel.this.parentChannel.send(this.target, data);
+        StreamTunnel.this.parentTunnel.send(this.target, data);
       }
 
       @Override
       public void write(int b) throws IOException {
         checkChannel();
         ByteString data = ByteString.copyFrom(new byte[] {(byte) b});
-        StreamChannel.this.parentChannel.send(this.target, data);
+        StreamTunnel.this.parentTunnel.send(this.target, data);
       }
     }
 

@@ -52,32 +52,33 @@ message Packet {
 		NodeUpdateMessage nodeUpdate = 21;
 		NodeRemoveMessage nodeRemove = 22;
 
-		// Channel
-		ChannelMessage channelMessage = 30;
-		ChannelRegister channelRegister = 31;
+		// Tunnel
+		TunnelMessage tunnelMessage = 30;
+		TunnelRegister tunnelRegister = 31;
 				
 		// Procedure
 		ProcedureMessage procedureMessage = 40;
 	}
 }
 
-message ChannelMessage {
-	int32 channelId = 1;
+message TunnelMessage {
+	int32 tunnelId = 1;
 	TargetMessage target = 2;
 	UUIDMessage sender = 3;
 	bytes data = 4;
 }
 
-message ChannelRegister {
+message TunnelRegister {
 	enum Type {
 		BYTES = 0;
 		OBJECT = 1;
 		STREAM = 2;
 		CUSTOM = 4;
 	}
-	int32 channelId = 1;
+	int32 tunnelId = 1;
 	string name = 2;
 	Type type = 3;
+	bool request = 4;
 }
 
 message ProcedureMessage {

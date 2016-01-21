@@ -1,18 +1,17 @@
-package de.rennschnitzel.net.core.channel;
+package de.rennschnitzel.net.core.tunnel;
 
 import de.rennschnitzel.net.core.AbstractNetwork;
+import de.rennschnitzel.net.core.Tunnel;
 
-public interface SubChannel {
+public interface SubTunnel {
 
   void close();
 
   boolean isClosed();
 
-  int getChannelId();
-
   String getName();
 
-  Channel getParentChannel();
+  Tunnel getParentTunnel();
 
   SubChannelDescriptor<?> getDescriptor();
 

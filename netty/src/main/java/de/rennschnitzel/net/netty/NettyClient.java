@@ -13,14 +13,16 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public abstract class NettyClient {
+public class NettyClient {
 
   public static enum State {
     NEW, CONNECTING, CONNECTED, DISCONNECTING, DISCONNECTED, FAILED;
@@ -36,12 +38,15 @@ public abstract class NettyClient {
   @Getter
   @NonNull
   private final HostAndPort address;
+  @Getter
+  @NonNull
   private final Logger logger;
-  private EventLoopGroup group = null;
+  private EventLoopGroup eventLoop = null;
   private ChannelFuture clientFuture = null;
   private Channel client = null;
 
-  protected abstract MainHandler<?> newMainHandler();
+  @NonNull
+  private final ChannelInitializer<SocketChannel> channelInitializer;
 
   public boolean isConnected() {
     Channel c = client;
@@ -54,14 +59,14 @@ public abstract class NettyClient {
 
 
     try {
-      group = PipelineUtils.newEventLoopGroup(0, new ThreadFactoryBuilder()
+      eventLoop = PipelineUtils.newEventLoopGroup(0, new ThreadFactoryBuilder()
           .setNameFormat("NetClient " + name + " IO Thread #%1$d").build());
 
       Bootstrap b = new Bootstrap();
-      b.group(group) //
+      b.group(eventLoop) //
           .channel(NioSocketChannel.class)//
           // .option(ChannelOption.)
-          .handler(new BaseChannelInitializer(this::newMainHandler));
+          .handler(channelInitializer);
       clientFuture = b.connect(address.getHostText(), address.getPort());
 
       clientFuture.addListener(new ChannelFutureListener() {
@@ -93,7 +98,7 @@ public abstract class NettyClient {
     channel.closeFuture().addListener(new ChannelFutureListener() {
       @Override
       public void operationComplete(ChannelFuture future) throws Exception {
-        group.shutdownGracefully();
+        eventLoop.shutdownGracefully();
         state = State.DISCONNECTED;
       }
     });
@@ -105,8 +110,8 @@ public abstract class NettyClient {
     if (client != null) {
       client.close();
     }
-    if (group != null) {
-      group.shutdownGracefully();
+    if (eventLoop != null) {
+      eventLoop.shutdownGracefully();
     }
   }
 
@@ -129,7 +134,7 @@ public abstract class NettyClient {
       if (client != null) {
         client.close().syncUninterruptibly();
       }
-      group.shutdownGracefully();
+      eventLoop.shutdownGracefully();
 
       state = State.DISCONNECTED;
 

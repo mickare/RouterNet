@@ -1,12 +1,12 @@
 package de.rennschnitzel.net.core.channel.custom;
 
-import de.rennschnitzel.net.core.channel.AbstractSubChannel;
-import de.rennschnitzel.net.core.channel.Channel;
+import de.rennschnitzel.net.core.Tunnel;
+import de.rennschnitzel.net.core.tunnel.AbstractSubTunnel;
 
 public abstract class CustomSubChannel<SELF extends CustomSubChannel<SELF, D>, D extends CustomSubChannelDescriptor<D, SELF>>
-    extends AbstractSubChannel<SELF, D> {
+    extends AbstractSubTunnel<SELF, D> {
 
-  public CustomSubChannel(Channel parentChannel, D descriptor) {
+  public CustomSubChannel(Tunnel parentChannel, D descriptor) {
     super(parentChannel, descriptor);
   }
 

@@ -23,15 +23,15 @@ public class ObjectConverters {
     // TODO Auto-generated constructor stub
   }
 
-  public static TransportProtocol.ChannelRegister.Type getType(Class<?> dataClass) throws InvalidClassException {
+  public static TransportProtocol.TunnelRegister.Type getType(Class<?> dataClass) throws InvalidClassException {
     if (byte[].class.isAssignableFrom(dataClass)) {
-      return TransportProtocol.ChannelRegister.Type.BYTES;
+      return TransportProtocol.TunnelRegister.Type.BYTES;
     }
     if (Void.class.equals(dataClass)) {
-      return TransportProtocol.ChannelRegister.Type.OBJECT;
+      return TransportProtocol.TunnelRegister.Type.OBJECT;
     }
     if (Serializable.class.isAssignableFrom(dataClass)) {
-      return TransportProtocol.ChannelRegister.Type.OBJECT;
+      return TransportProtocol.TunnelRegister.Type.OBJECT;
     }
     throw new InvalidClassException(dataClass.getName(), "data class not supported");
   }

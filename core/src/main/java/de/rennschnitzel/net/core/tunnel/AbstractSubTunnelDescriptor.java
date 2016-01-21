@@ -1,19 +1,20 @@
-package de.rennschnitzel.net.core.channel;
+package de.rennschnitzel.net.core.tunnel;
 
 import com.google.common.base.Preconditions;
 
+import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import lombok.Getter;
 
-public abstract class AbstractSubChannelDescriptor<SELF extends AbstractSubChannelDescriptor<SELF, C>, C extends AbstractSubChannel<C, SELF>>
+public abstract class AbstractSubTunnelDescriptor<SELF extends AbstractSubTunnelDescriptor<SELF, C>, C extends AbstractSubTunnel<C, SELF>>
     implements SubChannelDescriptor<C> {
 
   @Getter
   protected final String name;
   @Getter
-  protected final TransportProtocol.ChannelRegister.Type type;
+  protected final TransportProtocol.TunnelRegister.Type type;
 
-  public AbstractSubChannelDescriptor(String name, TransportProtocol.ChannelRegister.Type type) {
+  public AbstractSubTunnelDescriptor(String name, TransportProtocol.TunnelRegister.Type type) {
     Preconditions.checkArgument(!name.isEmpty());
     Preconditions.checkNotNull(type);
     this.name = name.toLowerCase();
@@ -21,11 +22,11 @@ public abstract class AbstractSubChannelDescriptor<SELF extends AbstractSubChann
   }
 
   @Override
-  public abstract C create(Channel parentChannel);
+  public abstract C create(Tunnel parentChannel);
 
   @SuppressWarnings("unchecked")
   @Override
-  public C cast(SubChannel channel) {
+  public C cast(SubTunnel channel) {
     if (channel == null) {
       return null;
     }

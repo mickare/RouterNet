@@ -8,10 +8,10 @@ import de.rennschnitzel.net.protocol.LoginProtocol.LoginUpgradeMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeRemoveMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeTopologyMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
-import de.rennschnitzel.net.protocol.TransportProtocol.ChannelMessage;
-import de.rennschnitzel.net.protocol.TransportProtocol.ChannelRegister;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
+import de.rennschnitzel.net.protocol.TransportProtocol.TunnelMessage;
+import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister;
 
 public class SimplePacketHandler<C> implements PacketHandler<C> {
 
@@ -69,12 +69,12 @@ public class SimplePacketHandler<C> implements PacketHandler<C> {
   }
 
   @Override
-  public void handle(C ctx, ChannelMessage msg) throws Exception {
+  public void handle(C ctx, TunnelMessage msg) throws Exception {
     throw new UnsupportedOperationException("Not implemented!");
   }
 
   @Override
-  public void handle(C ctx, ChannelRegister msg) throws Exception {
+  public void handle(C ctx, TunnelRegister msg) throws Exception {
     throw new UnsupportedOperationException("Not implemented!");
   }
 

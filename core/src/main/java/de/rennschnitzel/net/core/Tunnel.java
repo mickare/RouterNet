@@ -1,4 +1,4 @@
-package de.rennschnitzel.net.core.channel;
+package de.rennschnitzel.net.core;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -11,46 +11,38 @@ import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 
 import de.rennschnitzel.net.Owner;
-import de.rennschnitzel.net.core.AbstractNetwork;
-import de.rennschnitzel.net.core.Connection;
-import de.rennschnitzel.net.core.Target;
+import de.rennschnitzel.net.core.tunnel.TunnelHandler;
+import de.rennschnitzel.net.core.tunnel.TunnelMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol;
-import de.rennschnitzel.net.protocol.TransportProtocol.ChannelRegister;
-import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
+import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-public class Channel {
+public class Tunnel {
 
   @Getter
-  private final Connection connection;
-  @Getter
-  private volatile boolean closed;
-  @Getter
-  private final int channelId;
+  private final AbstractNetwork network;
+
   @Getter
   private final String name;
 
-  private Optional<ChannelRegister.Type> type = Optional.empty();
-  private ChannelHandler handler = null;
+  private Optional<TunnelRegister.Type> type = Optional.empty();
+  private TunnelHandler handler = null;
 
   private final CopyOnWriteArraySet<RegisteredMessageListener> listeners = new CopyOnWriteArraySet<>();
 
-  public Channel(Connection connection, int channelId, String name) {
-    Preconditions.checkNotNull(connection);
+  @Getter
+  private volatile boolean closed = false;
+
+  public Tunnel(AbstractNetwork network, String name) {
+    Preconditions.checkNotNull(network);
     Preconditions.checkArgument(!name.isEmpty());
-    this.connection = connection;
-    this.closed = connection.isClosed();
-    this.channelId = channelId;
+    this.network = network;
     this.name = name.toLowerCase();
   }
 
-  public AbstractNetwork getNetwork() {
-    return this.connection.getNetwork();
-  }
-
-  public synchronized void registerHandler(ChannelHandler handler) throws IllegalStateException {
+  public synchronized void registerHandler(TunnelHandler handler) throws IllegalStateException {
     Preconditions.checkNotNull(handler);
     Preconditions.checkState(this.handler == null);
     if (this.type.isPresent()) {
@@ -60,30 +52,18 @@ public class Channel {
     this.type = Optional.of(handler.getType());
   }
 
-  public synchronized void setType(ChannelRegister.Type type) {
+  public synchronized void setType(TunnelRegister.Type type) {
     Preconditions.checkNotNull(type);
     Preconditions.checkState(!this.type.isPresent());
     this.type = Optional.of(type);
   }
 
-  public ChannelRegister.Type getType() {
-    return type.orElse(ChannelRegister.Type.BYTES);
+  public TunnelRegister.Type getType() {
+    return type.orElse(TunnelRegister.Type.BYTES);
   }
 
   public void close() {
     this.closed = true;
-  }
-
-  public void sendRegisterMessage() throws IOException {
-    if (isClosed()) {
-      return;
-    }
-    TransportProtocol.ChannelRegister.Builder b = TransportProtocol.ChannelRegister.newBuilder();
-    b.setChannelId(this.channelId);
-    b.setName(this.name);
-    b.setType(getType());
-    this.connection.send(Packet.newBuilder().setChannelRegister(b));
-
   }
 
   public void broadcast(ByteBuffer data) throws IOException {
@@ -107,26 +87,26 @@ public class Channel {
   }
 
   public void send(Target target, ByteString data) throws IOException {
-    final ChannelMessage cmsg = new ChannelMessage(this, target, getNetwork().getHome().getId(), data);
+    final TunnelMessage cmsg = new TunnelMessage(this, target, getNetwork().getHome().getId(), data);
     this.send(cmsg);
   }
 
-  public void send(ChannelMessage cmsg) throws IOException {
+  public void send(TunnelMessage cmsg) throws IOException {
     this.sendIgnoreSelf(cmsg);
     if (cmsg.getTarget().contains(getNetwork().getHome())) {
       this.receive(cmsg);
     }
   }
 
-  public void sendIgnoreSelf(ChannelMessage cmsg) throws IOException {
-    this.connection.sendChannelMessage(cmsg.getProtocolMessage());
+  public void sendIgnoreSelf(TunnelMessage cmsg) throws IOException {
+    this.network.sendChannelMessage(cmsg);
   }
 
-  public final void receiveProto(final TransportProtocol.ChannelMessage msg) {
-    this.receive(new ChannelMessage(this, msg));
+  public final void receiveProto(final TransportProtocol.TunnelMessage msg) {
+    this.receive(new TunnelMessage(this, msg));
   }
 
-  public final void receive(final ChannelMessage cmsg) {
+  public final void receive(final TunnelMessage cmsg) {
     this.listeners.forEach(c -> c.accept(cmsg));
     if (this.handler != null) {
       try {
@@ -137,21 +117,21 @@ public class Channel {
     }
   }
 
-  public final void registerMessageListener(final Owner owner, final Consumer<ChannelMessage> dataConsumer) {
+  public final void registerMessageListener(final Owner owner, final Consumer<TunnelMessage> dataConsumer) {
     listeners.add(new RegisteredMessageListener(owner, dataConsumer));
   }
 
   @Getter
   @RequiredArgsConstructor
-  private static class RegisteredMessageListener implements Consumer<ChannelMessage> {
+  private static class RegisteredMessageListener implements Consumer<TunnelMessage> {
 
     @NonNull
     private final Owner owner;
     @NonNull
-    private final Consumer<ChannelMessage> delegate;
+    private final Consumer<TunnelMessage> delegate;
 
     @Override
-    public void accept(ChannelMessage cmsg) {
+    public void accept(TunnelMessage cmsg) {
       try {
         delegate.accept(cmsg);
       } catch (Exception e) {

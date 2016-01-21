@@ -1,15 +1,19 @@
 package de.rennschnitzel.net.core.packet;
 
 import de.rennschnitzel.net.exception.ProtocolException;
-import de.rennschnitzel.net.protocol.LoginProtocol.*;
+import de.rennschnitzel.net.protocol.LoginProtocol.LoginChallengeMessage;
+import de.rennschnitzel.net.protocol.LoginProtocol.LoginHandshakeMessage;
+import de.rennschnitzel.net.protocol.LoginProtocol.LoginResponseMessage;
+import de.rennschnitzel.net.protocol.LoginProtocol.LoginSuccessMessage;
+import de.rennschnitzel.net.protocol.LoginProtocol.LoginUpgradeMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeRemoveMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeTopologyMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
-import de.rennschnitzel.net.protocol.TransportProtocol.ChannelMessage;
-import de.rennschnitzel.net.protocol.TransportProtocol.ChannelRegister;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
+import de.rennschnitzel.net.protocol.TransportProtocol.TunnelMessage;
+import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister;
 
 public interface PacketHandler<C> {
 
@@ -54,11 +58,11 @@ public interface PacketHandler<C> {
         break;
 
       // Channel
-      case CHANNELMESSAGE:
-        handle(ctx, packet.getChannelMessage());
+      case TUNNELMESSAGE:
+        handle(ctx, packet.getTunnelMessage());
         break;
-      case CHANNELREGISTER:
-        handle(ctx, packet.getChannelRegister());
+      case TUNNELREGISTER:
+        handle(ctx, packet.getTunnelRegister());
         break;
 
       // Procedure
@@ -97,9 +101,9 @@ public interface PacketHandler<C> {
   void handle(C ctx, NodeRemoveMessage msg) throws Exception;
 
   // Channel
-  void handle(C ctx, ChannelMessage msg) throws Exception;
+  void handle(C ctx, TunnelMessage msg) throws Exception;
 
-  void handle(C ctx, ChannelRegister msg) throws Exception;
+  void handle(C ctx, TunnelRegister msg) throws Exception;
 
   // Procedure
   void handle(C ctx, ProcedureMessage msg) throws Exception;

@@ -1,21 +1,20 @@
 package de.rennschnitzel.net.core;
 
 import de.rennschnitzel.net.Owner;
-import de.rennschnitzel.net.core.channel.Channel;
-import de.rennschnitzel.net.core.channel.SubChannel;
-import de.rennschnitzel.net.core.channel.SubChannelDescriptor;
+import de.rennschnitzel.net.core.tunnel.SubTunnel;
+import de.rennschnitzel.net.core.tunnel.SubChannelDescriptor;
 
 public interface ConnectionInterface {
 
   AbstractNetwork getNetwork();
 
-  Channel getChannel(String name);
+  Tunnel getChannel(String name);
 
-  Channel getChannel(String name, boolean register);
+  Tunnel getChannel(String name, boolean register);
 
-  <S extends SubChannel> S getChannelIfPresent(SubChannelDescriptor<S> descriptor);
+  <S extends SubTunnel> S getChannelIfPresent(SubChannelDescriptor<S> descriptor);
 
-  <S extends SubChannel> S getChannel(SubChannelDescriptor<S> descriptor, Owner owner);
+  <S extends SubTunnel> S getChannel(SubChannelDescriptor<S> descriptor, Owner owner);
 
   boolean isClosed();
 

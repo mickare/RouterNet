@@ -17,6 +17,7 @@ import de.rennschnitzel.net.core.ProcedureManager;
 import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.procedure.ProcedureCall;
+import de.rennschnitzel.net.core.tunnel.TunnelMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
@@ -85,6 +86,11 @@ public class DummyNetwork extends AbstractNetwork {
   @Override
   public void sendHomeNodeUpdate() throws IOException {
     this.connection.send(Packet.newBuilder().setNodeUpdate(NodeUpdateMessage.newBuilder().setNode(this.getHome().toProtocol())));
+  }
+
+  @Override
+  protected void sendChannelMessage(TunnelMessage cmsg) throws IOException {
+    connection.send(Packet.newBuilder().setTunnelMessage(cmsg.toProtocolMessage(connection)));
   }
 
 }

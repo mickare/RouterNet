@@ -8,7 +8,7 @@ import de.rennschnitzel.net.protocol.LoginProtocol.LoginUpgradeMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeRemoveMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeTopologyMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
-import de.rennschnitzel.net.protocol.TransportProtocol.ChannelMessage;
+import de.rennschnitzel.net.protocol.TransportProtocol.TunnelMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import io.netty.channel.Channel;
@@ -111,12 +111,12 @@ public final class PacketUtil {
   // ******************************************************************************
   // Transport
   public static final ChannelFuture writeAndFlush(final Channel ch, //
-      final ChannelMessage.Builder value) {
+      final TunnelMessage.Builder value) {
     return writeAndFlush(ch, Packet.newBuilder().setChannelMessage(value));
   }
 
   public static final ChannelFuture writeAndFlush(final Channel ch, //
-      final ChannelMessage value) {
+      final TunnelMessage value) {
     return writeAndFlush(ch, Packet.newBuilder().setChannelMessage(value));
   }
 
