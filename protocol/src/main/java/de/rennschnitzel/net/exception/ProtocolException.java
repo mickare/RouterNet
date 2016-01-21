@@ -29,9 +29,4 @@ public class ProtocolException extends ConnectionException {
     // TODO Auto-generated constructor stub
   }
 
-  public ProtocolException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-    super(Type.PROTOCOL_ERROR, message, cause, enableSuppression, writableStackTrace);
-    // TODO Auto-generated constructor stub
-  }
-
 }

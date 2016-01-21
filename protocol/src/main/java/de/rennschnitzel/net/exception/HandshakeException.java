@@ -29,9 +29,4 @@ public class HandshakeException extends ConnectionException {
     // TODO Auto-generated constructor stub
   }
 
-  public HandshakeException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-    super(Type.HANDSHAKE, message, cause, enableSuppression, writableStackTrace);
-    // TODO Auto-generated constructor stub
-  }
-
 }

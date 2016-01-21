@@ -1,5 +1,6 @@
 package de.rennschnitzel.net;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
@@ -52,7 +53,7 @@ public class Net {
     return network.getConnection();
   }
 
-  public static Channel getChannel(String name) throws NotConnectedException {
+  public static Channel getChannel(String name) throws IOException {
     return getConnection().getChannel(name);
   }
 

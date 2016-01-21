@@ -1,6 +1,7 @@
 package de.rennschnitzel.net.core;
 
 import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -13,6 +14,9 @@ import de.rennschnitzel.net.core.channel.SubChannelDescriptor;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import de.rennschnitzel.net.protocol.TransportProtocol.ChannelRegister;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
+import de.rennschnitzel.net.util.concurrent.CloseableLock;
+import de.rennschnitzel.net.util.concurrent.ReentrantCloseableLock;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +27,7 @@ public abstract class Connection {
 
   private final AtomicInteger CHANNEL_ID_GENERATOR = new AtomicInteger(0);
 
+  private final CloseableLock channelLock = new ReentrantCloseableLock();
   private final ConcurrentMap<String, Channel> channelsByName = new ConcurrentHashMap<>();
   private final ConcurrentMap<Integer, Channel> channelsById = new ConcurrentHashMap<>();
 
@@ -33,9 +38,20 @@ public abstract class Connection {
   private final AbstractNetwork network;
 
   @Getter
+  @Setter(AccessLevel.PROTECTED)
+  @NonNull
+  private UUID id = null;
+
+  @Getter
   @Setter
   @NonNull
   private CloseMessage closeMessage = null;
+
+  public Connection(AbstractNetwork network, UUID id) {
+    this(network);
+    Preconditions.checkNotNull(id);
+    this.id = id;
+  }
 
   public Channel getChannelIfPresent(String name) {
     return this.channelsByName.get(name.toLowerCase());
@@ -61,7 +77,7 @@ public abstract class Connection {
     final String key = name.toLowerCase();
     Channel channel = this.channelsByName.get(key);
     if (channel == null) {
-      synchronized (this) {
+      try(CloseableLock l = channelLock.open()){
         // Check again, but in synchronized state!
         channel = this.channelsByName.get(key);
         if (channel == null) {
@@ -86,7 +102,7 @@ public abstract class Connection {
     Preconditions.checkNotNull(descriptor);
     S subChannel = getChannelIfPresent(descriptor);
     if (subChannel == null) {
-      synchronized (this) {
+      try(CloseableLock l = channelLock.open()){
         // Check again, but in synchronized state!
         subChannel = getChannelIfPresent(descriptor);
         if (subChannel == null) {

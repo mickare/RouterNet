@@ -13,17 +13,17 @@ import lombok.Getter;
 public class Message {
 
   protected final Target target;
-  protected final UUID sender;
+  protected final UUID senderId;
 
-  public Message(final Target target, final UUID sender) {
+  public Message(final Target target, final UUID senderId) {
     Preconditions.checkNotNull(target);
-    Preconditions.checkNotNull(sender);
+    Preconditions.checkNotNull(senderId);
     this.target = target;
-    this.sender = sender;
+    this.senderId = senderId;
   }
 
-  public Message(TargetMessage target, UUIDMessage sender) {
-    this(new Target(target), ProtocolUtils.convert(sender));
+  public Message(TargetMessage target, UUIDMessage senderId) {
+    this(new Target(target), ProtocolUtils.convert(senderId));
   }
 
 }

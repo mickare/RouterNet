@@ -1,7 +1,7 @@
-package de.rennschnitzel.net.core.handshake;
+package de.rennschnitzel.net.core.login;
 
 import com.google.protobuf.ByteString;
 
-public interface ClientAuthentication {
+public interface AuthenticationClient {
   public ByteString calculateResponse(ByteString challenge);
 }

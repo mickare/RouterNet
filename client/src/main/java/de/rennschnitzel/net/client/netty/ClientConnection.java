@@ -22,4 +22,10 @@ public class ClientConnection extends Connection {
     return false;
   }
 
+  @Override
+  public boolean isActive() {
+    // TODO Auto-generated method stub
+    return false;
+  }
+
 }

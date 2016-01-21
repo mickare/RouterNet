@@ -56,12 +56,12 @@ public class MultiProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
       throw new IllegalArgumentException("Wrong response sender");
     }
     if (response.getDataCase() == ProcedureResponseMessage.DataCase.ERROR) {
-      future.setException(new ConnectionException(response.getError()));
+      future.setException(ConnectionException.of(response.getError()));
     } else {
       try {
         future.set(getProcedure().getResponseReader().apply(response));
       } catch (Exception e) {
-        future.setException(new ConnectionException(response.getError()));
+        future.setException(ConnectionException.of(response.getError()));
       }
     }
   }

@@ -77,10 +77,10 @@ public abstract class AbstractNetwork {
 
   protected abstract <T, R> void sendProcedureCall(ProcedureCall<T, R> call) throws IOException;
 
-  protected abstract void sendProcedureResponse(UUID receiver, ProcedureResponseMessage build) throws IOException;
+  protected abstract void sendProcedureResponse(UUID receiverId, ProcedureResponseMessage build) throws IOException;
 
-  protected void sendProcedureResponse(UUIDMessage receiver, ProcedureResponseMessage build) throws IOException {
-    sendProcedureResponse(ProtocolUtils.convert(receiver), build);
+  protected void sendProcedureResponse(UUIDMessage receiverId, ProcedureResponseMessage build) throws IOException {
+    sendProcedureResponse(ProtocolUtils.convert(receiverId), build);
   }
 
   protected abstract void sendHomeNodeUpdate() throws IOException;

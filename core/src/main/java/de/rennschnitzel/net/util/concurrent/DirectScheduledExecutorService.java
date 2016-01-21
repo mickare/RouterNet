@@ -8,7 +8,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import lombok.NonNull;
@@ -24,6 +23,14 @@ public class DirectScheduledExecutorService extends DirectExecutorService implem
   }
 
   private static boolean warned = false;
+
+  public static void enableWarning() {
+    warned = false;
+  }
+
+  public static void disableWarning() {
+    warned = true;
+  }
 
   private static void warn() {
     if (!warned) {

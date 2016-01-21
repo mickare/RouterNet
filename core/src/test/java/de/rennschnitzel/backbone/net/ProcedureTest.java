@@ -16,6 +16,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -30,6 +31,7 @@ import de.rennschnitzel.net.core.procedure.ProcedureInformation;
 import de.rennschnitzel.net.core.procedure.RegisteredProcedure;
 import de.rennschnitzel.net.dummy.DummyConnection;
 import de.rennschnitzel.net.dummy.DummyNetwork;
+import de.rennschnitzel.net.util.concurrent.DirectScheduledExecutorService;
 
 public class ProcedureTest {
 
@@ -46,6 +48,7 @@ public class ProcedureTest {
 
   @Before
   public void setup() {
+    DirectScheduledExecutorService.disableWarning();
 
     testingOwner = new Owner() {
       @Override
@@ -73,6 +76,11 @@ public class ProcedureTest {
 
     con_router.connect(con_client);
 
+  }
+
+  @After
+  public void tearDown() {
+    DirectScheduledExecutorService.enableWarning();
   }
 
   public static <T> Function<String, T> test(Class<T> c) {

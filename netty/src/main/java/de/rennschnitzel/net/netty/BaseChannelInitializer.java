@@ -1,12 +1,9 @@
 package de.rennschnitzel.net.netty;
 
-import java.util.logging.Logger;
+import java.util.function.Supplier;
 
-import de.rennschnitzel.net.core.handshake.AbstractHandshakeHandler;
-import de.rennschnitzel.net.netty.handshake.NettyHandshakeAdapter;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -16,7 +13,6 @@ import io.netty.handler.codec.compression.FastLzFrameDecoder;
 import io.netty.handler.codec.compression.FastLzFrameEncoder;
 import io.netty.handler.codec.protobuf.ProtobufDecoder;
 import io.netty.handler.codec.protobuf.ProtobufEncoder;
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -24,11 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class BaseChannelInitializer extends ChannelInitializer<SocketChannel> {
 
   @NonNull
-  @Getter
-  private final Logger logger;
-
-  @NonNull
-  private final NettyHandshakeAdapter<?> handshake;
+  private final Supplier<MainHandler<?>> mainHandler;
 
   @Override
   public void initChannel(SocketChannel ch) throws Exception {
@@ -46,8 +38,7 @@ public class BaseChannelInitializer extends ChannelInitializer<SocketChannel> {
     pipeline.addLast("protoDecoder",
         new ProtobufDecoder(TransportProtocol.Packet.getDefaultInstance()));
     pipeline.addLast("protoEncoder", new ProtobufEncoder());
-    pipeline.addLast(handshake.getName(), handshake);
-    pipeline.addLast("exception", new ExceptionHandler(getLogger()));
+    pipeline.addLast("main", mainHandler.get());
 
   }
 

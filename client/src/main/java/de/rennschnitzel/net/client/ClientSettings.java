@@ -5,7 +5,6 @@ import java.util.UUID;
 
 import com.google.common.collect.Sets;
 
-import de.rennschnitzel.net.client.testing.TestingFramework;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -30,7 +29,7 @@ public class ClientSettings {
   @Data
   @NoArgsConstructor
   public static class Connection {
-    private TestingFramework.Mode testing = TestingFramework.Mode.DUMMY;
+    private boolean testingMode = true;
     private String address = "localhost:1010";
     private String password = "Wkn2Z[uBYT]x1T/hY1Ac";
   }

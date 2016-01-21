@@ -12,8 +12,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import de.rennschnitzel.net.Net;
 import de.rennschnitzel.net.core.Connection;
+import de.rennschnitzel.net.core.ConnectionFuture;
 import de.rennschnitzel.net.exception.NotConnectedException;
-import de.rennschnitzel.net.netty.ConnectionFuture;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.net.util.concurrent.CloseableLock;

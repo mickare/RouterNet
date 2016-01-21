@@ -22,8 +22,8 @@ public class Target {
     return TO_ALL;
   }
 
-  public static Target to(UUID server) {
-    return Builder.builder().include(server).build();
+  public static Target to(UUID nodeId) {
+    return Builder.builder().include(nodeId).build();
   }
 
   public static Target to(Node node) {
@@ -43,19 +43,19 @@ public class Target {
 
   private final TransportProtocol.TargetMessage protocolMessage;
 
-  public Target(boolean toAll, Collection<UUID> NodesInclude, Collection<UUID> NodesExclude, Collection<String> namespacesInclude,
+  public Target(boolean toAll, Collection<UUID> nodesInclude, Collection<UUID> nodesExclude, Collection<String> namespacesInclude,
       Collection<String> namespacesExclude) {
     this.toAll = toAll;
-    Set<UUID> incServ = Sets.newHashSet(NodesInclude);
-    incServ.removeAll(NodesExclude);
+    Set<UUID> incNodes = Sets.newHashSet(nodesInclude);
+    incNodes.removeAll(nodesExclude);
     Set<String> incName = Sets.newHashSet(namespacesInclude);
     incName.removeAll(namespacesExclude);
     if (toAll) {
-      incServ.clear();
+      incNodes.clear();
       incName.clear();
     }
-    this.nodesInclude = ImmutableSet.copyOf(incServ);
-    this.nodesExclude = ImmutableSet.copyOf(NodesExclude);
+    this.nodesInclude = ImmutableSet.copyOf(incNodes);
+    this.nodesExclude = ImmutableSet.copyOf(nodesExclude);
     this.namespacesInclude = ImmutableSet.copyOf(incName);
     this.namespacesExclude = ImmutableSet.copyOf(namespacesExclude);
     this.protocolMessage = createProtocolMessage();
@@ -171,14 +171,14 @@ public class Target {
     }
 
 
-    public Builder include(Node server) {
-      return this.include(server.getId());
+    public Builder include(Node node) {
+      return this.include(node.getId());
     }
 
-    public Builder include(UUID server) {
-      Preconditions.checkNotNull(server);
-      this.nodesInclude.add(server);
-      this.nodesExclude.remove(server);
+    public Builder include(UUID nodeId) {
+      Preconditions.checkNotNull(nodeId);
+      this.nodesInclude.add(nodeId);
+      this.nodesExclude.remove(nodeId);
       return this;
     }
 
@@ -198,10 +198,10 @@ public class Target {
       return this.exclude(server.getId());
     }
 
-    public Builder exclude(UUID server) {
-      Preconditions.checkNotNull(server);
-      this.nodesExclude.add(server);
-      this.nodesInclude.remove(server);
+    public Builder exclude(UUID nodeId) {
+      Preconditions.checkNotNull(nodeId);
+      this.nodesExclude.add(nodeId);
+      this.nodesInclude.remove(nodeId);
       return this;
     }
 

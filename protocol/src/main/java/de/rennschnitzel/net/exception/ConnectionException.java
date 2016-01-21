@@ -1,12 +1,14 @@
 package de.rennschnitzel.net.exception;
 
+import java.io.IOException;
+
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
 import lombok.Getter;
 
 @SuppressWarnings("serial")
-public class ConnectionException extends Exception {
+public class ConnectionException extends IOException {
 
   @Getter
   private final ErrorMessage.Type type;
@@ -15,9 +17,16 @@ public class ConnectionException extends Exception {
   private boolean doLog = false;
 
 
-  public ConnectionException(ErrorMessage error) {
-    this(error.getType(), error.getMessage());
+  public static ConnectionException of(ErrorMessage error) {
+    if (error.getType() == ErrorMessage.Type.HANDSHAKE) {
+      return new HandshakeException(error.getMessage());
+    } else if (error.getType() == ErrorMessage.Type.PROTOCOL_ERROR) {
+      return new ProtocolException(error.getMessage());
+    }
+    return new ConnectionException(error.getType(), error.getMessage());
   }
+
+
 
   public ConnectionException(ErrorMessage.Type type) {
     Preconditions.checkNotNull(type);
@@ -41,14 +50,6 @@ public class ConnectionException extends Exception {
     Preconditions.checkNotNull(type);
     this.type = type;
   }
-
-  public ConnectionException(ErrorMessage.Type type, String message, Throwable cause, boolean enableSuppression,
-      boolean writableStackTrace) {
-    super(message, cause, enableSuppression, writableStackTrace);
-    Preconditions.checkNotNull(type);
-    this.type = type;
-  }
-
 
   public ConnectionException doLog() {
     this.doLog = true;

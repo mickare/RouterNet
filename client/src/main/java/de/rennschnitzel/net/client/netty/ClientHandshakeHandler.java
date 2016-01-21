@@ -5,7 +5,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import de.rennschnitzel.net.netty.handshake.AbstractHandshakeHandler;
+import de.rennschnitzel.net.netty.login.AbstractHandshakeHandler;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginChallengeMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginHandshakeMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginResponseMessage;

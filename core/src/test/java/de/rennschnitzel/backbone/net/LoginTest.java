@@ -5,27 +5,28 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import de.rennschnitzel.net.Owner;
-import de.rennschnitzel.net.core.handshake.AbstractHandshakeHandler.State;
-import de.rennschnitzel.net.core.handshake.AuthenticationFactory;
+import de.rennschnitzel.net.core.login.AuthenticationFactory;
+import de.rennschnitzel.net.core.login.LoginHandler;
+import de.rennschnitzel.net.core.login.LoginHandler.State;
 import de.rennschnitzel.net.core.packet.BasePacketHandler;
-import de.rennschnitzel.net.dummy.DummyClientHandshakeHandler;
 import de.rennschnitzel.net.dummy.DummyConnection;
+import de.rennschnitzel.net.dummy.DummyLoginClientHandler;
+import de.rennschnitzel.net.dummy.DummyLoginRouterHandler;
 import de.rennschnitzel.net.dummy.DummyNetwork;
-import de.rennschnitzel.net.dummy.DummyRouterHandshakeHandler;
+import de.rennschnitzel.net.exception.HandshakeException;
 import de.rennschnitzel.net.util.SimpleOwner;
 
 public class LoginTest {
 
   Owner testingOwner;
-
   DummyNetwork net_router;
   DummyNetwork net_client;
 
@@ -41,14 +42,17 @@ public class LoginTest {
 
   }
 
+  @After
+  public void tearDown() {}
+
   @Test
   public void testLoginSuccessful() throws IOException, InterruptedException, ExecutionException, TimeoutException {
 
     final String password = "testLogin";
 
-    DummyRouterHandshakeHandler routerHandler = new DummyRouterHandshakeHandler("routerHandshake", net_router,
+    DummyLoginRouterHandler routerHandler = new DummyLoginRouterHandler("routerHandshake", net_router,
         AuthenticationFactory.newPasswordForRouter(password), new BasePacketHandler<>());
-    DummyClientHandshakeHandler clientHandler = new DummyClientHandshakeHandler("clientHandshake", net_client,
+    DummyLoginClientHandler clientHandler = new DummyLoginClientHandler("clientHandshake", net_client,
         AuthenticationFactory.newPasswordForClient(password), new BasePacketHandler<>());
 
 
@@ -57,12 +61,12 @@ public class LoginTest {
 
     con_client.connect(con_router);
 
-    assertEquals(State.SUCCESS, routerHandler.getState());
-    assertEquals(State.SUCCESS, clientHandler.getState());
     assertTrue(routerHandler.isDone());
     assertTrue(clientHandler.isDone());
-    assertEquals(con_router, routerHandler.get(1, TimeUnit.SECONDS));
-    assertEquals(con_client, clientHandler.get(1, TimeUnit.SECONDS));
+    assertEquals(State.SUCCESS, routerHandler.getState());
+    assertEquals(State.SUCCESS, clientHandler.getState());
+    assertEquals(net_client.getHome().getId(), routerHandler.getId());
+    assertEquals(net_router.getHome().getId(), clientHandler.getId());
   }
 
   @Test
@@ -71,15 +75,15 @@ public class LoginTest {
     final String password1 = "testLogin";
     final String password2 = "falsePassword";
 
-    DummyRouterHandshakeHandler routerHandler = new DummyRouterHandshakeHandler("routerHandshake", net_router,
+    DummyLoginRouterHandler routerHandler = new DummyLoginRouterHandler("routerHandshake", net_router,
         AuthenticationFactory.newPasswordForRouter(password1), new BasePacketHandler<>());
-    DummyClientHandshakeHandler clientHandler = new DummyClientHandshakeHandler("clientHandshake", net_client,
+    DummyLoginClientHandler clientHandler = new DummyLoginClientHandler("clientHandshake", net_client,
         AuthenticationFactory.newPasswordForClient(password2), new BasePacketHandler<>());
 
 
     DummyConnection con_router = new DummyConnection(net_router, routerHandler);
     DummyConnection con_client = new DummyConnection(net_client, clientHandler);
-
+        
     boolean catched = false;
     try {
       con_client.connect(con_router);
@@ -89,28 +93,18 @@ public class LoginTest {
     }
     assertTrue(catched);
 
-    assertEquals(State.FAILED, routerHandler.getState());
-    assertEquals(State.FAILED, clientHandler.getState());
     assertTrue(routerHandler.isDone());
     assertTrue(clientHandler.isDone());
+    assertEquals(State.FAILED, routerHandler.getState());
+    assertEquals(State.FAILED, clientHandler.getState());
 
-    catched = false;
-    try {
-      assertEquals(con_router, routerHandler.get(1, TimeUnit.MICROSECONDS));
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
-      catched = true;
-      assertEquals("de.rennschnitzel.net.exception.HandshakeException: invalid login", e.getMessage());
-    }
-    assertTrue(catched);
+    assertEquals(LoginHandler.State.AUTH, routerHandler.getFailureState());
+    assertEquals(LoginHandler.State.AUTH, clientHandler.getFailureState());
+    assertEquals(HandshakeException.class, routerHandler.getFailureCause().getClass());
+    assertEquals(HandshakeException.class, clientHandler.getFailureCause().getClass());
+    assertEquals("invalid login", routerHandler.getFailureCause().getMessage());
+    assertEquals("invalid login", clientHandler.getFailureCause().getMessage());
 
-    catched = false;
-    try {
-      assertEquals(con_client, clientHandler.get(1, TimeUnit.MICROSECONDS));
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
-      catched = true;
-      assertEquals("de.rennschnitzel.net.exception.HandshakeException: invalid login", e.getMessage());
-    }
-    assertTrue(catched);
 
   }
 

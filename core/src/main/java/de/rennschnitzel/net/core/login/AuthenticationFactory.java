@@ -1,4 +1,4 @@
-package de.rennschnitzel.net.core.handshake;
+package de.rennschnitzel.net.core.login;
 
 import java.security.MessageDigest;
 import java.security.SecureRandom;
@@ -28,15 +28,15 @@ public class AuthenticationFactory {
     }
   }
 
-  public static ClientAuthentication newPasswordForClient(String password) {
+  public static AuthenticationClient newPasswordForClient(String password) {
     return new PasswordClientAuthentication(password);
   }
 
-  public static RouterAuthentication newPasswordForRouter(String password) {
+  public static AuthenticationRouter newPasswordForRouter(String password) {
     return new PasswordRouterAuthentication(password);
   }
 
-  private static final class PasswordClientAuthentication implements ClientAuthentication {
+  private static final class PasswordClientAuthentication implements AuthenticationClient {
 
     private static final int DROP_BYTE_VALUE_MAX = 64;
 
@@ -64,7 +64,7 @@ public class AuthenticationFactory {
     }
   }
 
-  private static final class PasswordRouterAuthentication implements RouterAuthentication {
+  private static final class PasswordRouterAuthentication implements AuthenticationRouter {
 
     @Getter
     private final ByteString challenge;

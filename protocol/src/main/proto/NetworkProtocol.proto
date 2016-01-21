@@ -33,8 +33,7 @@ message DataBungeecordMessage {
 message DataRouterMessage {}
 
 message NodeTopologyMessage {
-	repeated string namespaces = 1;
-	repeated NodeMessage nodes = 2;
+	repeated NodeMessage nodes = 1;
 }
 
 message ProcedureDescription {

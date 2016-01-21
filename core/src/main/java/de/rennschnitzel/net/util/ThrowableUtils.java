@@ -1,9 +1,9 @@
-package de.rennschnitzel.net.router.util;
+package de.rennschnitzel.net.util;
 
 
-public class Utils {
+public class ThrowableUtils {
 
-  private Utils() {}
+  private ThrowableUtils() {}
 
   public static String stackTraceToString(Throwable e) {
     return stackTraceToString(e.getStackTrace());

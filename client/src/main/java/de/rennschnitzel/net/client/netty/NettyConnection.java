@@ -8,7 +8,7 @@ import de.rennschnitzel.net.NetClient;
 import de.rennschnitzel.net.Network;
 import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.packet.BasePacketHandler;
-import de.rennschnitzel.net.netty.ConnectionBasePacketAdapter;
+import de.rennschnitzel.net.netty.ConnectionPacketAdapter;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import lombok.Getter;
 
@@ -23,13 +23,13 @@ public class NettyConnection extends Connection {
   @Getter
   private final BasePacketHandler<NettyConnection> packetHandler = new BasePacketHandler<>();
   @Getter
-  private final ConnectionBasePacketAdapter<NettyConnection> protocolHandler;
+  private final ConnectionPacketAdapter<NettyConnection> protocolHandler;
 
   public NettyConnection(NetClient client, UUID id) {
     super(client.getNetwork());
     this.client = client;
     this.id = id;
-    protocolHandler = new ConnectionBasePacketAdapter<>(this, packetHandler);
+    protocolHandler = new ConnectionPacketAdapter<>(this, packetHandler);
 
   }
 

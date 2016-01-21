@@ -45,12 +45,12 @@ public class SingleProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
       return;
     }
     if (response.getDataCase() == ProcedureResponseMessage.DataCase.ERROR) {
-      result.setException(new ConnectionException(response.getError()));
+      result.setException(ConnectionException.of(response.getError()));
     } else {
       try {
         result.set(getProcedure().getResponseReader().apply(response));
       } catch (Exception e) {
-        result.setException(new ConnectionException(response.getError()));
+        result.setException(ConnectionException.of(response.getError()));
       }
     }
   }

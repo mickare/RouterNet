@@ -5,8 +5,8 @@ import java.io.IOException;
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.core.AbstractNetwork;
-import de.rennschnitzel.net.core.handshake.ClientAuthentication;
-import de.rennschnitzel.net.core.handshake.ClientHandshakeHandler;
+import de.rennschnitzel.net.core.login.AuthenticationClient;
+import de.rennschnitzel.net.core.login.LoginClientHandler;
 import de.rennschnitzel.net.core.packet.PacketHandler;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginHandshakeMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginResponseMessage;
@@ -15,11 +15,11 @@ import de.rennschnitzel.net.protocol.LoginProtocol.LoginUpgradeMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 
-public class DummyClientHandshakeHandler extends ClientHandshakeHandler<DummyConnection, DummyConnection> {
+public class DummyLoginClientHandler extends LoginClientHandler<DummyConnection> {
 
   private final PacketHandler<DummyConnection> upgradeHandler;
 
-  public DummyClientHandshakeHandler(String handlerName, AbstractNetwork network, ClientAuthentication authentication,
+  public DummyLoginClientHandler(String handlerName, AbstractNetwork network, AuthenticationClient authentication,
       PacketHandler<DummyConnection> upgradeHandler) {
     super(handlerName, network, authentication);
     Preconditions.checkNotNull(upgradeHandler);
@@ -37,10 +37,10 @@ public class DummyClientHandshakeHandler extends ClientHandshakeHandler<DummyCon
   }
 
   @Override
-  protected LoginUpgradeMessage upgrade(DummyConnection ctx, LoginSuccessMessage msg) throws Exception {
-    this.setSuccess(ctx);
+  protected void upgrade(DummyConnection ctx, LoginSuccessMessage msg) throws Exception {
+    this.setSuccess();
+    this.send(ctx, LoginUpgradeMessage.newBuilder().setNode(this.getNetwork().getHome().toProtocol()).build());
     ctx.setHandler(upgradeHandler);
-    return LoginUpgradeMessage.newBuilder().setNode(this.getNetwork().getHome().toProtocol()).build();
   }
 
   @Override
@@ -49,19 +49,14 @@ public class DummyClientHandshakeHandler extends ClientHandshakeHandler<DummyCon
   }
 
   @Override
-  protected void send(DummyConnection ctx, CloseMessage msg) throws IOException {
-    ctx.send(Packet.newBuilder().setClose(msg));
+  protected void send(DummyConnection ctx, CloseMessage msg) {
+    if (ctx.isActive()) {
+      try {
+        ctx.send(Packet.newBuilder().setClose(msg));
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
   }
-
-  @Override
-  public boolean isOpen() {
-    return !this.getContext().isClosed() && !this.isDone();
-  }
-
-  @Override
-  public boolean isActive() {
-    return this.isOpen() && this.getContext().isActive();
-  }
-
 
 }

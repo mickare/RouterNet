@@ -20,14 +20,14 @@ public class ChannelMessage extends Message {
   private final TransportProtocol.ChannelMessage protocolMessage;
 
   public ChannelMessage(ChannelMessage cmsg) {
-    super(cmsg.target, cmsg.sender);
+    super(cmsg.target, cmsg.senderId);
     this.channel = cmsg.channel;
     this.data = cmsg.data;
     this.protocolMessage = cmsg.protocolMessage;
   }
 
-  public ChannelMessage(final Channel channel, final Target target, final UUID sender, final ByteString byteData) {
-    super(target, sender);
+  public ChannelMessage(final Channel channel, final Target target, final UUID senderId, final ByteString byteData) {
+    super(target, senderId);
     Preconditions.checkNotNull(channel);
     Preconditions.checkNotNull(byteData);
     this.channel = channel;

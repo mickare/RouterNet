@@ -112,7 +112,7 @@ public class ChannelTest {
     assertEquals(2, rec_router.get());
 
     con_router.getChannelIfPresent("base1").registerMessageListener(testingOwner, (msg) -> {
-      assertEquals(con_client.getNetwork().getHome().getId(), msg.getSender());
+      assertEquals(con_client.getNetwork().getHome().getId(), msg.getSenderId());
     });
     con_client.getChannelIfPresent("base1").send(target_router, data1);
 
@@ -136,7 +136,7 @@ public class ChannelTest {
     String testData = sb.toString();
 
     ch_router.registerMessageListener(testingOwner, msg -> {
-      assertEquals(net_client.getHome().getId(), msg.getSender());
+      assertEquals(net_client.getHome().getId(), msg.getSenderId());
       assertEquals(testData, msg.getObject());
     });
 

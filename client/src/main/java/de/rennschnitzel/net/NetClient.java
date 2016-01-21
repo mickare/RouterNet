@@ -19,6 +19,9 @@ import lombok.Getter;
 @Getter
 public class NetClient {
 
+  private boolean initialized = false;
+  private boolean enabled = false;
+
   private Logger logger = Logger.getGlobal();
   private File directory;
   private ConfigFile<ClientSettings> configFile;
@@ -32,7 +35,8 @@ public class NetClient {
 
   public NetClient() {}
 
-  public void init(Logger logger, File directory, ScheduledExecutorService executor) {
+  public synchronized void init(Logger logger, File directory, ScheduledExecutorService executor) {
+    Preconditions.checkState(initialized == false, "NetClient already initialized");
     Preconditions.checkNotNull(logger);
     Preconditions.checkArgument(directory.isDirectory());
     Preconditions.checkNotNull(executor);
@@ -71,24 +75,33 @@ public class NetClient {
     }
   }
 
-  public void enable() throws Exception {
+  public synchronized void enable() throws Exception {
+    Preconditions.checkState(initialized == true, "NetClient is not initialized");
+    Preconditions.checkState(enabled == false, "NetClient is already enabled");
     this.configFile.reload();
 
     this.home = new HomeNode(getConfig().getNode().getId());
     network = new Network(this);
     Net.setNetwork(network);
 
-    TestingFramework.Mode testMode = this.getConfig().getConnection().getTesting();
-    if (testMode != null && testMode != TestingFramework.Mode.NONE) {
-      this.test = new TestingFramework(this, testMode);
+    if (this.getConfig().getConnection().isTestingMode()) {
+      this.test = new TestingFramework(this);
       this.connectionService = new TestingConnectionService(this.test);
       this.connectionService.startAsync();
     }
 
+    enabled = true;
   }
 
-  public void disable() throws Exception {
+  public synchronized void disable() throws Exception {
+    Preconditions.checkState(enabled == true, "NetClient is not enabled");
     this.connectionService.stopAsync();
+    this.test = null;
+    enabled = false;
+  }
+
+  public boolean isTestMode() {
+    return this.test != null;
   }
 
 }

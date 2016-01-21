@@ -5,7 +5,7 @@ import java.util.UUID;
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.core.Connection;
-import de.rennschnitzel.net.netty.ConnectionBasePacketAdapter;
+import de.rennschnitzel.net.netty.ConnectionPacketAdapter;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.net.router.Router;
 import de.rennschnitzel.net.router.RouterNetwork;
@@ -22,13 +22,13 @@ public class NettyConnection extends Connection {
   @Getter
   private final RouterPacketHandler packetHandler = new RouterPacketHandler();
   @Getter
-  private final ConnectionBasePacketAdapter<NettyConnection> protocolHandler;
+  private final ConnectionPacketAdapter<NettyConnection> protocolHandler;
 
   public NettyConnection(Router router, UUID id) {
     super(router.getNetwork());
     this.router = router;
     this.id = id;
-    protocolHandler = new ConnectionBasePacketAdapter<>(this, packetHandler);
+    protocolHandler = new ConnectionPacketAdapter<>(this, packetHandler);
 
   }
 
