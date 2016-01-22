@@ -25,7 +25,6 @@ import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
 import de.rennschnitzel.net.util.concurrent.DirectScheduledExecutorService;
 import lombok.Getter;
-import lombok.NonNull;
 
 public class DummyNetwork extends AbstractNetwork {
 
@@ -81,17 +80,34 @@ public class DummyNetwork extends AbstractNetwork {
 
   @Override
   public <T, R> void sendProcedureCall(ProcedureCall<T, R> call) throws IOException {
+
+
     ProcedureMessage.Builder b = ProcedureMessage.newBuilder();
     b.setTarget(call.getTarget().getProtocolMessage());
     b.setSender(ProtocolUtils.convert(getHome().getId()));
     b.setCall(call.toProtocol());
-    connection.send(Packet.newBuilder().setProcedureMessage(b));
+    ProcedureMessage msg = b.build();
+    Packet packet = Packet.newBuilder().setProcedureMessage(msg).build();
+
+    if (!call.getTarget().isOnly(this.getHome())) {
+      connection.send(packet);
+    }
+
+    if (call.getTarget().contains(this.getHome())) {
+      this.procedureManager.handle(call);
+    }
+
   }
 
   @Override
   public void sendProcedureResponse(UUID receiver, ProcedureResponseMessage msg) throws IOException {
-    connection.send(Packet.newBuilder().setProcedureMessage(ProcedureMessage.newBuilder()
-        .setSender(ProtocolUtils.convert(getHome().getId())).setTarget(Target.to(receiver).getProtocolMessage()).setResponse(msg)));
+    ProcedureMessage pmsg = ProcedureMessage.newBuilder().setSender(ProtocolUtils.convert(getHome().getId()))
+        .setTarget(Target.to(receiver).getProtocolMessage()).setResponse(msg).build();
+    if (this.getHome().getId().equals(receiver)) {
+      this.procedureManager.handle(connection, pmsg);
+    } else {
+      connection.send(Packet.newBuilder().setProcedureMessage(pmsg));
+    }
   }
 
   @Override

@@ -20,14 +20,16 @@ public class TypeUtils {
     return TypeResolver.resolveRawArguments(Function.class, function.getClass());
   }
 
-  public static <T> Class<?> resolveArgumentClass(Consumer<T> function) {
+  @SuppressWarnings("unchecked")
+  public static <T> Class<T> resolveArgumentClass(Consumer<T> function) {
     Preconditions.checkNotNull(function);
-    return TypeResolver.resolveRawArgument(Consumer.class, function.getClass());
+    return (Class<T>) TypeResolver.resolveRawArgument(Consumer.class, function.getClass());
   }
 
-  public static <R> Class<?> resolveArgumentClass(Supplier<R> function) {
+  @SuppressWarnings("unchecked")
+  public static <R> Class<R> resolveArgumentClass(Supplier<R> function) {
     Preconditions.checkNotNull(function);
-    return TypeResolver.resolveRawArgument(Supplier.class, function.getClass());
+    return (Class<R>) TypeResolver.resolveRawArgument(Supplier.class, function.getClass());
   }
 
 }

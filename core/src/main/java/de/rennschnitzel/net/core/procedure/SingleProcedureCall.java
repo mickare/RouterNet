@@ -28,13 +28,33 @@ public class SingleProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
     this.node = node;
     this.result = new ProcedureCallResult<T, R>(this, node);
 
-    if (!node.hasProcedure(procedure.getDescription())) {
+    if (!node.hasProcedure(procedure)) {
       setException(new UndefinedServerProcedure());
     }
 
   }
 
+  @Override
+  public void execute(CallableRegisteredProcedure<T, R> procedure) throws IllegalArgumentException {
+    if (result.isDone()) {
+      return;
+    }
+    if (!getProcedure().isApplicable(procedure)) {
+      throw new IllegalArgumentException("response is not applicable for procedure");
+    }
+    Preconditions.checkArgument(procedure.getNetwork().getHome().getId().equals(node.getId()), "Wrong response sender");
+    try {
+      this.result.set(procedure.call(this.getArgument()));
+    } catch (Exception e) {
+      this.result.setException(e);
+    }
+  }
+
+  @Override
   public void receive(ProcedureMessage message, ProcedureResponseMessage response) throws IllegalArgumentException {
+    if (this.isDone()) {
+      return;
+    }
     if (!getProcedure().isApplicable(response.getProcedure())) {
       throw new IllegalArgumentException("response is not applicable for procedure");
     }

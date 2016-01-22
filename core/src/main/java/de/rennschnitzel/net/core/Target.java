@@ -15,7 +15,7 @@ import lombok.Getter;
 
 @Getter
 public class Target {
-  
+
   private static Target TO_ALL = Builder.toAll().build();
 
   public static Target toAll() {
@@ -106,6 +106,15 @@ public class Target {
 
   public boolean isEmpty() {
     return this.toAll ? false : this.nodesInclude.isEmpty() && this.namespacesInclude.isEmpty();
+  }
+
+  public boolean isOnly(Node node) {
+    if (!this.toAll && this.namespacesInclude.isEmpty()) {
+      if (this.nodesInclude.size() == 1) {
+        return nodesInclude.contains(node.getId());
+      }
+    }
+    return false;
   }
 
   @Override

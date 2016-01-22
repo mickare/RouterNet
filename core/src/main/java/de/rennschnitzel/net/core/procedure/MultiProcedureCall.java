@@ -31,7 +31,7 @@ public class MultiProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
     for (Node node : Sets.newHashSet(nodes)) {
 
       ProcedureCallResult<T, R> res = new ProcedureCallResult<>(this, node);
-      if (!node.hasProcedure(procedure.getDescription())) {
+      if (!node.hasProcedure(procedure)) {
         res.setException(new UndefinedServerProcedure());
       }
 
@@ -43,6 +43,25 @@ public class MultiProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
 
   public Map<UUID, ? extends ListenableFuture<R>> getResult() {
     return this.results;
+  }
+
+  @Override
+  public void execute(CallableRegisteredProcedure<T, R> procedure) throws IllegalArgumentException {
+    if (!getProcedure().isApplicable(procedure)) {
+      throw new IllegalArgumentException("response is not applicable for procedure");
+    }
+    ProcedureCallResult<T, R> future = results.get(procedure.getNetwork().getHome().getId());
+    if (future == null) {
+      throw new IllegalArgumentException("Wrong response sender");
+    }
+    if (this.isDone()) {
+      return;
+    }
+    try {
+      future.set(procedure.call(this.getArgument()));
+    } catch (Exception e) {
+      future.setException(e);
+    }
   }
 
   @Override

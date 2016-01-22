@@ -44,7 +44,7 @@ public abstract class AbstractProcedureCall<T, R> implements ProcedureCall<T, R>
 
   public TransportProtocol.ProcedureCallMessage toProtocol() {
     TransportProtocol.ProcedureCallMessage.Builder b = TransportProtocol.ProcedureCallMessage.newBuilder();
-    b.setProcedure(this.procedure.getDescription().toProtocol());
+    b.setProcedure(this.procedure.toProtocol());
     b.setId(id);
     b.setTimestamp(timestamp);
     b.setMaxTimeout(maxTimeout);

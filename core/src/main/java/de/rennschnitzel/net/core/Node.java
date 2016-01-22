@@ -244,12 +244,12 @@ public class Node {
     }
 
     public void addRegisteredProcedure(CallableRegisteredProcedure<?, ?> procedure) {
-      dirty |= this.procedures.add(procedure.getDescription());
+      dirty |= this.procedures.add(procedure);
       publishChanges();
     }
 
     public void removeRegisteredProcedure(CallableRegisteredProcedure<?, ?> procedure) {
-      dirty |= this.procedures.remove(procedure.getDescription());
+      dirty |= this.procedures.remove(procedure);
       publishChanges();
     }
 

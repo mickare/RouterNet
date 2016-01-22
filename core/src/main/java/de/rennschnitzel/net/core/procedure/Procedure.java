@@ -15,33 +15,39 @@ import lombok.Getter;
 
 public class Procedure implements Comparable<Procedure> {
 
+  // ***************************************************************************
+  // STATIC - START
+
   private static final Object LOCK = new Object();
 
-  @SuppressWarnings("unchecked")
-  public static <T, R> Procedure of(String name, Function<T, R> function) {
-    Class<?>[] typeArgs = TypeUtils.resolveArgumentClass(function);
-    return new Procedure(name, (Class<T>) typeArgs[0], (Class<R>) typeArgs[1]);
+  public static <T, R> BoundProcedure<T, R> of(String name, Function<T, R> function) {
+    return BoundProcedure.of(name, function);
   }
 
-  public static Procedure of(String name, Consumer<?> function) {
-    return new Procedure(name, TypeUtils.resolveArgumentClass(function), Void.class);
-  }
-
-
-  public static Procedure of(String name, Supplier<?> function) {
-    return new Procedure(name, Void.class, TypeUtils.resolveArgumentClass(function));
+  public static <T> BoundProcedure<T, Void> of(String name, Consumer<T> consumer) {
+    return BoundProcedure.of(name, consumer);
   }
 
 
-  public static Procedure of(String name, Runnable function) {
-    return new Procedure(name, Void.class, Void.class);
+  public static <R> BoundProcedure<Void, R> of(String name, Supplier<R> supplier) {
+    return BoundProcedure.of(name, supplier);
   }
 
 
-
-  public static Procedure of(String name, final Class<?> argument, final Class<?> result) {
-    return new Procedure(name, argument, result);
+  public static BoundProcedure<Void, Void> of(String name, Runnable runnable) {
+    return BoundProcedure.of(name, runnable);
   }
+
+  public static <T, R> CallableProcedure<T, R> of(String name, Class<T> argument, Class<R> result) {
+    return new CallableProcedure<T, R>(AbstractNetwork.getInstance(), name, argument, result);
+  }
+
+  public static Procedure of(String name, String argumentType, String resultType) {
+    return new Procedure(name, argumentType, resultType);
+  }
+
+  // STATIC - END
+  // ***************************************************************************
 
   @Getter
   private final String name, argumentType, resultType;
@@ -87,56 +93,55 @@ public class Procedure implements Comparable<Procedure> {
   }
 
 
-  public <T, R> CallableProcedure<T, R> get(Function<T, R> function) throws IllegalArgumentException {
-    return get(AbstractNetwork.getInstance(), function);
+  public <T, R> CallableProcedure<T, R> bind(Function<T, R> function) throws IllegalArgumentException {
+    return bind(AbstractNetwork.getInstance(), function);
   }
 
 
-  public <T> CallableProcedure<T, Void> get(Consumer<T> consumer) throws IllegalArgumentException {
-    return get(AbstractNetwork.getInstance(), consumer);
+  public <T> CallableProcedure<T, Void> bind(Consumer<T> consumer) throws IllegalArgumentException {
+    return bind(AbstractNetwork.getInstance(), consumer);
   }
 
-  public <R> CallableProcedure<Void, R> get(Supplier<R> supplier) throws IllegalArgumentException {
-    return get(AbstractNetwork.getInstance(), supplier);
+  public <R> CallableProcedure<Void, R> bind(Supplier<R> supplier) throws IllegalArgumentException {
+    return bind(AbstractNetwork.getInstance(), supplier);
   }
 
-  public CallableProcedure<Void, Void> get(Runnable runnable) throws IllegalArgumentException {
-    return get(AbstractNetwork.getInstance(), runnable);
+  public CallableProcedure<Void, Void> bind(Runnable runnable) throws IllegalArgumentException {
+    return bind(AbstractNetwork.getInstance(), runnable);
   }
 
-  public <T, R> CallableProcedure<T, R> get(final Class<T> argument, final Class<R> result) throws IllegalArgumentException {
-    return get(AbstractNetwork.getInstance(), argument, result);
+  public <T, R> CallableProcedure<T, R> bind(final Class<T> argument, final Class<R> result) throws IllegalArgumentException {
+    return bind(AbstractNetwork.getInstance(), argument, result);
   }
 
   @SuppressWarnings("unchecked")
-  public <T, R> CallableProcedure<T, R> get(AbstractNetwork network, Function<T, R> function) throws IllegalArgumentException {
+  public <T, R> CallableProcedure<T, R> bind(AbstractNetwork network, Function<T, R> function) throws IllegalArgumentException {
     Class<?>[] typeArgs = TypeUtils.resolveArgumentClass(function);
-    return get(network, (Class<T>) typeArgs[0], (Class<R>) typeArgs[1]);
+    return bind(network, (Class<T>) typeArgs[0], (Class<R>) typeArgs[1]);
   }
 
-  @SuppressWarnings("unchecked")
-  public <T> CallableProcedure<T, Void> get(AbstractNetwork network, Consumer<T> consumer) throws IllegalArgumentException {
-    return get(network, (Class<T>) TypeUtils.resolveArgumentClass(consumer), Void.class);
+  public <T> CallableProcedure<T, Void> bind(AbstractNetwork network, Consumer<T> consumer) throws IllegalArgumentException {
+    return bind(network, (Class<T>) TypeUtils.resolveArgumentClass(consumer), Void.class);
   }
 
-  @SuppressWarnings("unchecked")
-  public <R> CallableProcedure<Void, R> get(AbstractNetwork network, Supplier<R> supplier) throws IllegalArgumentException {
-    return get(network, Void.class, (Class<R>) TypeUtils.resolveArgumentClass(supplier));
+  public <R> CallableProcedure<Void, R> bind(AbstractNetwork network, Supplier<R> supplier) throws IllegalArgumentException {
+    return bind(network, Void.class, (Class<R>) TypeUtils.resolveArgumentClass(supplier));
   }
 
-  public CallableProcedure<Void, Void> get(AbstractNetwork network, Runnable runnable) throws IllegalArgumentException {
-    return get(network, Void.class, Void.class);
+  public CallableProcedure<Void, Void> bind(AbstractNetwork network, Runnable runnable) throws IllegalArgumentException {
+    return bind(network, Void.class, Void.class);
   }
 
-  public <T, R> CallableProcedure<T, R> get(AbstractNetwork network, final Class<T> argumentType, final Class<R> resultType)
+  public <T, R> CallableProcedure<T, R> bind(AbstractNetwork network, final Class<T> argumentType, final Class<R> resultType)
       throws IllegalArgumentException {
     checkApplicable(argumentType, resultType);
-    return new CallableBaseProcedure<>(network, this, argumentType, resultType);
+    return new CallableProcedure<>(network, this, argumentType, resultType);
   }
 
-  private void checkApplicable(final Class<?> argumentType, final Class<?> resultType) throws IllegalArgumentException {
+  public Procedure checkApplicable(final Class<?> argumentType, final Class<?> resultType) throws IllegalArgumentException {
     Preconditions.checkArgument(getArgumentClass().isAssignableFrom(argumentType));
     Preconditions.checkArgument(getResultClass().isAssignableFrom(resultType));
+    return this;
   }
 
   public boolean isApplicable(final Class<?> argumentType, final Class<?> resultType) throws RuntimeException {

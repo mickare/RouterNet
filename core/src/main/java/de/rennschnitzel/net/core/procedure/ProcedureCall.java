@@ -36,4 +36,6 @@ public interface ProcedureCall<T, R> {
 
   boolean setException(Throwable throwable);
 
+  void execute(CallableRegisteredProcedure<T, R> procedure) throws IllegalArgumentException;
+
 }

@@ -25,6 +25,7 @@ import de.rennschnitzel.net.core.Node;
 import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.packet.BasePacketHandler;
+import de.rennschnitzel.net.core.procedure.BoundProcedure;
 import de.rennschnitzel.net.core.procedure.CallableProcedure;
 import de.rennschnitzel.net.core.procedure.ProcedureCallResult;
 import de.rennschnitzel.net.core.procedure.Procedure;
@@ -91,7 +92,25 @@ public class ProcedureTest {
   }
 
   @Test
-  public void testFunctionDivergent() throws IOException, InterruptedException, TimeoutException, ExecutionException {
+  public void testUsability() throws InterruptedException, TimeoutException, ExecutionException {
+
+    Function<String, String> usability = (str) -> str + "success";
+
+    // net client was last initialized, so static instance is net_client!
+    BoundProcedure<String, String> proc = Procedure.of("usability", usability);
+    net_router.getProcedureManager().registerProcedure(proc);
+
+    Node node = net_client.getNode(net_router.getHome().getId());
+    assertTrue(node.hasProcedure(proc));
+
+    String result = Procedure.of("usability", usability)//
+        .call(net_client.getNode(net_router.getHome().getId()), "test").get(1, TimeUnit.MILLISECONDS);
+    assertEquals("testsuccess", result);
+
+  }
+
+  @Test
+  public void testTypetools() throws IOException, InterruptedException, TimeoutException, ExecutionException {
 
     String helloWorld = "Hello World!";
     final AtomicInteger runCount = new AtomicInteger(0);
@@ -100,10 +119,10 @@ public class ProcedureTest {
       int i = runCount.incrementAndGet();
       return i;
     };
-    net_client.getProcedureManager().registerProcedure("function", func);
+    net_client.getProcedureManager().registerProcedure("testTypetools", func);
 
-    Procedure info1 = Procedure.of("function", String.class, Integer.class);
-    Procedure info2 = Procedure.of("function", func);
+    Procedure info1 = Procedure.of("testTypetools", String.class, Integer.class);
+    Procedure info2 = Procedure.of("testTypetools", func);
 
     assertEquals(info1, info2);
     assertTrue(info1.equals(info2));
@@ -119,8 +138,8 @@ public class ProcedureTest {
     assertTrue(client_on_router.hasProcedure(info1));
     assertTrue(client_on_router.hasProcedure(info2));
 
-    CallableProcedure<String, Integer> p1 = info1.get(net_router, func);
-    CallableProcedure<String, Integer> p2 = info1.get(net_router, String.class, Integer.class);
+    CallableProcedure<String, Integer> p1 = info1.bind(net_router, func);
+    CallableProcedure<String, Integer> p2 = info1.bind(net_router, String.class, Integer.class);
     assertEquals(p1, p2);
 
     assertEquals(0, runCount.get());
@@ -141,10 +160,10 @@ public class ProcedureTest {
       return t;
     };
 
-    net_client.getProcedureManager().registerProcedure("function", func);
+    net_client.getProcedureManager().registerProcedure("testFunction", func);
 
-    Procedure info1 = Procedure.of("function", String.class, String.class);
-    Procedure info2 = Procedure.of("function", func);
+    Procedure info1 = Procedure.of("testFunction", String.class, String.class);
+    Procedure info2 = Procedure.of("testFunction", func);
 
     assertEquals(info1, info2);
     assertTrue(info1.equals(info2));
@@ -160,8 +179,8 @@ public class ProcedureTest {
     assertTrue(client_on_router.hasProcedure(info1));
     assertTrue(client_on_router.hasProcedure(info2));
 
-    CallableProcedure<String, String> p1 = info1.get(net_router, func);
-    CallableProcedure<String, String> p2 = info1.get(net_router, String.class, String.class);
+    CallableProcedure<String, String> p1 = info1.bind(net_router, func);
+    CallableProcedure<String, String> p2 = info1.bind(net_router, String.class, String.class);
     assertEquals(p1, p2);
 
     assertEquals(0, runCount.get());
@@ -181,10 +200,10 @@ public class ProcedureTest {
     Runnable func = () -> {
       runCount.incrementAndGet();
     };
-    net_client.getProcedureManager().registerProcedure("runnable", func);
+    net_client.getProcedureManager().registerProcedure("testRunnable", func);
 
-    Procedure info1 = Procedure.of("runnable", Void.class, Void.class);
-    Procedure info2 = Procedure.of("runnable", func);
+    Procedure info1 = Procedure.of("testRunnable", Void.class, Void.class);
+    Procedure info2 = Procedure.of("testRunnable", func);
 
     assertEquals(info1, info2);
     assertTrue(info1.equals(info2));
@@ -200,8 +219,8 @@ public class ProcedureTest {
     assertTrue(client_on_router.hasProcedure(info1));
     assertTrue(client_on_router.hasProcedure(info2));
 
-    CallableProcedure<Void, Void> p1 = info1.get(net_router, func);
-    CallableProcedure<Void, Void> p2 = info1.get(net_router, Void.class, Void.class);
+    CallableProcedure<Void, Void> p1 = info1.bind(net_router, func);
+    CallableProcedure<Void, Void> p2 = info1.bind(net_router, Void.class, Void.class);
     assertEquals(p1, p2);
 
     assertEquals(0, runCount.get());
@@ -223,10 +242,10 @@ public class ProcedureTest {
         fail();
       }
     };
-    net_client.getProcedureManager().registerProcedure("consumer", func);
+    net_client.getProcedureManager().registerProcedure("testConsumer", func);
 
-    Procedure info1 = Procedure.of("consumer", String.class, Void.class);
-    Procedure info2 = Procedure.of("consumer", func);
+    Procedure info1 = Procedure.of("testConsumer", String.class, Void.class);
+    Procedure info2 = Procedure.of("testConsumer", func);
 
     assertEquals(info1, info2);
     assertTrue(info1.equals(info2));
@@ -242,8 +261,8 @@ public class ProcedureTest {
     assertTrue(client_on_router.hasProcedure(info1));
     assertTrue(client_on_router.hasProcedure(info2));
 
-    CallableProcedure<String, Void> p1 = info1.get(net_router, func);
-    CallableProcedure<String, Void> p2 = info1.get(net_router, String.class, Void.class);
+    CallableProcedure<String, Void> p1 = info1.bind(net_router, func);
+    CallableProcedure<String, Void> p2 = info1.bind(net_router, String.class, Void.class);
     assertEquals(p1, p2);
 
     assertEquals(0, runCount.get());
@@ -263,10 +282,10 @@ public class ProcedureTest {
       runCount.incrementAndGet();
       return helloWorld;
     };
-    net_client.getProcedureManager().registerProcedure("supplier", func);
+    net_client.getProcedureManager().registerProcedure("testSupplier", func);
 
-    Procedure info1 = Procedure.of("supplier", Void.class, String.class);
-    Procedure info2 = Procedure.of("supplier", func);
+    Procedure info1 = Procedure.of("testSupplier", Void.class, String.class);
+    Procedure info2 = Procedure.of("testSupplier", func);
 
     assertEquals(info1, info2);
     assertTrue(info1.equals(info2));
@@ -282,8 +301,8 @@ public class ProcedureTest {
     assertTrue(client_on_router.hasProcedure(info1));
     assertTrue(client_on_router.hasProcedure(info2));
 
-    CallableProcedure<Void, String> p1 = info1.get(net_router, func);
-    CallableProcedure<Void, String> p2 = info1.get(net_router, Void.class, String.class);
+    CallableProcedure<Void, String> p1 = info1.bind(net_router, func);
+    CallableProcedure<Void, String> p2 = info1.bind(net_router, Void.class, String.class);
     assertEquals(p1, p2);
 
     assertEquals(0, runCount.get());
