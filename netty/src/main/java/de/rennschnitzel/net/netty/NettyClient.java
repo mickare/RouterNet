@@ -55,6 +55,12 @@ public class NettyClient {
     return c != null ? c.isActive() : false;
   }
 
+
+  public boolean hasFailed() {
+    return state == State.FAILED;
+  }
+
+
   public synchronized Future<NettyClient> connect() {
     Preconditions.checkState(this.state == State.NEW);
     this.state = State.CONNECTING;

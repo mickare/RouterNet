@@ -99,7 +99,7 @@ public class ProcedureTest {
     // net client was last initialized, so static instance is net_client!
     BoundProcedure<String, String> proc = Procedure.of("usability", usability);
     net_router.getProcedureManager().registerProcedure(proc);
-
+    
     Node node = net_client.getNode(net_router.getHome().getId());
     assertTrue(node.hasProcedure(proc));
 

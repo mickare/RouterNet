@@ -60,16 +60,15 @@ public class MainHandler<N extends AbstractNetwork> extends SimpleChannelInbound
   }
 
   public ChannelFuture send(Packet packet) {
-    ChannelFuture f = this.context.write(packet);
-    f.addListener(new ChannelFutureListener() {
-      @Override
-      public void operationComplete(ChannelFuture future) throws Exception {
-        if (!future.isSuccess()) {
-          getLogger().log(Level.SEVERE, "sendAndFlush", future.cause());
-        }
+    ChannelFuture future = this.context.write(packet);
+    future.addListener(f -> {
+      if (!f.isSuccess()) {
+        getLogger().log(Level.SEVERE, "send " + packet, f.cause());
+      } else {
+        debug(packet.toString());
       }
     });
-    return f;
+    return future;
 
   }
 
@@ -79,7 +78,7 @@ public class MainHandler<N extends AbstractNetwork> extends SimpleChannelInbound
       @Override
       public void operationComplete(ChannelFuture future) throws Exception {
         if (!future.isSuccess()) {
-          getLogger().log(Level.SEVERE, "sendAndFlush", future.cause());
+          getLogger().log(Level.SEVERE, "sendAndFlush " + packet, future.cause());
         }
       }
     });
@@ -104,7 +103,7 @@ public class MainHandler<N extends AbstractNetwork> extends SimpleChannelInbound
     debug("channelActive 1, " + ctx);
     Preconditions.checkState(this.state == State.LOGIN);
 
-    loginHandler.contextActive(ctx);
+    loginHandler.channelActive(ctx);
 
     debug("channelActive 2, " + ctx);
   }
@@ -124,22 +123,31 @@ public class MainHandler<N extends AbstractNetwork> extends SimpleChannelInbound
   @Override
   protected void channelRead0(ChannelHandlerContext ctx, Packet packet) throws Exception {
 
-    debug("WTF");
 
+    if (packet.getValueCase() == Packet.ValueCase.CLOSE) {
+
+      getLogger().log(Level.INFO, "Connection closed:\n" + packet.getClose());
+
+      ctx.channel().close();
+      this.state = State.CLOSED;
+      return;
+    }
+
+    //debug(packet.toString());
 
     if (state == State.LOGIN) {
       loginHandler.handle(ctx, packet);
       if (loginHandler.isDone()) {
         if (loginHandler.isSuccess()) {
-          System.out.println("A");
           this.state = State.RUNNING;
           this.name = this.loginHandler.getName();
           this.connection =
               new NettyConnection<N>(network, loginHandler.getId(), this, this.packetHandler);
-          this.loginHandler.registerNodes();    
+          this.loginHandler.registerNodes();
           this.network.addConnection(connection);
-          this.packetHandler.contextActive(connection);
-          this.loginHandler.getConnectionFuture().set(connection);      
+          this.packetHandler.channelActive(connection);
+          this.loginHandler.getConnectionFuture().set(connection);
+
         } else {
 
           this.state = State.CLOSED;
@@ -151,6 +159,7 @@ public class MainHandler<N extends AbstractNetwork> extends SimpleChannelInbound
       throw new IllegalStateException();
     }
 
+    debug("state: " + state);
   }
 
   @Override

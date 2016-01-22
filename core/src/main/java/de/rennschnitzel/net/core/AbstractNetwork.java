@@ -39,6 +39,7 @@ import de.rennschnitzel.net.util.concurrent.CloseableLock;
 import de.rennschnitzel.net.util.concurrent.CloseableReadWriteLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
+import io.netty.util.concurrent.Future;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -87,26 +88,29 @@ public abstract class AbstractNetwork {
   // ***************************************************************************
   // Connection
 
-  public final boolean addConnection(Connection connection) throws IOException {
-    if (addConnection0(connection)) {
-      try {
+  public final boolean addConnection(Connection connection) throws Exception {
+    try {
+
+      if (addConnection0(connection)) {
+
         for (Tunnel tunnel : getTunnels()) {
           connection.registerTunnel(tunnel);
         }
 
         this.eventBus.post(new ConnectionEvent.AddedConnectionEvent(connection));
+        this.home.sendUpdate(connection);
 
-        this.home.publishChanges();
-      } catch (IOException e) {
-        removeConnection0(connection);
-        throw e;
+        return true;
+
       }
-      return true;
+    } catch (Exception e) {
+      removeConnection0(connection);
+      throw e;
     }
     return false;
   }
 
-  protected abstract boolean addConnection0(Connection connection) throws IOException;
+  protected abstract boolean addConnection0(Connection connection) throws Exception;
 
 
   public boolean removeConnection(Connection connection) {
@@ -122,19 +126,19 @@ public abstract class AbstractNetwork {
   // ***************************************************************************
   // Sending
 
-  protected abstract <T, R> void sendProcedureCall(ProcedureCall<T, R> call) throws IOException;
+  protected abstract <T, R> Future<?> sendProcedureCall(ProcedureCall<T, R> call);
 
-  protected abstract void sendProcedureResponse(UUID receiverId, ProcedureResponseMessage build) throws IOException;
+  protected abstract Future<?> sendProcedureResponse(UUID receiverId, ProcedureResponseMessage build);
 
-  protected void sendProcedureResponse(UUIDMessage receiverId, ProcedureResponseMessage build) throws IOException {
-    sendProcedureResponse(ProtocolUtils.convert(receiverId), build);
+  protected Future<?> sendProcedureResponse(UUIDMessage receiverId, ProcedureResponseMessage build) {
+    return sendProcedureResponse(ProtocolUtils.convert(receiverId), build);
   }
 
-  protected abstract void sendHomeNodeUpdate() throws IOException;
+  protected abstract void publishHomeNodeUpdate();
 
-  protected abstract void registerTunnel(Tunnel tunnel) throws IOException;
+  protected abstract Future<?> registerTunnel(Tunnel tunnel);
 
-  protected abstract void sendTunnelMessage(TunnelMessage cmsg) throws IOException;
+  protected abstract Future<?> sendTunnelMessage(TunnelMessage cmsg);
 
 
   // ***************************************************************************
@@ -279,7 +283,7 @@ public abstract class AbstractNetwork {
       return this.getHome();
     }
     Node node = nodesCache.getUnchecked(id);
-    node.connected(msg);
+    node.update(msg);
     Node old = this.nodes.put(id, node);
     if (old == null) {
       this.eventBus.post(new NetworkNodeEvent.NetworkNodeAddedEvent(this, node));

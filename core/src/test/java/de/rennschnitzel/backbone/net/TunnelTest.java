@@ -24,7 +24,7 @@ import de.rennschnitzel.net.dummy.DummyConnection;
 import de.rennschnitzel.net.dummy.DummyNetwork;
 import de.rennschnitzel.net.util.SimpleOwner;
 
-public class ChannelTest {
+public class TunnelTest {
 
   private final Random rand = new Random();
 
@@ -42,7 +42,7 @@ public class ChannelTest {
   @Before
   public void setup() {
 
-    testingOwner = new SimpleOwner("ChannelTestOwner", Logger.getLogger("ChannelTest"));
+    testingOwner = new SimpleOwner("TunnelTestOwner", Logger.getLogger("TunnelTest"));
 
     net_router = new DummyNetwork();
     do {
@@ -62,7 +62,7 @@ public class ChannelTest {
 
 
   @Test
-  public void testChannel() throws IOException {
+  public void testTunnel() throws IOException {
 
     Tunnel base0 = net_client.getTunnel("base0");
     assertNotNull(con_router.getTunnelIdIfPresent(base0));
@@ -130,7 +130,7 @@ public class ChannelTest {
   }
 
   @Test
-  public void testObjectChannel() throws ConvertObjectChannelException, IOException {
+  public void testObjectTunnel() throws ConvertObjectChannelException, IOException {
 
     ObjectTunnel.Descriptor<String> desc = TunnelDescriptors.getObjectTunnel("object", String.class);
 
@@ -156,7 +156,7 @@ public class ChannelTest {
   }
 
   @Test
-  public void testStreamChannel() throws IOException {
+  public void testStreamTunnel() throws IOException {
 
     StreamTunnel.Descriptor descIn = TunnelDescriptors.getStreamTunnel("stream");
     StreamTunnel.Descriptor descOut = TunnelDescriptors.getStreamTunnel("stream");

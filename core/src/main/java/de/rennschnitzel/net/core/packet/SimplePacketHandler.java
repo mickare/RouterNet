@@ -21,7 +21,10 @@ public class SimplePacketHandler<C> implements PacketHandler<C> {
   public void handlerAdded(C ctx) throws Exception {}
 
   @Override
-  public void contextActive(C ctx) throws Exception {}
+  public void channelActive(C ctx) throws Exception {}
+
+  @Override
+  public void channelInactive(C ctx) throws Exception {}
 
   @Override
   public void handle(C ctx, CloseMessage msg) throws Exception {
@@ -82,5 +85,7 @@ public class SimplePacketHandler<C> implements PacketHandler<C> {
   public void handle(C ctx, ProcedureMessage msg) throws Exception {
     throw new UnsupportedOperationException("Not implemented!");
   }
+
+
 
 }

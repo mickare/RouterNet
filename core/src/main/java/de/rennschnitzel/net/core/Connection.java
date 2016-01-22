@@ -20,13 +20,16 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 
 import de.rennschnitzel.net.core.tunnel.SubTunnel;
+import de.rennschnitzel.net.exception.ConnectionException;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
+import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister;
 import de.rennschnitzel.net.util.concurrent.CloseableLock;
 import de.rennschnitzel.net.util.concurrent.CloseableReadWriteLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
+import io.netty.util.concurrent.Future;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
@@ -71,7 +74,7 @@ public abstract class Connection {
   }
 
 
-  public abstract boolean isValid();
+  public abstract boolean isOpen();
 
   public abstract boolean isActive();
 
@@ -138,22 +141,22 @@ public abstract class Connection {
     return getTunnelId(channel.getParentTunnel());
   }
 
-  public abstract void send(TransportProtocol.Packet packet) throws IOException;
+  public abstract Future<?> send(TransportProtocol.Packet packet);
 
-  public void send(TransportProtocol.Packet.Builder packet) throws IOException {
-    send(packet.build());
+  public Future<?> send(TransportProtocol.Packet.Builder packet) {
+    return send(packet.build());
   }
 
-  public void sendTunnelMessage(TransportProtocol.TunnelMessage msg) throws IOException {
-    send(TransportProtocol.Packet.newBuilder().setTunnelMessage(msg).build());
+  public Future<?> sendTunnelMessage(TransportProtocol.TunnelMessage msg) {
+    return send(TransportProtocol.Packet.newBuilder().setTunnelMessage(msg).build());
   }
 
-  public void sendTunnelMessage(TransportProtocol.TunnelMessage.Builder msg) throws IOException {
-    sendTunnelMessage(msg.build());
+  public Future<?> sendTunnelMessage(TransportProtocol.TunnelMessage.Builder msg) {
+    return sendTunnelMessage(msg.build());
   }
 
 
-  public ListenableFuture<Integer> registerTunnel(Tunnel tunnel) throws IOException {
+  public ListenableFuture<Integer> registerTunnel(Tunnel tunnel) {
     Integer id = this.getTunnelIdIfPresent(tunnel);
     if (id != null) {
       return Futures.immediateFuture(id);
@@ -161,7 +164,7 @@ public abstract class Connection {
     return _registerTunnel(tunnel);
   }
 
-  private ListenableFuture<Integer> _registerTunnel(Tunnel tunnel) throws IOException {
+  private ListenableFuture<Integer> _registerTunnel(Tunnel tunnel) {
 
     SettableFuture<Integer> future = this.tunnelFutures.getUnchecked(tunnel.getName());
 
@@ -207,7 +210,7 @@ public abstract class Connection {
             this.tunnels.put(id, msg.getName());
             send(Packet.newBuilder().setTunnelRegister(//
                 TunnelRegister.newBuilder(msg).setTunnelId(id).setRequest(false))//
-            );
+            ).get(100, TimeUnit.MILLISECONDS);
 
             return future;
 
@@ -228,7 +231,7 @@ public abstract class Connection {
           if (future.set(existingId.intValue())) {
             send(Packet.newBuilder().setTunnelRegister(//
                 TunnelRegister.newBuilder(msg).setTunnelId(existingId.intValue()).setRequest(false))//
-            );
+            ).get(100, TimeUnit.MILLISECONDS);
           }
 
         } else {
@@ -238,7 +241,7 @@ public abstract class Connection {
             this.tunnels.put(id, msg.getName());
             send(Packet.newBuilder().setTunnelRegister(//
                 TunnelRegister.newBuilder(msg).setTunnelId(id).setRequest(false))//
-            );
+            ).get(100, TimeUnit.MILLISECONDS);
           }
 
         }
@@ -252,6 +255,9 @@ public abstract class Connection {
 
       }
 
+    } catch (Exception e) {
+      future.setException(e);
+      throw new ConnectionException(ErrorMessage.Type.UNAVAILABLE, "failed to register tunnel", e);
     }
 
     return future;

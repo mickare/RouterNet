@@ -40,6 +40,9 @@ public class NettyServer extends AbstractService {
   @NonNull
   private final ChannelInitializer<SocketChannel> channelInitializer;
 
+  public boolean hasFailed() {
+    return state() == State.FAILED;
+  }
 
   @Override
   protected void doStart() {

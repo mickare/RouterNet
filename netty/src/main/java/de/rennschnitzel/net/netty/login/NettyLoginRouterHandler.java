@@ -10,6 +10,8 @@ import de.rennschnitzel.net.protocol.LoginProtocol.LoginChallengeMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginSuccessMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginUpgradeMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 
 public class NettyLoginRouterHandler extends LoginRouterHandler<ChannelHandlerContext> {
@@ -20,13 +22,15 @@ public class NettyLoginRouterHandler extends LoginRouterHandler<ChannelHandlerCo
   }
 
   @Override
-  protected void send(ChannelHandlerContext ctx, LoginChallengeMessage msg) throws Exception {
-    PacketUtil.writeAndFlush(ctx.channel(), msg);
+  protected ChannelFuture send(ChannelHandlerContext ctx, LoginChallengeMessage msg)
+      throws Exception {
+    return PacketUtil.writeAndFlush(ctx.channel(), msg);
   }
 
   @Override
-  protected void send(ChannelHandlerContext ctx, LoginSuccessMessage msg) throws Exception {
-    PacketUtil.writeAndFlush(ctx.channel(), msg);
+  protected ChannelFuture send(ChannelHandlerContext ctx, LoginSuccessMessage msg)
+      throws Exception {
+    return PacketUtil.writeAndFlush(ctx.channel(), msg);
   }
 
   @Override
@@ -36,10 +40,8 @@ public class NettyLoginRouterHandler extends LoginRouterHandler<ChannelHandlerCo
   }
 
   @Override
-  protected void send(ChannelHandlerContext ctx, CloseMessage msg) {
-    if (ctx.channel().isActive()) {
-      PacketUtil.writeAndFlush(ctx.channel(), msg);
-    }
+  protected ChannelFuture send(ChannelHandlerContext ctx, CloseMessage msg) {
+    return PacketUtil.writeAndFlush(ctx.channel(), msg).addListener(ChannelFutureListener.CLOSE);
   }
 
 }

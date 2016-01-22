@@ -26,7 +26,11 @@ public class BasePacketHandler<C extends Connection> implements PacketHandler<C>
   public void handlerAdded(C ctx) throws Exception {}
 
   @Override
-  public void contextActive(C ctx) throws Exception {}
+  public void channelActive(C ctx) throws Exception {}
+
+  @Override
+  public void channelInactive(C ctx) throws Exception {}
+
 
   public boolean isReceiver(C con, TransportProtocol.TargetMessage target) {
     return con.getNetwork().getHome().isPart(target);

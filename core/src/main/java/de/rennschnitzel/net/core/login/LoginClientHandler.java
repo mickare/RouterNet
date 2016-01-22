@@ -16,6 +16,7 @@ import de.rennschnitzel.net.protocol.LoginProtocol.LoginHandshakeMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginResponseMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginSuccessMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginUpgradeMessage;
+import io.netty.util.concurrent.Future;
 import lombok.Getter;
 
 public abstract class LoginClientHandler<C> extends LoginHandler<C> {
@@ -37,7 +38,7 @@ public abstract class LoginClientHandler<C> extends LoginHandler<C> {
   }
 
   @Override
-  public void contextActive(C ctx) throws Exception {
+  public void channelActive(C ctx) throws Exception {
     checkAndSetState(State.NEW, State.LOGIN);
     LoginHandshakeMessage.Builder msg = LoginHandshakeMessage.newBuilder();
     msg.setProtocolVersion(Protocol.VERSION);
@@ -46,10 +47,10 @@ public abstract class LoginClientHandler<C> extends LoginHandler<C> {
     if (name.isPresent()) {
       msg.setName(name.get());
     }
-    send(ctx, msg.build());
+    addFailListener(ctx, send(ctx, msg.build()));
   }
 
-  protected abstract void send(C ctx, LoginHandshakeMessage handshake) throws Exception;
+  protected abstract Future<?> send(C ctx, LoginHandshakeMessage handshake) throws Exception;
 
   @Override
   public void handle(C ctx, LoginHandshakeMessage msg) throws Exception {
@@ -65,10 +66,10 @@ public abstract class LoginClientHandler<C> extends LoginHandler<C> {
   public void handle(C ctx, LoginChallengeMessage msg) throws Exception {
     checkAndSetState(State.LOGIN, State.AUTH);
     ByteString response = this.authentication.calculateResponse(msg.getToken());
-    send(ctx, LoginResponseMessage.newBuilder().setToken(response).build());
+    addFailListener(ctx, send(ctx, LoginResponseMessage.newBuilder().setToken(response).build()));
   }
 
-  protected abstract void send(C ctx, LoginResponseMessage response) throws Exception;
+  protected abstract Future<?> send(C ctx, LoginResponseMessage response) throws Exception;
 
   @Override
   public void handle(C ctx, LoginSuccessMessage msg) throws Exception {
@@ -82,7 +83,7 @@ public abstract class LoginClientHandler<C> extends LoginHandler<C> {
 
   protected abstract void upgrade(C ctx, LoginSuccessMessage msg) throws Exception;
 
-  protected abstract void send(C ctx, LoginUpgradeMessage upgrade) throws IOException;
+  protected abstract Future<?> send(C ctx, LoginUpgradeMessage upgrade) throws IOException;
 
   @Override
   public void handle(C ctx, LoginUpgradeMessage msg) throws Exception {

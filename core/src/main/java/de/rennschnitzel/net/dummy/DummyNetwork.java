@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Sets;
 
 import de.rennschnitzel.net.ProtocolUtils;
 import de.rennschnitzel.net.core.AbstractNetwork;
@@ -23,7 +24,9 @@ import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
+import de.rennschnitzel.net.util.FutureUtils;
 import de.rennschnitzel.net.util.concurrent.DirectScheduledExecutorService;
+import io.netty.util.concurrent.Future;
 import lombok.Getter;
 
 public class DummyNetwork extends AbstractNetwork {
@@ -79,34 +82,45 @@ public class DummyNetwork extends AbstractNetwork {
   }
 
   @Override
-  public <T, R> void sendProcedureCall(ProcedureCall<T, R> call) throws IOException {
+  public <T, R> Future<?> sendProcedureCall(ProcedureCall<T, R> call) {
 
+    try {
 
-    ProcedureMessage.Builder b = ProcedureMessage.newBuilder();
-    b.setTarget(call.getTarget().getProtocolMessage());
-    b.setSender(ProtocolUtils.convert(getHome().getId()));
-    b.setCall(call.toProtocol());
-    ProcedureMessage msg = b.build();
-    Packet packet = Packet.newBuilder().setProcedureMessage(msg).build();
+      ProcedureMessage.Builder b = ProcedureMessage.newBuilder();
+      b.setTarget(call.getTarget().getProtocolMessage());
+      b.setSender(ProtocolUtils.convert(getHome().getId()));
+      b.setCall(call.toProtocol());
+      ProcedureMessage msg = b.build();
+      Packet packet = Packet.newBuilder().setProcedureMessage(msg).build();
 
-    if (!call.getTarget().isOnly(this.getHome())) {
-      connection.send(packet);
+      if (!call.getTarget().isOnly(this.getHome())) {
+        connection.send(packet);
+      }
+
+      if (call.getTarget().contains(this.getHome())) {
+        this.procedureManager.handle(call);
+      }
+
+    } catch (Exception e) {
+      return FutureUtils.futureFailure(e);
     }
 
-    if (call.getTarget().contains(this.getHome())) {
-      this.procedureManager.handle(call);
-    }
-
+    return FutureUtils.SUCCESS;
   }
 
   @Override
-  public void sendProcedureResponse(UUID receiver, ProcedureResponseMessage msg) throws IOException {
+  public Future<?> sendProcedureResponse(UUID receiver, ProcedureResponseMessage msg) {
     ProcedureMessage pmsg = ProcedureMessage.newBuilder().setSender(ProtocolUtils.convert(getHome().getId()))
         .setTarget(Target.to(receiver).getProtocolMessage()).setResponse(msg).build();
     if (this.getHome().getId().equals(receiver)) {
-      this.procedureManager.handle(connection, pmsg);
+      try {
+        this.procedureManager.handle(connection, pmsg);
+        return FutureUtils.SUCCESS;
+      } catch (Exception e) {
+        return FutureUtils.futureFailure(e);
+      }
     } else {
-      connection.send(Packet.newBuilder().setProcedureMessage(pmsg));
+      return connection.send(Packet.newBuilder().setProcedureMessage(pmsg));
     }
   }
 
@@ -116,18 +130,22 @@ public class DummyNetwork extends AbstractNetwork {
   }
 
   @Override
-  public void sendHomeNodeUpdate() throws IOException {
-    connection.send(Packet.newBuilder().setNodeUpdate(NodeUpdateMessage.newBuilder().setNode(this.getHome().toProtocol())));
+  public void publishHomeNodeUpdate() {
+    this.getHome().publishUpdate(Sets.newHashSet(this.connection));
   }
 
   @Override
-  protected void sendTunnelMessage(TunnelMessage cmsg) throws IOException {
-    connection.send(Packet.newBuilder().setTunnelMessage(cmsg.toProtocolMessage(connection)));
+  protected Future<?> sendTunnelMessage(TunnelMessage cmsg) {
+    try {
+      return connection.send(Packet.newBuilder().setTunnelMessage(cmsg.toProtocolMessage(connection)));
+    } catch (IOException e) {
+      return FutureUtils.futureFailure(e);
+    }
   }
 
   @Override
-  protected void registerTunnel(Tunnel tunnel) throws IOException {
-    connection.registerTunnel(tunnel);
+  protected Future<?> registerTunnel(Tunnel tunnel) {
+    return FutureUtils.transformFuture(connection.registerTunnel(tunnel));
   }
 
 }

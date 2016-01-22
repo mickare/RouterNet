@@ -21,25 +21,43 @@ public class Procedure implements Comparable<Procedure> {
   private static final Object LOCK = new Object();
 
   public static <T, R> BoundProcedure<T, R> of(String name, Function<T, R> function) {
-    return BoundProcedure.of(name, function);
+    return of(name, function, AbstractNetwork.getInstance());
+  }
+
+  public static <T, R> BoundProcedure<T, R> of(String name, Function<T, R> function, AbstractNetwork network) {
+    return BoundProcedure.of(name, function, network);
   }
 
   public static <T> BoundProcedure<T, Void> of(String name, Consumer<T> consumer) {
-    return BoundProcedure.of(name, consumer);
+    return of(name, consumer, AbstractNetwork.getInstance());
   }
 
+  public static <T> BoundProcedure<T, Void> of(String name, Consumer<T> consumer, AbstractNetwork network) {
+    return BoundProcedure.of(name, consumer, network);
+  }
 
   public static <R> BoundProcedure<Void, R> of(String name, Supplier<R> supplier) {
-    return BoundProcedure.of(name, supplier);
+    return of(name, supplier, AbstractNetwork.getInstance());
   }
 
+  public static <R> BoundProcedure<Void, R> of(String name, Supplier<R> supplier, AbstractNetwork network) {
+    return BoundProcedure.of(name, supplier, network);
+  }
 
   public static BoundProcedure<Void, Void> of(String name, Runnable runnable) {
-    return BoundProcedure.of(name, runnable);
+    return of(name, runnable, AbstractNetwork.getInstance());
+  }
+
+  public static BoundProcedure<Void, Void> of(String name, Runnable runnable, AbstractNetwork network) {
+    return BoundProcedure.of(name, runnable, network);
   }
 
   public static <T, R> CallableProcedure<T, R> of(String name, Class<T> argument, Class<R> result) {
-    return new CallableProcedure<T, R>(AbstractNetwork.getInstance(), name, argument, result);
+    return of(name, argument, result, AbstractNetwork.getInstance());
+  }
+
+  public static <T, R> CallableProcedure<T, R> of(String name, Class<T> argument, Class<R> result, AbstractNetwork network) {
+    return new CallableProcedure<T, R>(network, name, argument, result);
   }
 
   public static Procedure of(String name, String argumentType, String resultType) {
@@ -206,6 +224,11 @@ public class Procedure implements Comparable<Procedure> {
     b.setArgumentType(this.argumentType);
     b.setResultType(this.resultType);
     return b.build();
+  }
+
+  @Override
+  public String toString() {
+    return this.getClass().getSimpleName() + "[" + this.resultType + " " + this.name + "(" + this.argumentType + ") ]";
   }
 
 }

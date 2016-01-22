@@ -15,8 +15,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
+import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import de.rennschnitzel.net.core.procedure.BoundProcedure;
@@ -51,7 +50,7 @@ public class ProcedureManager {
   public static long MAX_TIMEOUT = 60 * 60 * 1000; // 1 hour
 
   private final ReentrantCloseableReadWriteLock lock = new ReentrantCloseableReadWriteLock();
-  private final BiMap<Procedure, CallableRegisteredProcedure<?, ?>> registeredProcedures = HashBiMap.create();
+  private final Map<Procedure, CallableRegisteredProcedure<?, ?>> registeredProcedures = Maps.newHashMap();
 
   @NonNull
   @Getter
@@ -145,13 +144,13 @@ public class ProcedureManager {
     Preconditions.checkNotNull(procedure);
     Preconditions.checkArgument(timeout > 0);
     final SingleProcedureCall<T, R> call = new SingleProcedureCall<>(node, procedure, argument, timeout);
-    try (CloseableLock l = lock.readLock().open()) {
-      if (!call.isDone()) {
-        openCalls.put(call.getId(), call);
+    if (!call.isDone()) {
+      openCalls.put(call.getId(), call);
+      try {
         network.sendProcedureCall(call);
+      } catch (Exception e) {
+        call.setException(e);
       }
-    } catch (Exception e) {
-      call.setException(e);
     }
     return call.getResult();
   }
@@ -168,13 +167,13 @@ public class ProcedureManager {
     Preconditions.checkNotNull(procedure);
     Preconditions.checkArgument(timeout > 0);
     final MultiProcedureCall<T, R> call = new MultiProcedureCall<>(nodes, procedure, argument, timeout);
-    try (CloseableLock l = lock.readLock().open()) {
-      if (!call.isDone()) {
-        openCalls.put(call.getId(), call);
+    if (!call.isDone()) {
+      openCalls.put(call.getId(), call);
+      try {
         network.sendProcedureCall(call);
+      } catch (Exception e) {
+        call.setException(e);
       }
-    } catch (Exception e) {
-      call.setException(e);
     }
     return call.getResult();
   }

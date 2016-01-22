@@ -1,7 +1,6 @@
 package de.rennschnitzel.backbone.net;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -83,15 +82,15 @@ public class LoginTest {
 
     DummyConnection con_router = new DummyConnection(net_router, routerHandler);
     DummyConnection con_client = new DummyConnection(net_client, clientHandler);
-        
-    boolean catched = false;
-    try {
-      con_client.connect(con_router);
-    } catch (Exception e) {
-      catched = true;
-      assertEquals("invalid login", e.getMessage());
-    }
-    assertTrue(catched);
+
+    con_client.connect(con_router);
+
+    assertTrue(routerHandler.isDone());
+    assertFalse(routerHandler.isSuccess());
+
+    assertTrue(clientHandler.isDone());
+    assertFalse(clientHandler.isSuccess());
+
 
     assertTrue(routerHandler.isDone());
     assertTrue(clientHandler.isDone());

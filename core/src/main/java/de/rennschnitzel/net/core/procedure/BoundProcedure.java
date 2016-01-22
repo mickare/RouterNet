@@ -18,29 +18,42 @@ public class BoundProcedure<T, R> extends CallableProcedure<T, R> {
   // ***************************************************************************
   // STATIC - START
 
-  @SuppressWarnings("unchecked")
   public static <T, R> BoundProcedure<T, R> of(String name, Function<T, R> function) {
-    Class<?>[] typeArgs = TypeUtils.resolveArgumentClass(function);
-    return new BoundProcedure<T, R>(AbstractNetwork.getInstance(), name, (Class<T>) typeArgs[0], (Class<R>) typeArgs[1], function);
+    return of(name, function, AbstractNetwork.getInstance());
   }
+
+  @SuppressWarnings("unchecked")
+  public static <T, R> BoundProcedure<T, R> of(String name, Function<T, R> function, AbstractNetwork network) {
+    Class<?>[] typeArgs = TypeUtils.resolveArgumentClass(function);
+    return new BoundProcedure<T, R>(network, name, (Class<T>) typeArgs[0], (Class<R>) typeArgs[1], function);
+  }
+
 
   public static <T> BoundProcedure<T, Void> of(String name, Consumer<T> consumer) {
-    return new BoundProcedure<T, Void>(AbstractNetwork.getInstance(), name, TypeUtils.resolveArgumentClass(consumer), Void.class,
-        t -> {
-          consumer.accept(t);
-          return null;
-        });
+    return of(name, consumer, AbstractNetwork.getInstance());
   }
 
+  public static <T> BoundProcedure<T, Void> of(String name, Consumer<T> consumer, AbstractNetwork network) {
+    return new BoundProcedure<T, Void>(network, name, TypeUtils.resolveArgumentClass(consumer), Void.class, t -> {
+      consumer.accept(t);
+      return null;
+    });
+  }
 
   public static <R> BoundProcedure<Void, R> of(String name, Supplier<R> supplier) {
-    return new BoundProcedure<Void, R>(AbstractNetwork.getInstance(), name, Void.class, TypeUtils.resolveArgumentClass(supplier),
-        t -> supplier.get());
+    return of(name, supplier, AbstractNetwork.getInstance());
   }
 
+  public static <R> BoundProcedure<Void, R> of(String name, Supplier<R> supplier, AbstractNetwork network) {
+    return new BoundProcedure<Void, R>(network, name, Void.class, TypeUtils.resolveArgumentClass(supplier), t -> supplier.get());
+  }
 
   public static BoundProcedure<Void, Void> of(String name, Runnable runnable) {
-    return new BoundProcedure<Void, Void>(AbstractNetwork.getInstance(), name, Void.class, Void.class, t -> {
+    return of(name, runnable, AbstractNetwork.getInstance());
+  }
+
+  public static BoundProcedure<Void, Void> of(String name, Runnable runnable, AbstractNetwork network) {
+    return new BoundProcedure<Void, Void>(network, name, Void.class, Void.class, t -> {
       runnable.run();
       return null;
     });
@@ -57,8 +70,7 @@ public class BoundProcedure<T, R> extends CallableProcedure<T, R> {
     this(network, procedure.getName(), procedure.getArgumentClass(), procedure.getResultClass(), function);
   }
 
-  public BoundProcedure(AbstractNetwork network, Procedure procedure, Class<T> argClass, Class<R> resultClass,
-      Function<T, R> function) {
+  public BoundProcedure(AbstractNetwork network, Procedure procedure, Class<T> argClass, Class<R> resultClass, Function<T, R> function) {
     this(network, procedure.checkApplicable(argClass, resultClass).getName(), argClass, resultClass, function);
   }
 

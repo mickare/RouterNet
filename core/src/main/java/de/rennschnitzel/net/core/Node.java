@@ -1,6 +1,5 @@
 package de.rennschnitzel.net.core;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -16,14 +15,18 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 import de.rennschnitzel.net.ProtocolUtils;
-import de.rennschnitzel.net.core.procedure.Procedure;
 import de.rennschnitzel.net.core.procedure.CallableRegisteredProcedure;
-import de.rennschnitzel.net.protocol.TransportProtocol;
+import de.rennschnitzel.net.core.procedure.Procedure;
 import de.rennschnitzel.net.protocol.NetworkProtocol.DataBukkitMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.DataBungeecordMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.DataRouterMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
+import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage.Type;
+import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
+import de.rennschnitzel.net.protocol.TransportProtocol;
+import de.rennschnitzel.net.util.FutureUtils;
+import io.netty.util.concurrent.Future;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
@@ -54,7 +57,7 @@ public class Node {
   @Getter
   private Data data = new Data();
 
-  protected synchronized boolean connected(NodeMessage msg) {
+  protected synchronized boolean update(NodeMessage msg) {
     UUID id = ProtocolUtils.convert(msg.getId());
     Preconditions.checkArgument(this.id.equals(id));
     if (msg.getStartTimestamp() < this.startTimestamp) {
@@ -243,12 +246,12 @@ public class Node {
       publishChanges();
     }
 
-    public void addRegisteredProcedure(CallableRegisteredProcedure<?, ?> procedure) {
+    protected void addRegisteredProcedure(CallableRegisteredProcedure<?, ?> procedure) {
       dirty |= this.procedures.add(procedure);
       publishChanges();
     }
 
-    public void removeRegisteredProcedure(CallableRegisteredProcedure<?, ?> procedure) {
+    protected void removeRegisteredProcedure(CallableRegisteredProcedure<?, ?> procedure) {
       dirty |= this.procedures.remove(procedure);
       publishChanges();
     }
@@ -261,30 +264,30 @@ public class Node {
         throw new IllegalStateException();
       }
       network.scheduleAsyncLater(() -> {
-        try {
-          publishChanges(network);
-        } catch (Exception e) {
-          network.getLogger().log(Level.SEVERE, "Failed to publish home node updates", e);
-        }
-      } , 100, TimeUnit.MICROSECONDS);
-    }
-
-    public void publishChanges(AbstractNetwork network) throws IOException {
-      Preconditions.checkArgument(network.getHome() == this);
-      if (!this.dirty) {
-        return;
-      }
-      synchronized (this) {
         if (!this.dirty) {
           return;
         }
-        this.dirty = false;
-        network.sendHomeNodeUpdate();
-      }
+        synchronized (HomeNode.this) {
+          if (!this.dirty) {
+            return;
+          }
+          this.dirty = false;
+        }
+        network.publishHomeNodeUpdate();
+      } , 100, TimeUnit.MICROSECONDS);
+    }
+
+    public void publishUpdate(Set<Connection> connections) {
+      Packet packet = Packet.newBuilder().setNodeUpdate(NodeUpdateMessage.newBuilder().setNode(this.toProtocol())).build();
+      connections.forEach(con -> con.send(packet));
+    }
+
+    public Future<?> sendUpdate(Connection connection) {
+      return connection.send(Packet.newBuilder().setNodeUpdate(NodeUpdateMessage.newBuilder().setNode(this.toProtocol())));
     }
 
     @Override
-    public boolean connected(NodeMessage server) {
+    public boolean update(NodeMessage server) {
       throw new UnsupportedOperationException();
     }
 

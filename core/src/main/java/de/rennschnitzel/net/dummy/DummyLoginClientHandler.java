@@ -12,10 +12,9 @@ import de.rennschnitzel.net.protocol.LoginProtocol.LoginHandshakeMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginResponseMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginSuccessMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginUpgradeMessage;
-import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
-import lombok.Getter;
+import io.netty.util.concurrent.Future;
 
 public class DummyLoginClientHandler extends LoginClientHandler<DummyConnection> {
 
@@ -30,36 +29,35 @@ public class DummyLoginClientHandler extends LoginClientHandler<DummyConnection>
   }
 
   @Override
-  protected void send(DummyConnection ctx, LoginHandshakeMessage handshake) throws Exception {
-    ctx.send(Packet.newBuilder().setLoginHandshake(handshake));
+  protected Future<?> send(DummyConnection ctx, LoginHandshakeMessage handshake) throws Exception {
+    return ctx.send(Packet.newBuilder().setLoginHandshake(handshake));
   }
 
   @Override
-  protected void send(DummyConnection ctx, LoginResponseMessage response) throws Exception {
-    ctx.send(Packet.newBuilder().setLoginResponse(response));
+  protected Future<?> send(DummyConnection ctx, LoginResponseMessage response) throws Exception {
+    return ctx.send(Packet.newBuilder().setLoginResponse(response));
   }
 
   @Override
   protected void upgrade(DummyConnection ctx, LoginSuccessMessage msg) throws Exception {
-    this.send(ctx, LoginUpgradeMessage.newBuilder().setNode(this.getNetwork().getHome().toProtocol()).build());
-    ctx.setHandler(upgradeHandler);
-    this.setSuccess();
-  }
-
-  @Override
-  protected void send(DummyConnection ctx, LoginUpgradeMessage upgrade) throws IOException {
-    ctx.send(Packet.newBuilder().setLoginUpgrade(upgrade));
-  }
-
-  @Override
-  protected void send(DummyConnection ctx, CloseMessage msg) {
-    if (ctx.isActive()) {
-      try {
-        ctx.send(Packet.newBuilder().setClose(msg));
-      } catch (IOException e) {
-        throw new RuntimeException(e);
+    this.send(ctx, LoginUpgradeMessage.newBuilder().setNode(this.getNetwork().getHome().toProtocol()).build()).addListener(f -> {
+      if (f.isSuccess()) {
+        ctx.setHandler(upgradeHandler);
+        this.setSuccess();
+      } else {
+        this.fail(ctx, f.cause());
       }
-    }
+    });
+  }
+
+  @Override
+  protected Future<?> send(DummyConnection ctx, LoginUpgradeMessage upgrade) throws IOException {
+    return ctx.send(Packet.newBuilder().setLoginUpgrade(upgrade));
+  }
+
+  @Override
+  protected Future<?> send(DummyConnection ctx, CloseMessage msg) {
+    return ctx.send(Packet.newBuilder().setClose(msg));
   }
 
 }

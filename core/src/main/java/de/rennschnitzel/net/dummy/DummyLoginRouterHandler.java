@@ -1,7 +1,5 @@
 package de.rennschnitzel.net.dummy;
 
-import java.io.IOException;
-
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.core.AbstractNetwork;
@@ -14,6 +12,7 @@ import de.rennschnitzel.net.protocol.LoginProtocol.LoginSuccessMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginUpgradeMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
+import io.netty.util.concurrent.Future;
 
 public class DummyLoginRouterHandler extends LoginRouterHandler<DummyConnection> {
 
@@ -27,13 +26,13 @@ public class DummyLoginRouterHandler extends LoginRouterHandler<DummyConnection>
   }
 
   @Override
-  protected void send(DummyConnection ctx, LoginChallengeMessage msg) throws Exception {
-    ctx.send(Packet.newBuilder().setLoginChallenge(msg));
+  protected Future<?> send(DummyConnection ctx, LoginChallengeMessage msg) throws Exception {
+    return ctx.send(Packet.newBuilder().setLoginChallenge(msg));
   }
 
   @Override
-  protected void send(DummyConnection ctx, LoginSuccessMessage msg) throws Exception {
-    ctx.send(Packet.newBuilder().setLoginSuccess(msg));
+  protected Future<?> send(DummyConnection ctx, LoginSuccessMessage msg) throws Exception {
+    return ctx.send(Packet.newBuilder().setLoginSuccess(msg));
   }
 
   @Override
@@ -43,14 +42,8 @@ public class DummyLoginRouterHandler extends LoginRouterHandler<DummyConnection>
   }
 
   @Override
-  protected void send(DummyConnection ctx, CloseMessage msg) {
-    if (ctx.isActive()) {
-      try {
-        ctx.send(Packet.newBuilder().setClose(msg));
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    }
+  protected Future<?> send(DummyConnection ctx, CloseMessage msg) {
+    return ctx.send(Packet.newBuilder().setClose(msg));
   }
 
 }

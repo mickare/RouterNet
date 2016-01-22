@@ -9,6 +9,8 @@ import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.packet.PacketHandler;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
+import de.rennschnitzel.net.util.FutureUtils;
+import io.netty.util.concurrent.Future;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -19,7 +21,7 @@ public class DummyConnection extends Connection {
 
 
   @Getter
-  private boolean valid = false;
+  private boolean valid = true;
 
   @Setter
   @NonNull
@@ -49,7 +51,7 @@ public class DummyConnection extends Connection {
     synchronized (lockObj) {
 
       Preconditions.checkState(this.connected == null);
-      Preconditions.checkState(!this.valid, "closed");
+      Preconditions.checkState(this.valid, "not valid");
 
       this.connected = connection;
       connection.connected = this;
@@ -60,8 +62,8 @@ public class DummyConnection extends Connection {
       try {
 
         // activate handlers
-        this.connected.handler.contextActive(this.connected);
-        this.handler.contextActive(this);
+        this.connected.handler.channelActive(this.connected);
+        this.handler.channelActive(this);
 
         this.getNetwork().addConnection(this);
         this.connected.getNetwork().addConnection(this.connected);
@@ -73,18 +75,22 @@ public class DummyConnection extends Connection {
     }
   }
 
+  public boolean isOpen() {
+    return this.valid;
+  }
+
   public boolean isActive() {
-    return this.isValid() && this.connected != null;
+    return this.isOpen() && this.connected != null;
   }
 
   public void disconnect(CloseMessage msg) {
     Preconditions.checkNotNull(msg);
     try {
       synchronized (lockObj) {
-        if (this.valid) {
+        if (!this.valid) {
           return;
         }
-        this.valid = true;
+        this.valid = false;
         if (this.connected != null) {
           this.setCloseMessage(msg);
           this.connected.receive(Packet.newBuilder().setClose(msg).build());
@@ -102,23 +108,24 @@ public class DummyConnection extends Connection {
   }
 
   public void receive(Packet packet) throws Exception {
-    if (valid) {
+    if (!valid) {
       return;
     }
     handler.handle(this, packet);
   }
 
   @Override
-  public void send(Packet packet) throws IOException {
-    if (valid) {
-      return;
+  public Future<?> send(Packet packet) {
+    if (!valid) {
+      return FutureUtils.futureFailure(new IllegalStateException("not valid connection"));
     }
     try {
       connected.receive(packet);
+      return FutureUtils.SUCCESS;
     } catch (IOException e) {
-      throw e;
+      return FutureUtils.futureFailure(e);
     } catch (Exception e) {
-      throw new IOException(e);
+      return FutureUtils.futureFailure(new IOException(e));
     }
   }
 

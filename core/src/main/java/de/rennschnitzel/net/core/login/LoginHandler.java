@@ -20,6 +20,7 @@ import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.TunnelMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister;
+import io.netty.util.concurrent.Future;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +31,7 @@ public abstract class LoginHandler<C> implements PacketHandler<C> {
 
   @Getter
   private final AbstractNetwork network;
-  
+
   @RequiredArgsConstructor
   public static enum State {
     NEW(0), LOGIN(1), AUTH(1), SUCCESS(3), FAILED(3);
@@ -60,6 +61,22 @@ public abstract class LoginHandler<C> implements PacketHandler<C> {
     Preconditions.checkNotNull(network);
     this.handlerName = handlerName;
     this.network = network;
+  }
+
+
+  @Override
+  public void channelInactive(C ctx) throws Exception {
+    if (!this.isDone()) {
+      this.fail(ctx, new IllegalStateException("channel inactive"));
+    }
+  }
+
+  protected void addFailListener(final C ctx, final Future<?> future) {
+    future.addListener(f -> {
+      if (!f.isSuccess()) {
+        this.fail(ctx, f.cause());
+      }
+    });
   }
 
   public abstract UUID getId();
@@ -118,7 +135,7 @@ public abstract class LoginHandler<C> implements PacketHandler<C> {
         .setError(ErrorMessage.newBuilder().setType(ErrorMessage.Type.HANDSHAKE).setMessage(cause.getMessage())).build());
   }
 
-  protected abstract void send(C ctx, CloseMessage msg);
+  protected abstract Future<?> send(C ctx, CloseMessage msg);
 
   protected synchronized final void checkState(final State setpoint) throws ConnectionException {
     if (this.state != setpoint) {

@@ -17,7 +17,9 @@ import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister;
 
 public interface PacketHandler<C> {
 
-  void contextActive(C ctx) throws Exception;
+  void channelActive(C ctx) throws Exception;
+
+  void channelInactive(C ctx) throws Exception;
 
   void handlerAdded(C ctx) throws Exception;
 
@@ -69,6 +71,7 @@ public interface PacketHandler<C> {
       case PROCEDUREMESSAGE:
         handle(ctx, packet.getProcedureMessage());
         break;
+                
       default:
         handleUndefined(ctx, packet);
     }

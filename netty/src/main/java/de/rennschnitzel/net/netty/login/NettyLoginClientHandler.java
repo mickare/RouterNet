@@ -11,6 +11,8 @@ import de.rennschnitzel.net.protocol.LoginProtocol.LoginResponseMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginSuccessMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginUpgradeMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 
 public class NettyLoginClientHandler extends LoginClientHandler<ChannelHandlerContext> {
@@ -20,32 +22,40 @@ public class NettyLoginClientHandler extends LoginClientHandler<ChannelHandlerCo
   }
 
   @Override
-  protected void send(ChannelHandlerContext ctx, LoginHandshakeMessage handshake) throws Exception {
-    PacketUtil.writeAndFlush(ctx.channel(), handshake);
+  protected ChannelFuture send(ChannelHandlerContext ctx, LoginHandshakeMessage handshake)
+      throws Exception {
+    return PacketUtil.writeAndFlush(ctx.channel(), handshake);
   }
 
   @Override
-  protected void send(ChannelHandlerContext ctx, LoginResponseMessage response) throws Exception {
-    PacketUtil.writeAndFlush(ctx.channel(), response);
+  protected ChannelFuture send(ChannelHandlerContext ctx, LoginResponseMessage response)
+      throws Exception {
+    return PacketUtil.writeAndFlush(ctx.channel(), response);
   }
 
   @Override
-  protected void upgrade(ChannelHandlerContext ctx, LoginSuccessMessage msg) throws Exception {
+  protected void upgrade(ChannelHandlerContext ctx, final LoginSuccessMessage msg) throws Exception {
     this.send(ctx,
-        LoginUpgradeMessage.newBuilder().setNode(this.getNetwork().getHome().toProtocol()).build());
-    this.setSuccess();
+        LoginUpgradeMessage.newBuilder().setNode(this.getNetwork().getHome().toProtocol()).build())//
+        .addListener(f -> {
+          if (f.isSuccess()) {
+            this.getNetwork().updateNodes(msg.getTopology());
+            this.setSuccess();
+          } else {
+            this.fail(ctx, f.cause());
+          }
+        });
   }
 
   @Override
-  protected void send(ChannelHandlerContext ctx, LoginUpgradeMessage upgrade) throws IOException {
-    PacketUtil.writeAndFlush(ctx.channel(), upgrade);
+  protected ChannelFuture send(ChannelHandlerContext ctx, LoginUpgradeMessage upgrade)
+      throws IOException {
+    return PacketUtil.writeAndFlush(ctx.channel(), upgrade);
   }
 
   @Override
-  protected void send(ChannelHandlerContext ctx, CloseMessage msg) {
-    if (ctx.channel().isActive()) {
-      PacketUtil.writeAndFlush(ctx.channel(), msg);
-    }
+  protected ChannelFuture send(ChannelHandlerContext ctx, CloseMessage msg) {
+    return PacketUtil.writeAndFlush(ctx.channel(), msg).addListener(ChannelFutureListener.CLOSE);
   }
 
 }

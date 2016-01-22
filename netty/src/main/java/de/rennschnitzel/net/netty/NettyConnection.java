@@ -9,6 +9,7 @@ import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.packet.PacketHandler;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import lombok.Getter;
 
@@ -37,8 +38,8 @@ public class NettyConnection<N extends AbstractNetwork> extends Connection {
   }
 
   @Override
-  public void send(Packet packet) {
-    this.mainHandler.send(packet);
+  public ChannelFuture send(Packet packet) {
+    return this.mainHandler.sendAndFlush(packet);
   }
 
   protected void receive(Packet packet) throws Exception {
@@ -46,8 +47,8 @@ public class NettyConnection<N extends AbstractNetwork> extends Connection {
   }
 
   @Override
-  public boolean isValid() {
-    return !this.mainHandler.getContext().channel().isOpen();
+  public boolean isOpen() {
+    return this.mainHandler.getContext().channel().isOpen();
   }
 
   @Override
@@ -57,8 +58,7 @@ public class NettyConnection<N extends AbstractNetwork> extends Connection {
 
   @Override
   public void disconnect(CloseMessage msg) {
-    mainHandler.sendAndFlush(Packet.newBuilder().setClose(msg).build())
-        .addListener(ChannelFutureListener.CLOSE);
+    send(Packet.newBuilder().setClose(msg).build()).addListener(ChannelFutureListener.CLOSE);
   }
 
 }

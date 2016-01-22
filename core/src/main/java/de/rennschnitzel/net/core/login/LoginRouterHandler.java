@@ -15,6 +15,7 @@ import de.rennschnitzel.net.protocol.LoginProtocol.LoginHandshakeMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginResponseMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginSuccessMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginUpgradeMessage;
+import io.netty.util.concurrent.Future;
 import lombok.Getter;
 
 public abstract class LoginRouterHandler<C> extends LoginHandler<C> {
@@ -38,7 +39,7 @@ public abstract class LoginRouterHandler<C> extends LoginHandler<C> {
   }
 
   @Override
-  public void contextActive(C ctx) throws Exception {
+  public void channelActive(C ctx) throws Exception {
     checkState(State.NEW);
   }
 
@@ -58,10 +59,10 @@ public abstract class LoginRouterHandler<C> extends LoginHandler<C> {
 
     Preconditions.checkState(this.id != null);
 
-    send(ctx, LoginChallengeMessage.newBuilder().setToken(this.authentication.getChallenge()).build());
+    addFailListener(ctx, send(ctx, LoginChallengeMessage.newBuilder().setToken(this.authentication.getChallenge()).build()));
   }
 
-  protected abstract void send(C ctx, LoginChallengeMessage msg) throws Exception;
+  protected abstract Future<?> send(C ctx, LoginChallengeMessage msg) throws Exception;
 
   @Override
   public void handle(C ctx, LoginResponseMessage msg) throws Exception {
@@ -78,11 +79,10 @@ public abstract class LoginRouterHandler<C> extends LoginHandler<C> {
       b.setRouterName(name.get());
     }
     b.setTopology(this.getNetwork().getTopologyMessage());
-    send(ctx, b.build());
-
+    addFailListener(ctx, send(ctx, b.build()));
   }
 
-  protected abstract void send(C ctx, LoginSuccessMessage msg) throws Exception;
+  protected abstract Future<?> send(C ctx, LoginSuccessMessage msg) throws Exception;
 
   @Override
   public void handle(C ctx, LoginUpgradeMessage msg) throws Exception {
