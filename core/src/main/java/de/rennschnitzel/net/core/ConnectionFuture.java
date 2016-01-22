@@ -6,6 +6,6 @@ import de.rennschnitzel.net.core.Connection;
 
 public interface ConnectionFuture<C extends Connection> extends ListenableFuture<C> {
 
-  boolean isOpen();
+  boolean isSuccess();
 
 }

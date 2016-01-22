@@ -9,8 +9,6 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
-import io.netty.handler.codec.compression.FastLzFrameDecoder;
-import io.netty.handler.codec.compression.FastLzFrameEncoder;
 import io.netty.handler.codec.protobuf.ProtobufDecoder;
 import io.netty.handler.codec.protobuf.ProtobufEncoder;
 import lombok.NonNull;
@@ -33,8 +31,8 @@ public class BaseChannelInitializer extends ChannelInitializer<SocketChannel> {
     ChannelPipeline pipeline = ch.pipeline();
     pipeline.addLast("frameDecoder", new LengthFieldBasedFrameDecoder(1048576, 0, 4, 0, 4));
     pipeline.addLast("frameEncoder", new LengthFieldPrepender(4));
-    pipeline.addLast("compressionDecoder", new FastLzFrameDecoder(true));
-    pipeline.addLast("compressionEncoder", new FastLzFrameEncoder(true));
+    //pipeline.addLast("compressionDecoder", new FastLzFrameDecoder(true));
+    //pipeline.addLast("compressionEncoder", new FastLzFrameEncoder(true));
     pipeline.addLast("protoDecoder",
         new ProtobufDecoder(TransportProtocol.Packet.getDefaultInstance()));
     pipeline.addLast("protoEncoder", new ProtobufEncoder());

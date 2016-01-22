@@ -3,7 +3,10 @@ package de.rennschnitzel.net.core.login;
 import java.util.UUID;
 
 import com.google.common.base.Preconditions;
+import com.google.common.util.concurrent.SettableFuture;
 
+import de.rennschnitzel.net.core.AbstractNetwork;
+import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.packet.PacketHandler;
 import de.rennschnitzel.net.exception.ConnectionException;
 import de.rennschnitzel.net.exception.HandshakeException;
@@ -24,6 +27,10 @@ import lombok.Setter;
 
 public abstract class LoginHandler<C> implements PacketHandler<C> {
 
+
+  @Getter
+  private final AbstractNetwork network;
+  
   @RequiredArgsConstructor
   public static enum State {
     NEW(0), LOGIN(1), AUTH(1), SUCCESS(3), FAILED(3);
@@ -32,7 +39,7 @@ public abstract class LoginHandler<C> implements PacketHandler<C> {
   }
 
   @Getter
-  private final String name;
+  private final String handlerName;
   @Getter
   private volatile State state = State.NEW;
 
@@ -45,12 +52,21 @@ public abstract class LoginHandler<C> implements PacketHandler<C> {
   @Getter
   private State failureState = null;
 
-  public LoginHandler(String name) {
-    Preconditions.checkArgument(!name.isEmpty());
-    this.name = name;
+  @Getter
+  private SettableFuture<Connection> connectionFuture = SettableFuture.create();
+
+  public LoginHandler(String handlerName, AbstractNetwork network) {
+    Preconditions.checkArgument(!handlerName.isEmpty());
+    Preconditions.checkNotNull(network);
+    this.handlerName = handlerName;
+    this.network = network;
   }
 
   public abstract UUID getId();
+
+  public abstract String getName();
+
+  public abstract void registerNodes();
 
   public boolean isSuccess() {
     return this.state == State.SUCCESS;
@@ -84,13 +100,16 @@ public abstract class LoginHandler<C> implements PacketHandler<C> {
   }
 
 
-  public synchronized final void fail(C ctx, Throwable cause) {
-    if (this.state.step >= State.FAILED.step) {
-      return;
+  public final void fail(C ctx, Throwable cause) {
+    synchronized (this) {
+      if (this.state.step >= State.FAILED.step) {
+        return;
+      }
+      this.connectionFuture.setException(cause);
+      this.failureCause = cause;
+      this.failureState = this.state;
+      this.state = State.FAILED;
     }
-    this.failureCause = cause;
-    this.failureState = this.state;
-    this.state = State.FAILED;
     onFail(ctx, cause);
   }
 

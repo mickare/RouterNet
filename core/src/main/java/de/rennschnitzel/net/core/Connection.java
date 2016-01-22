@@ -70,6 +70,18 @@ public abstract class Connection {
     this.id = id;
   }
 
+
+  public abstract boolean isValid();
+
+  public abstract boolean isActive();
+
+  public abstract void disconnect(CloseMessage msg);
+
+
+  public void disconnect(CloseMessage.Builder builder) {
+    this.disconnect(builder.build());
+  }
+
   private int getNextFreeTunnelId() {
     int id;
     try (CloseableLock l = tunnelLock.readLock().open()) {
@@ -140,18 +152,15 @@ public abstract class Connection {
     sendTunnelMessage(msg.build());
   }
 
-  public abstract boolean isClosed();
-
-  public abstract boolean isActive();
 
   public ListenableFuture<Integer> registerTunnel(Tunnel tunnel) throws IOException {
     Integer id = this.getTunnelIdIfPresent(tunnel);
-    if(id != null) {
+    if (id != null) {
       return Futures.immediateFuture(id);
     }
     return _registerTunnel(tunnel);
   }
-  
+
   private ListenableFuture<Integer> _registerTunnel(Tunnel tunnel) throws IOException {
 
     SettableFuture<Integer> future = this.tunnelFutures.getUnchecked(tunnel.getName());

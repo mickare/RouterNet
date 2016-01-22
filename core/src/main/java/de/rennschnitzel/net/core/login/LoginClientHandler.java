@@ -20,27 +20,29 @@ import lombok.Getter;
 
 public abstract class LoginClientHandler<C> extends LoginHandler<C> {
 
-  @Getter
-  private final AbstractNetwork network;
   private final AuthenticationClient authentication;
 
   @Getter
   private UUID id = null;
+  @Getter
+  private String name = null;
+
+  @Getter
+  private LoginSuccessMessage finalMessage;
 
   public LoginClientHandler(String handlerName, AbstractNetwork network, AuthenticationClient authentication) {
-    super(handlerName);
-    Preconditions.checkNotNull(network);
+    super(handlerName, network);
     Preconditions.checkNotNull(authentication);
-    this.network = network;
     this.authentication = authentication;
   }
 
+  @Override
   public void contextActive(C ctx) throws Exception {
     checkAndSetState(State.NEW, State.LOGIN);
     LoginHandshakeMessage.Builder msg = LoginHandshakeMessage.newBuilder();
     msg.setProtocolVersion(Protocol.VERSION);
-    msg.setId(ProtocolUtils.convert(network.getHome().getId()));
-    Optional<String> name = network.getHome().getName();
+    msg.setId(ProtocolUtils.convert(getNetwork().getHome().getId()));
+    Optional<String> name = getNetwork().getHome().getName();
     if (name.isPresent()) {
       msg.setName(name.get());
     }
@@ -71,7 +73,9 @@ public abstract class LoginClientHandler<C> extends LoginHandler<C> {
   @Override
   public void handle(C ctx, LoginSuccessMessage msg) throws Exception {
     checkState(State.AUTH);
+    this.finalMessage = msg;
     this.id = ProtocolUtils.convert(msg.getRouterId());
+    this.name = msg.getRouterName();
     Preconditions.checkState(this.id != null);
     upgrade(ctx, msg);
   }
@@ -83,6 +87,11 @@ public abstract class LoginClientHandler<C> extends LoginHandler<C> {
   @Override
   public void handle(C ctx, LoginUpgradeMessage msg) throws Exception {
     throw new ProtocolException("invalid packet");
+  }
+
+  @Override
+  public void registerNodes() {
+    this.getNetwork().updateNodes(this.getFinalMessage().getTopology());
   }
 
 }

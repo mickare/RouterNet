@@ -19,12 +19,12 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import de.rennschnitzel.net.core.procedure.CallableProcedure;
+import de.rennschnitzel.net.core.procedure.CallableRegisteredProcedure;
 import de.rennschnitzel.net.core.procedure.MultiProcedureCall;
 import de.rennschnitzel.net.core.procedure.Procedure;
 import de.rennschnitzel.net.core.procedure.ProcedureCall;
 import de.rennschnitzel.net.core.procedure.ProcedureCallResult;
-import de.rennschnitzel.net.core.procedure.ProcedureInformation;
-import de.rennschnitzel.net.core.procedure.RegisteredProcedure;
 import de.rennschnitzel.net.core.procedure.SingleProcedureCall;
 import de.rennschnitzel.net.exception.ProtocolException;
 import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
@@ -44,19 +44,20 @@ public class ProcedureManager {
 
 
   /**
-   * Default timeout of procedures. (in seconds)
+   * Default timeout of procedures. (in milliseconds)
    */
-  public static long PROCEDURE_DEFAULT_TIMEOUT = 60 * 60;
+  public static long PROCEDURE_DEFAULT_TIMEOUT = 10 * 1000; // 10 seconds
+  public static long MAX_TIMEOUT = 60 * 60 * 1000; // 1 hour
 
   private final ReentrantCloseableReadWriteLock lock = new ReentrantCloseableReadWriteLock();
-  private final BiMap<ProcedureInformation, RegisteredProcedure<?, ?>> registeredProcedures = HashBiMap.create();
+  private final BiMap<Procedure, CallableRegisteredProcedure<?, ?>> registeredProcedures = HashBiMap.create();
 
   @NonNull
   @Getter
   private final AbstractNetwork network;
 
   private final Cache<Integer, ProcedureCall<?, ?>> openCalls = CacheBuilder.newBuilder()//
-      .expireAfterWrite(1, TimeUnit.HOURS)//
+      .expireAfterWrite(MAX_TIMEOUT, TimeUnit.MILLISECONDS)//
       .removalListener(new RemovalListener<Integer, ProcedureCall<?, ?>>() {
         @Override
         public void onRemoval(RemovalNotification<Integer, ProcedureCall<?, ?>> notify) {
@@ -68,14 +69,14 @@ public class ProcedureManager {
 
 
   @SuppressWarnings("unchecked")
-  public <T, R> RegisteredProcedure<T, R> registerProcedure(String name, Function<T, R> function) {
+  public <T, R> CallableRegisteredProcedure<T, R> registerProcedure(String name, Function<T, R> function) {
     final Class<?>[] args = TypeUtils.resolveArgumentClass(function);
     return registerProcedure(name, function, (Class<T>) args[0], (Class<R>) args[1]);
   }
 
 
   @SuppressWarnings("unchecked")
-  public <T> RegisteredProcedure<T, Void> registerProcedure(final String name, final Consumer<T> consumer) {
+  public <T> CallableRegisteredProcedure<T, Void> registerProcedure(final String name, final Consumer<T> consumer) {
     return registerProcedure(name, (t) -> {
       consumer.accept(t);
       return null;
@@ -83,18 +84,18 @@ public class ProcedureManager {
   }
 
   @SuppressWarnings("unchecked")
-  public <R> RegisteredProcedure<Void, R> registerProcedure(final String name, final Supplier<R> supplier) {
+  public <R> CallableRegisteredProcedure<Void, R> registerProcedure(final String name, final Supplier<R> supplier) {
     return registerProcedure(name, (t) -> supplier.get(), Void.class, (Class<R>) TypeUtils.resolveArgumentClass(supplier));
   }
 
-  public RegisteredProcedure<Void, Void> registerProcedure(final String name, final Runnable run) {
+  public CallableRegisteredProcedure<Void, Void> registerProcedure(final String name, final Runnable run) {
     return registerProcedure(name, (t) -> {
       run.run();
       return null;
     } , Void.class, Void.class);
   }
 
-  public <T, R> RegisteredProcedure<T, R> registerProcedure(final String name, final Function<T, R> function, final Class<T> argClass,
+  public <T, R> CallableRegisteredProcedure<T, R> registerProcedure(final String name, final Function<T, R> function, final Class<T> argClass,
       final Class<R> resultClass) {
     Preconditions.checkNotNull(name);
     Preconditions.checkNotNull(function);
@@ -103,25 +104,25 @@ public class ProcedureManager {
     Preconditions.checkNotNull(resultClass);
     Preconditions.checkArgument(argClass != TypeResolver.Unknown.class);
     Preconditions.checkArgument(resultClass != TypeResolver.Unknown.class);
-    final RegisteredProcedure<T, R> proc = new RegisteredProcedure<T, R>(network, name, argClass, resultClass, function);
+    final CallableRegisteredProcedure<T, R> proc = new CallableRegisteredProcedure<T, R>(network, name, argClass, resultClass, function);
     try (CloseableLock l = lock.writeLock().open()) {
-      registeredProcedures.put(proc.getInfo(), proc);
+      registeredProcedures.put(proc.getDescription(), proc);
     }
     network.getHome().addRegisteredProcedure(proc);
     return proc;
   }
 
-  public RegisteredProcedure<?, ?> getRegisteredProcedure(ProcedureInformation info) {
+  public CallableRegisteredProcedure<?, ?> getRegisteredProcedure(Procedure info) {
     try (CloseableLock l = lock.readLock().open()) {
       return this.registeredProcedures.get(info);
     }
   }
 
-  public <T, R> ProcedureCallResult<T, R> callProcedure(Node node, Procedure<T, R> procedure, T argument) {
+  public <T, R> ProcedureCallResult<T, R> callProcedure(Node node, CallableProcedure<T, R> procedure, T argument) {
     return this.callProcedure(node, procedure, argument, PROCEDURE_DEFAULT_TIMEOUT);
   }
 
-  public <T, R> ProcedureCallResult<T, R> callProcedure(Node node, Procedure<T, R> procedure, T argument, long timeout) {
+  public <T, R> ProcedureCallResult<T, R> callProcedure(Node node, CallableProcedure<T, R> procedure, T argument, long timeout) {
     Preconditions.checkNotNull(node);
     Preconditions.checkNotNull(procedure);
     Preconditions.checkArgument(timeout > 0);
@@ -137,11 +138,11 @@ public class ProcedureManager {
     return call.getResult();
   }
 
-  public <T, R> Map<UUID, ? extends ListenableFuture<R>> callProcedure(Collection<Node> nodes, Procedure<T, R> procedure, T argument) {
+  public <T, R> Map<UUID, ? extends ListenableFuture<R>> callProcedure(Collection<Node> nodes, CallableProcedure<T, R> procedure, T argument) {
     return this.callProcedure(nodes, procedure, argument, PROCEDURE_DEFAULT_TIMEOUT);
   }
 
-  public <T, R> Map<UUID, ? extends ListenableFuture<R>> callProcedure(Collection<Node> nodes, Procedure<T, R> procedure, T argument,
+  public <T, R> Map<UUID, ? extends ListenableFuture<R>> callProcedure(Collection<Node> nodes, CallableProcedure<T, R> procedure, T argument,
       long timeout) {
     Preconditions.checkNotNull(nodes);
     Preconditions.checkArgument(!nodes.isEmpty());
@@ -199,14 +200,14 @@ public class ProcedureManager {
 
   private void handle(Connection con, ProcedureMessage msg, ProcedureCallMessage call) {
     try {
-      ProcedureInformation key = new ProcedureInformation(call.getProcedure());
-      RegisteredProcedure<?, ?> proc = this.registeredProcedures.get(key);
+      Procedure key = new Procedure(call.getProcedure());
+      CallableRegisteredProcedure<?, ?> proc = this.registeredProcedures.get(key);
       if (proc == null) {
         sendFail(con, msg, call, ErrorMessage.newBuilder().setType(ErrorMessage.Type.UNDEFINED).setMessage("unregistered procedure"));
       }
 
       ProcedureResponseMessage.Builder out = newResponse(call);
-      proc.call(call, out);
+      proc.remoteCalled(call, out);
       out.setSuccess(true);
       out.setCancelled(false);
       network.sendProcedureResponse(msg.getSender(), out.build());

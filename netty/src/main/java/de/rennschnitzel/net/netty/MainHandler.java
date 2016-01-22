@@ -8,7 +8,6 @@ import com.google.common.base.Preconditions;
 import de.rennschnitzel.net.core.AbstractNetwork;
 import de.rennschnitzel.net.core.login.LoginHandler;
 import de.rennschnitzel.net.core.packet.PacketHandler;
-import de.rennschnitzel.net.event.ConnectionEvent;
 import de.rennschnitzel.net.exception.ConnectionException;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
@@ -37,6 +36,7 @@ public class MainHandler<N extends AbstractNetwork> extends SimpleChannelInbound
   private LoginHandler<ChannelHandlerContext> loginHandler = null;
   private final PacketHandler<NettyConnection<N>> packetHandler;
   private NettyConnection<N> connection = null;
+  private String name = "unknown";
 
   public MainHandler(N network, LoginHandler<ChannelHandlerContext> loginHandler,
       PacketHandler<NettyConnection<N>> packetHandler) {
@@ -51,32 +51,62 @@ public class MainHandler<N extends AbstractNetwork> extends SimpleChannelInbound
     this.packetHandler = packetHandler;
   }
 
+  private void debug(String msg) {
+    getLogger().info(msg);
+  }
+
   public Logger getLogger() {
     return network.getLogger();
   }
 
-  public void send(Packet packet) {
-    this.context.write(packet);
+  public ChannelFuture send(Packet packet) {
+    ChannelFuture f = this.context.write(packet);
+    f.addListener(new ChannelFutureListener() {
+      @Override
+      public void operationComplete(ChannelFuture future) throws Exception {
+        if (!future.isSuccess()) {
+          getLogger().log(Level.SEVERE, "sendAndFlush", future.cause());
+        }
+      }
+    });
+    return f;
+
   }
 
-  public void sendAndFlush(Packet packet) {
-    this.context.writeAndFlush(packet);
+  public ChannelFuture sendAndFlush(Packet packet) {
+    ChannelFuture f = this.context.writeAndFlush(packet);
+    f.addListener(new ChannelFutureListener() {
+      @Override
+      public void operationComplete(ChannelFuture future) throws Exception {
+        if (!future.isSuccess()) {
+          getLogger().log(Level.SEVERE, "sendAndFlush", future.cause());
+        }
+      }
+    });
+    return f;
   }
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+    debug("handlerAdded 1, " + ctx);
     Preconditions.checkState(this.state == State.NEW);
 
     this.state = State.LOGIN;
     this.context = ctx;
+
+    loginHandler.handlerAdded(ctx);
+
+    debug("handlerAdded 2, " + ctx);
   }
 
   @Override
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
+    debug("channelActive 1, " + ctx);
     Preconditions.checkState(this.state == State.LOGIN);
 
-    getLogger().info("Channel active " + ctx.channel().toString());
     loginHandler.contextActive(ctx);
+
+    debug("channelActive 2, " + ctx);
   }
 
   @Override
@@ -87,21 +117,29 @@ public class MainHandler<N extends AbstractNetwork> extends SimpleChannelInbound
           new ConnectionException(ErrorMessage.Type.UNDEFINED, "channel inactive"));
     }
 
-    getLogger().info("Channel closed " + ctx.channel().toString());
+    getLogger().info("closed " + ctx.channel().toString());
     this.state = State.CLOSED;
   }
 
   @Override
   protected void channelRead0(ChannelHandlerContext ctx, Packet packet) throws Exception {
 
+    debug("WTF");
+
+
     if (state == State.LOGIN) {
       loginHandler.handle(ctx, packet);
       if (loginHandler.isDone()) {
         if (loginHandler.isSuccess()) {
+          System.out.println("A");
           this.state = State.RUNNING;
+          this.name = this.loginHandler.getName();
           this.connection =
               new NettyConnection<N>(network, loginHandler.getId(), this, this.packetHandler);
-          this.network.getEventBus().post(new ConnectionEvent.OpenConnectionEvent(connection));
+          this.loginHandler.registerNodes();    
+          this.network.addConnection(connection);
+          this.packetHandler.contextActive(connection);
+          this.loginHandler.getConnectionFuture().set(connection);      
         } else {
 
           this.state = State.CLOSED;
@@ -118,6 +156,9 @@ public class MainHandler<N extends AbstractNetwork> extends SimpleChannelInbound
   @Override
   public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
     try {
+      this.loginHandler.getConnectionFuture().setException(cause);
+      getLogger().log(Level.WARNING, this.name + " lost connection", cause);
+
       ErrorMessage.Type type;
       String text;
       if (cause instanceof ConnectionException) {
@@ -136,6 +177,7 @@ public class MainHandler<N extends AbstractNetwork> extends SimpleChannelInbound
       ChannelFuture f =
           PacketUtil.writeAndFlush(ctx.channel(), CloseMessage.newBuilder().setError(error));
       f.addListener(ChannelFutureListener.CLOSE);
+
 
     } catch (final Exception ex) {
       getLogger().log(Level.SEVERE,

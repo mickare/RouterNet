@@ -12,12 +12,15 @@ import de.rennschnitzel.net.protocol.LoginProtocol.LoginHandshakeMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginResponseMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginSuccessMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginUpgradeMessage;
+import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
+import lombok.Getter;
 
 public class DummyLoginClientHandler extends LoginClientHandler<DummyConnection> {
 
   private final PacketHandler<DummyConnection> upgradeHandler;
+
 
   public DummyLoginClientHandler(String handlerName, AbstractNetwork network, AuthenticationClient authentication,
       PacketHandler<DummyConnection> upgradeHandler) {
@@ -38,9 +41,9 @@ public class DummyLoginClientHandler extends LoginClientHandler<DummyConnection>
 
   @Override
   protected void upgrade(DummyConnection ctx, LoginSuccessMessage msg) throws Exception {
-    this.setSuccess();
     this.send(ctx, LoginUpgradeMessage.newBuilder().setNode(this.getNetwork().getHome().toProtocol()).build());
     ctx.setHandler(upgradeHandler);
+    this.setSuccess();
   }
 
   @Override

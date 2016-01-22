@@ -13,11 +13,10 @@ import de.rennschnitzel.net.protocol.LoginProtocol.LoginUpgradeMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import io.netty.channel.ChannelHandlerContext;
 
-public abstract class NettyLoginClientHandler extends LoginClientHandler<ChannelHandlerContext> {
+public class NettyLoginClientHandler extends LoginClientHandler<ChannelHandlerContext> {
 
-  public NettyLoginClientHandler(String handlerName, AbstractNetwork network,
-      AuthenticationClient authentication) {
-    super(handlerName, network, authentication);
+  public NettyLoginClientHandler(AbstractNetwork network, AuthenticationClient authentication) {
+    super("NettyLoginClientHandler", network, authentication);
   }
 
   @Override
@@ -34,11 +33,8 @@ public abstract class NettyLoginClientHandler extends LoginClientHandler<Channel
   protected void upgrade(ChannelHandlerContext ctx, LoginSuccessMessage msg) throws Exception {
     this.send(ctx,
         LoginUpgradeMessage.newBuilder().setNode(this.getNetwork().getHome().toProtocol()).build());
-    upgradeConnection(ctx);
     this.setSuccess();
   }
-
-  protected abstract void upgradeConnection(ChannelHandlerContext ctx) throws Exception;
 
   @Override
   protected void send(ChannelHandlerContext ctx, LoginUpgradeMessage upgrade) throws IOException {

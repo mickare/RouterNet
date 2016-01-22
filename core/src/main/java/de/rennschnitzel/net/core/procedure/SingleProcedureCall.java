@@ -22,13 +22,13 @@ public class SingleProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
   @Getter
   private final ProcedureCallResult<T, R> result;
 
-  public SingleProcedureCall(Node node, Procedure<T, R> procedure, T argument, long maxTimeout) {
+  public SingleProcedureCall(Node node, CallableProcedure<T, R> procedure, T argument, long maxTimeout) {
     super(procedure, Target.to(node), argument, maxTimeout);
     Preconditions.checkNotNull(node);
     this.node = node;
     this.result = new ProcedureCallResult<T, R>(this, node);
 
-    if (!node.hasProcedure(procedure.getInfo())) {
+    if (!node.hasProcedure(procedure.getDescription())) {
       setException(new UndefinedServerProcedure());
     }
 

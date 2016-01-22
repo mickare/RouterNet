@@ -23,7 +23,7 @@ public class MultiProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
 
   private final Map<UUID, ProcedureCallResult<T, R>> results;
 
-  public MultiProcedureCall(Collection<Node> nodes, Procedure<T, R> procedure, T argument, long maxTimeout) {
+  public MultiProcedureCall(Collection<Node> nodes, CallableProcedure<T, R> procedure, T argument, long maxTimeout) {
     super(procedure, Target.to(nodes), argument, maxTimeout);
     Preconditions.checkArgument(!nodes.isEmpty());
 
@@ -31,7 +31,7 @@ public class MultiProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
     for (Node node : Sets.newHashSet(nodes)) {
 
       ProcedureCallResult<T, R> res = new ProcedureCallResult<>(this, node);
-      if (!node.hasProcedure(procedure.getInfo())) {
+      if (!node.hasProcedure(procedure.getDescription())) {
         res.setException(new UndefinedServerProcedure());
       }
 

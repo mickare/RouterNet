@@ -221,7 +221,7 @@ public class Router extends AbstractIdleService implements Owner {
 
   public boolean isConnected(UUID id) {
     Connection con = getConnection(id);
-    return !con.isClosed();
+    return con.isValid();
   }
 
   public void addConnection(NettyConnection connection) {

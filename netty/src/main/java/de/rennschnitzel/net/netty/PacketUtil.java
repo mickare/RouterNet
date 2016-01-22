@@ -1,5 +1,8 @@
 package de.rennschnitzel.net.netty;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginChallengeMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginHandshakeMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginResponseMessage;
@@ -13,6 +16,7 @@ import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 
 public final class PacketUtil {
 
@@ -21,7 +25,16 @@ public final class PacketUtil {
 
   public static final ChannelFuture writeAndFlush(final Channel ch, //
       final Packet packet) {
-    return ch.writeAndFlush(packet);
+    ChannelFuture f = ch.writeAndFlush(packet);
+    f.addListener(new ChannelFutureListener() {
+      @Override
+      public void operationComplete(ChannelFuture future) throws Exception {
+        if (!future.isSuccess()) {
+          Logger.getGlobal().log(Level.SEVERE, "sendAndFlush", future.cause());
+        }
+      }
+    });
+    return f;
   }
 
 
@@ -112,12 +125,12 @@ public final class PacketUtil {
   // Transport
   public static final ChannelFuture writeAndFlush(final Channel ch, //
       final TunnelMessage.Builder value) {
-    return writeAndFlush(ch, Packet.newBuilder().setChannelMessage(value));
+    return writeAndFlush(ch, Packet.newBuilder().setTunnelMessage(value));
   }
 
   public static final ChannelFuture writeAndFlush(final Channel ch, //
       final TunnelMessage value) {
-    return writeAndFlush(ch, Packet.newBuilder().setChannelMessage(value));
+    return writeAndFlush(ch, Packet.newBuilder().setTunnelMessage(value));
   }
 
 

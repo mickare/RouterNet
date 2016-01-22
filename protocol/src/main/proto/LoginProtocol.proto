@@ -22,7 +22,8 @@ message LoginResponseMessage {
 
 message LoginSuccessMessage {
 	UUIDMessage routerId = 1;
-	NodeTopologyMessage topology = 2;
+	string routerName = 2;
+	NodeTopologyMessage topology = 3;
 }
 
 message LoginUpgradeMessage {

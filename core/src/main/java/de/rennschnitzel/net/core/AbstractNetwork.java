@@ -29,6 +29,7 @@ import de.rennschnitzel.net.core.procedure.ProcedureCall;
 import de.rennschnitzel.net.core.tunnel.SubTunnel;
 import de.rennschnitzel.net.core.tunnel.SubTunnelDescriptor;
 import de.rennschnitzel.net.core.tunnel.TunnelMessage;
+import de.rennschnitzel.net.event.ConnectionEvent;
 import de.rennschnitzel.net.event.NetworkNodeEvent;
 import de.rennschnitzel.net.protocol.ComponentsProtocol.UUIDMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
@@ -86,21 +87,37 @@ public abstract class AbstractNetwork {
   // ***************************************************************************
   // Connection
 
-  public final void addConnection(Connection connection) throws IOException {
-    addConnection0(connection);
-    try {
-      for (Tunnel tunnel : getTunnels()) {
-        connection.registerTunnel(tunnel);
+  public final boolean addConnection(Connection connection) throws IOException {
+    if (addConnection0(connection)) {
+      try {
+        for (Tunnel tunnel : getTunnels()) {
+          connection.registerTunnel(tunnel);
+        }
+
+        this.eventBus.post(new ConnectionEvent.AddedConnectionEvent(connection));
+
+        this.home.publishChanges();
+      } catch (IOException e) {
+        removeConnection0(connection);
+        throw e;
       }
-    } catch (IOException e) {
-      removeConnection(connection);
-      throw e;
+      return true;
     }
+    return false;
   }
 
-  protected abstract void addConnection0(Connection connection) throws IOException;
+  protected abstract boolean addConnection0(Connection connection) throws IOException;
 
-  public abstract void removeConnection(Connection connection);
+
+  public boolean removeConnection(Connection connection) {
+    if (removeConnection0(connection)) {
+      this.eventBus.post(new ConnectionEvent.RemovedConnectionEvent(connection));
+      return true;
+    }
+    return false;
+  }
+
+  protected abstract boolean removeConnection0(Connection connection);
 
   // ***************************************************************************
   // Sending

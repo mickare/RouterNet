@@ -1,5 +1,6 @@
 package de.rennschnitzel.net.core.login;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import com.google.common.base.Preconditions;
@@ -18,8 +19,6 @@ import lombok.Getter;
 
 public abstract class LoginRouterHandler<C> extends LoginHandler<C> {
 
-  @Getter
-  private final AbstractNetwork network;
   private final AuthenticationRouter authentication;
 
   @Getter
@@ -29,14 +28,16 @@ public abstract class LoginRouterHandler<C> extends LoginHandler<C> {
   @Getter
   private String name = null;
 
+  @Getter
+  private LoginUpgradeMessage finalMessage;
+
   public LoginRouterHandler(String handlerName, AbstractNetwork network, AuthenticationRouter authentication) {
-    super(handlerName);
-    Preconditions.checkNotNull(network);
+    super(handlerName, network);
     Preconditions.checkNotNull(authentication);
-    this.network = network;
     this.authentication = authentication;
   }
 
+  @Override
   public void contextActive(C ctx) throws Exception {
     checkState(State.NEW);
   }
@@ -56,7 +57,7 @@ public abstract class LoginRouterHandler<C> extends LoginHandler<C> {
     this.name = msg.getName();
 
     Preconditions.checkState(this.id != null);
-    
+
     send(ctx, LoginChallengeMessage.newBuilder().setToken(this.authentication.getChallenge()).build());
   }
 
@@ -71,8 +72,12 @@ public abstract class LoginRouterHandler<C> extends LoginHandler<C> {
     }
 
     LoginSuccessMessage.Builder b = LoginSuccessMessage.newBuilder();
-    b.setRouterId(ProtocolUtils.convert(this.network.getHome().getId()));
-    b.setTopology(this.network.getTopologyMessage());
+    b.setRouterId(ProtocolUtils.convert(this.getNetwork().getHome().getId()));
+    Optional<String> name = this.getNetwork().getHome().getName();
+    if (name.isPresent()) {
+      b.setRouterName(name.get());
+    }
+    b.setTopology(this.getNetwork().getTopologyMessage());
     send(ctx, b.build());
 
   }
@@ -82,6 +87,7 @@ public abstract class LoginRouterHandler<C> extends LoginHandler<C> {
   @Override
   public void handle(C ctx, LoginUpgradeMessage msg) throws Exception {
     checkState(State.AUTH);
+    this.finalMessage = msg;
     upgrade(ctx, msg);
   }
 
@@ -97,4 +103,8 @@ public abstract class LoginRouterHandler<C> extends LoginHandler<C> {
     throw new ProtocolException("invalid packet");
   }
 
+  @Override
+  public void registerNodes() {
+    this.getNetwork().updateNode(this.getFinalMessage().getNode());
+  }
 }

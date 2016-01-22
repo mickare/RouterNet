@@ -17,7 +17,7 @@ public class ClientConnection extends Connection {
   }
 
   @Override
-  public boolean isClosed() {
+  public boolean isValid() {
     // TODO Auto-generated method stub
     return false;
   }

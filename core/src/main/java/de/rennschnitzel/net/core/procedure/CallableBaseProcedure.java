@@ -1,8 +1,12 @@
 package de.rennschnitzel.net.core.procedure;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.UUID;
 import java.util.function.BiConsumer;
 
 import com.google.common.base.Preconditions;
+import com.google.common.util.concurrent.ListenableFuture;
 
 import de.rennschnitzel.net.core.AbstractNetwork;
 import de.rennschnitzel.net.core.Node;
@@ -11,12 +15,11 @@ import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureCallMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
 import de.rennschnitzel.net.util.function.CheckedFunction;
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
-public class BaseProcedure<T, R> implements Procedure<T, R> {
+public class CallableBaseProcedure<T, R> implements CallableProcedure<T, R>, Comparable<CallableProcedure<?, ?>>  {
 
-  private final ProcedureInformation info;
+  private final Procedure description;
   private final Class<T> argClass;
   private final Class<R> resultClass;
   private final CheckedFunction<ProcedureCallMessage, T> callReader;
@@ -26,17 +29,14 @@ public class BaseProcedure<T, R> implements Procedure<T, R> {
 
   private final AbstractNetwork network;
 
-  @Setter
-  private CheckedFunction<T, R> localFunction = null;
-
-  public BaseProcedure(final AbstractNetwork network, final ProcedureInformation info, final Class<T> argClass, final Class<R> resultClass) {
+  public CallableBaseProcedure(final AbstractNetwork network, final Procedure description, final Class<T> argClass, final Class<R> resultClass) {
     Preconditions.checkNotNull(network);
-    Preconditions.checkNotNull(info);
+    Preconditions.checkNotNull(description);
     Preconditions.checkNotNull(argClass);
     Preconditions.checkNotNull(resultClass);
 
     this.network = network;
-    this.info = info;
+    this.description = description;
     this.argClass = argClass;
     this.resultClass = resultClass;
 
@@ -50,11 +50,11 @@ public class BaseProcedure<T, R> implements Procedure<T, R> {
 
   @Override
   public String getName() {
-    return info.getName();
+    return description.getName();
   }
 
   @Override
-  public boolean isApplicable(ProcedureInformation info) {
+  public boolean isApplicable(Procedure info) {
     boolean result = true;
     result &= this.getName().equals(info.getName());
     result &= this.argClass.getName().equals(info.getArgumentType());
@@ -78,8 +78,8 @@ public class BaseProcedure<T, R> implements Procedure<T, R> {
   }
 
   @Override
-  public int compareTo(Procedure<?, ?> o) {
-    return info.compareTo(o.getInfo());
+  public int compareTo(CallableProcedure<?, ?> o) {
+    return description.compareTo(o.getDescription());
   }
 
   @Override
@@ -87,21 +87,31 @@ public class BaseProcedure<T, R> implements Procedure<T, R> {
     if (this == object) {
       return true;
     }
-    if (!(object instanceof Procedure)) {
+    if (!(object instanceof CallableProcedure)) {
       return false;
     }
-    Procedure<?, ?> o = (Procedure<?, ?>) object;
+    CallableProcedure<?, ?> o = (CallableProcedure<?, ?>) object;
     return compareTo(o) == 0;
-  }
-
-  @Override
-  public boolean isLocalFunction() {
-    return localFunction != null;
   }
 
   @Override
   public ProcedureCallResult<T, R> call(Node node, T argument) {
     return network.getProcedureManager().callProcedure(node, this, argument);
+  }
+
+  @Override
+  public ProcedureCallResult<T, R> call(Node node, T argument, long timeout) {
+    return network.getProcedureManager().callProcedure(node, this, argument, timeout);
+  }
+
+  @Override
+  public Map<UUID, ? extends ListenableFuture<R>> call(Collection<Node> nodes, T argument) {
+    return network.getProcedureManager().callProcedure(nodes, this, argument);
+  }
+
+  @Override
+  public Map<UUID, ? extends ListenableFuture<R>> call(Collection<Node> nodes, T argument, long timeout) {
+    return network.getProcedureManager().callProcedure(nodes, this, argument, timeout);
   }
 
 

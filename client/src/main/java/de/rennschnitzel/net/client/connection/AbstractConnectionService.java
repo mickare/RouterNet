@@ -114,7 +114,7 @@ public abstract class AbstractConnectionService<F extends ConnectionFuture<?>>
 
           try {
             Connection con = connection.get(3, TimeUnit.SECONDS);
-            if (con.isClosed()) {
+            if (con.isValid()) {
               reconnect = true;
             }
           } catch (ExecutionException | TimeoutException e) {

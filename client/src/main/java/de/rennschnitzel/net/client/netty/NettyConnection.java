@@ -45,7 +45,7 @@ public class NettyConnection extends Connection {
   }
 
   @Override
-  public boolean isClosed() {
+  public boolean isValid() {
     return !this.protocolHandler.getContext().channel().isOpen();
   }
 

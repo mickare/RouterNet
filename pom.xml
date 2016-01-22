@@ -24,19 +24,6 @@
 		<module>netty</module>
 	</modules>
 
-	<distributionManagement>
-		<repository>
-			<id>rs-private</id>
-			<name>Internal Releases</name>
-			<url>http://repo.rennschnitzel.de:8081/nexus/content/repositories/rs-protected/</url>
-		</repository>
-		<snapshotRepository>
-			<id>rs-private</id>
-			<name>Internal Releases</name>
-			<url>http://repo.rennschnitzel.de:8081/nexus/content/repositories/rs-protected/</url>
-		</snapshotRepository>
-	</distributionManagement>
-
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>

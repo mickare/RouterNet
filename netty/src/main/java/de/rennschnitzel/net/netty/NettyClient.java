@@ -1,6 +1,7 @@
 package de.rennschnitzel.net.netty;
 
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -9,6 +10,7 @@ import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
+import de.rennschnitzel.net.core.AbstractNetwork;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -40,7 +42,7 @@ public class NettyClient {
   private final HostAndPort address;
   @Getter
   @NonNull
-  private final Logger logger;
+  private final Logger logger = AbstractNetwork.getInstance().getLogger();
   private EventLoopGroup eventLoop = null;
   private ChannelFuture clientFuture = null;
   private Channel client = null;
@@ -111,7 +113,10 @@ public class NettyClient {
       client.close();
     }
     if (eventLoop != null) {
-      eventLoop.shutdownGracefully();
+      try {
+        eventLoop.shutdownGracefully().await(500, TimeUnit.MILLISECONDS);
+      } catch (InterruptedException e) {
+      };
     }
   }
 
@@ -134,7 +139,7 @@ public class NettyClient {
       if (client != null) {
         client.close().syncUninterruptibly();
       }
-      eventLoop.shutdownGracefully();
+      eventLoop.shutdownGracefully().await(500, TimeUnit.MILLISECONDS);;
 
       state = State.DISCONNECTED;
 

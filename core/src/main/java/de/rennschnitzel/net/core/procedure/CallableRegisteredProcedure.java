@@ -9,7 +9,7 @@ import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureCallMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
 import lombok.Getter;
 
-public class RegisteredProcedure<T, R> extends BaseProcedure<T, R> {
+public class CallableRegisteredProcedure<T, R> extends CallableBaseProcedure<T, R> {
 
   @Getter
   private final Function<T, R> function;
@@ -23,11 +23,11 @@ public class RegisteredProcedure<T, R> extends BaseProcedure<T, R> {
    * (Class<R>) typeArgs[1], function); }
    */
 
-  public RegisteredProcedure(AbstractNetwork network, String name, Class<T> argClass, Class<R> resultClass, Function<T, R> function) {
-    this(network, new ProcedureInformation(name, argClass.getName(), resultClass.getName()), argClass, resultClass, function);
+  public CallableRegisteredProcedure(AbstractNetwork network, String name, Class<T> argClass, Class<R> resultClass, Function<T, R> function) {
+    this(network, new Procedure(name, argClass.getName(), resultClass.getName()), argClass, resultClass, function);
   }
 
-  public RegisteredProcedure(AbstractNetwork network, ProcedureInformation info, Class<T> argClass, Class<R> resultClass, Function<T, R> function) {
+  public CallableRegisteredProcedure(AbstractNetwork network, Procedure info, Class<T> argClass, Class<R> resultClass, Function<T, R> function) {
     super(network, info, argClass, resultClass);
     Preconditions.checkNotNull(function);
     this.function = function;
@@ -37,9 +37,10 @@ public class RegisteredProcedure<T, R> extends BaseProcedure<T, R> {
     return this.function.apply(arg);
   }
 
-  public void call(ProcedureCallMessage call, ProcedureResponseMessage.Builder out) throws Exception {
+  public R remoteCalled(ProcedureCallMessage call, ProcedureResponseMessage.Builder out) throws Exception {
     R result = this.call(this.getCallReader().apply(call));
     this.getResponseWriter().accept(out, result);
+    return result;
   }
 
 }

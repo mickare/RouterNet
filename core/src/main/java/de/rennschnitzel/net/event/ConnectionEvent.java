@@ -17,16 +17,16 @@ public class ConnectionEvent extends NetworkEvent {
     this.connection = connection;
   }
 
-  public static class OpenConnectionEvent extends ConnectionEvent {
+  public static class AddedConnectionEvent extends ConnectionEvent {
 
-    public OpenConnectionEvent(Connection connection) {
+    public AddedConnectionEvent(Connection connection) {
       super(connection);
     }
   }
 
-  public static class ClosedConnectionEvent extends ConnectionEvent {
+  public static class RemovedConnectionEvent extends ConnectionEvent {
 
-    public ClosedConnectionEvent(Connection connection) {
+    public RemovedConnectionEvent(Connection connection) {
       super(connection);
     }
   }

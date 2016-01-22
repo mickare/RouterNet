@@ -50,11 +50,13 @@
 			<groupId>com.google.protobuf</groupId>
 			<artifactId>protobuf-java</artifactId>
 			<version>3.0.0-beta-1</version>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
 			<version>18.0</version>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 
@@ -69,7 +71,7 @@
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.3</version>
+				<version>3.5</version>
 				<configuration>
 					<source>${jdk.version}</source>
 					<target>${jdk.version}</target>

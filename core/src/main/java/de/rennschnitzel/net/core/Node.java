@@ -16,8 +16,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 import de.rennschnitzel.net.ProtocolUtils;
-import de.rennschnitzel.net.core.procedure.ProcedureInformation;
-import de.rennschnitzel.net.core.procedure.RegisteredProcedure;
+import de.rennschnitzel.net.core.procedure.Procedure;
+import de.rennschnitzel.net.core.procedure.CallableRegisteredProcedure;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import de.rennschnitzel.net.protocol.NetworkProtocol.DataBukkitMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.DataBungeecordMessage;
@@ -49,7 +49,7 @@ public class Node {
   protected long startTimestamp = -1;
   // protected final Set<ProcedureInformation> procedures = Collections.synchronizedSet(new
   // HashSet<>());
-  protected final Set<ProcedureInformation> procedures = Collections.synchronizedSet(Sets.newTreeSet());
+  protected final Set<Procedure> procedures = Collections.synchronizedSet(Sets.newTreeSet());
 
   @Getter
   private Data data = new Data();
@@ -72,7 +72,7 @@ public class Node {
       this.namespaces.addAll(msg.getNamespacesList());
     }
     synchronized (this.procedures) {
-      Set<ProcedureInformation> procedures = msg.getProceduresList().stream().map(ProcedureInformation::new).collect(Collectors.toSet());
+      Set<Procedure> procedures = msg.getProceduresList().stream().map(Procedure::new).collect(Collectors.toSet());
       this.procedures.clear();
       this.procedures.addAll(procedures);
     }
@@ -92,7 +92,7 @@ public class Node {
     }
   }
 
-  public Set<ProcedureInformation> getProcedures() {
+  public Set<Procedure> getProcedures() {
     synchronized (this.procedures) {
       return ImmutableSet.copyOf(procedures);
     }
@@ -115,7 +115,7 @@ public class Node {
     return hasNamespace(namespace.getName());
   }
 
-  public boolean hasProcedure(ProcedureInformation info) {
+  public boolean hasProcedure(Procedure info) {
     return procedures.contains(info);
   }
 
@@ -181,7 +181,7 @@ public class Node {
     }
     b.setStartTimestamp(this.startTimestamp);
     b.addAllNamespaces(this.namespaces);
-    this.procedures.stream().map(ProcedureInformation::toProtocol).forEach(b::addProcedures);
+    this.procedures.stream().map(Procedure::toProtocol).forEach(b::addProcedures);
     return b.build();
   }
 
@@ -243,13 +243,13 @@ public class Node {
       publishChanges();
     }
 
-    public void addRegisteredProcedure(RegisteredProcedure<?, ?> procedure) {
-      dirty |= this.procedures.add(procedure.getInfo());
+    public void addRegisteredProcedure(CallableRegisteredProcedure<?, ?> procedure) {
+      dirty |= this.procedures.add(procedure.getDescription());
       publishChanges();
     }
 
-    public void removeRegisteredProcedure(RegisteredProcedure<?, ?> procedure) {
-      dirty |= this.procedures.remove(procedure.getInfo());
+    public void removeRegisteredProcedure(CallableRegisteredProcedure<?, ?> procedure) {
+      dirty |= this.procedures.remove(procedure.getDescription());
       publishChanges();
     }
 

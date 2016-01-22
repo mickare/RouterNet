@@ -19,15 +19,22 @@ public abstract class AbstractProcedureCall<T, R> implements ProcedureCall<T, R>
   @Getter
   private final long timestamp = System.currentTimeMillis();
   @Getter
-  private final long maxTimeout;
+  private final long maxTimeout; // in milliseconds
   @Getter
-  private final Procedure<T, R> procedure;
+  private final CallableProcedure<T, R> procedure;
   @Getter
   private final Target target;
   @Getter
   private final T argument;
 
-  public AbstractProcedureCall(Procedure<T, R> procedure, Target target, T argument, long maxTimeout) {
+  /**
+   * 
+   * @param procedure
+   * @param target
+   * @param argument
+   * @param maxTimeout in milliseconds
+   */
+  public AbstractProcedureCall(CallableProcedure<T, R> procedure, Target target, T argument, long maxTimeout) {
     Preconditions.checkNotNull(procedure);
     this.procedure = procedure;
     this.target = target;
@@ -37,7 +44,7 @@ public abstract class AbstractProcedureCall<T, R> implements ProcedureCall<T, R>
 
   public TransportProtocol.ProcedureCallMessage toProtocol() {
     TransportProtocol.ProcedureCallMessage.Builder b = TransportProtocol.ProcedureCallMessage.newBuilder();
-    b.setProcedure(this.procedure.toProtocol());
+    b.setProcedure(this.procedure.getDescription().toProtocol());
     b.setId(id);
     b.setTimestamp(timestamp);
     b.setMaxTimeout(maxTimeout);

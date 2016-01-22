@@ -9,16 +9,16 @@ import java.util.logging.Logger;
 
 import com.google.common.base.Preconditions;
 
-import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage.Type;
 import de.rennschnitzel.net.ProtocolUtils;
 import de.rennschnitzel.net.core.AbstractNetwork;
 import de.rennschnitzel.net.core.Connection;
+import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.ProcedureManager;
 import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.core.Tunnel;
-import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.procedure.ProcedureCall;
 import de.rennschnitzel.net.core.tunnel.TunnelMessage;
+import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage.Type;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
@@ -26,18 +26,21 @@ import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
 import de.rennschnitzel.net.util.concurrent.DirectScheduledExecutorService;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 
 public class DummyNetwork extends AbstractNetwork {
 
+  private static Logger LOGGER_DEFAULT = new DummyLogger("DummyNetwork", System.out);
+
   @Getter
-  @NonNull
   private Connection connection = null;
 
   @Getter
   private final ProcedureManager procedureManager = new ProcedureManager(this);
 
   private final ScheduledExecutorService executor;
+
+  @Getter
+  private Logger logger = LOGGER_DEFAULT;
 
   public DummyNetwork() {
     this(new DirectScheduledExecutorService());
@@ -58,15 +61,22 @@ public class DummyNetwork extends AbstractNetwork {
     home.setType(Type.BUKKIT);
   }
 
-  public synchronized void addConnection0(Connection connection) {
-    Preconditions.checkArgument(connection.getNetwork() == this);
-    this.connection = connection;
+  public void setName(String name) {
+    this.logger = new DummyLogger(name, System.out);
   }
 
-  public synchronized void removeConnection(Connection connection) {
+  public synchronized boolean addConnection0(Connection connection) {
+    Preconditions.checkArgument(connection.getNetwork() == this);
+    this.connection = connection;
+    return true;
+  }
+
+  public synchronized boolean removeConnection0(Connection connection) {
     if (this.connection == connection) {
       this.connection = null;
+      return true;
     }
+    return false;
   }
 
   @Override
@@ -76,11 +86,6 @@ public class DummyNetwork extends AbstractNetwork {
     b.setSender(ProtocolUtils.convert(getHome().getId()));
     b.setCall(call.toProtocol());
     connection.send(Packet.newBuilder().setProcedureMessage(b));
-  }
-
-  @Override
-  public Logger getLogger() {
-    return Logger.getLogger("NetworkForTesting");
   }
 
   @Override

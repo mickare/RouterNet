@@ -16,7 +16,7 @@ public interface ProcedureCall<T, R> {
 
   long getMaxTimeout();
 
-  Procedure<T, R> getProcedure();
+  CallableProcedure<T, R> getProcedure();
 
   Target getTarget();
 
