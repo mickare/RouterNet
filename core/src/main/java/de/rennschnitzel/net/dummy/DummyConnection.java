@@ -55,6 +55,9 @@ public class DummyConnection extends Connection {
       this.connected.setId(this.getNetwork().getHome().getId());
 
       try {
+        this.getNetwork().addConnection(this);
+        this.connected.getNetwork().addConnection(this.connected);
+
         this.connected.handler.contextActive(this.connected);
         this.handler.contextActive(this);
       } catch (Exception e) {

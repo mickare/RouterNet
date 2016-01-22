@@ -26,9 +26,9 @@ import com.google.common.eventbus.EventBus;
 import de.rennschnitzel.net.ProtocolUtils;
 import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.procedure.ProcedureCall;
-import de.rennschnitzel.net.core.tunnel.TunnelMessage;
 import de.rennschnitzel.net.core.tunnel.SubTunnel;
-import de.rennschnitzel.net.core.tunnel.SubChannelDescriptor;
+import de.rennschnitzel.net.core.tunnel.SubTunnelDescriptor;
+import de.rennschnitzel.net.core.tunnel.TunnelMessage;
 import de.rennschnitzel.net.event.NetworkNodeEvent;
 import de.rennschnitzel.net.protocol.ComponentsProtocol.UUIDMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
@@ -62,9 +62,9 @@ public abstract class AbstractNetwork {
   @Getter
   private final ProcedureManager procedureManager = new ProcedureManager(this);
 
-  private final CloseableLock channelLock = new ReentrantCloseableLock();
-  private final ConcurrentMap<String, Tunnel> channelsByName = new ConcurrentHashMap<>();
-  private final ConcurrentMap<SubChannelDescriptor<?>, SubTunnel> subChannels = new ConcurrentHashMap<>();
+  private final CloseableLock tunnelLock = new ReentrantCloseableLock();
+  private final ConcurrentMap<String, Tunnel> tunnelsByName = new ConcurrentHashMap<>();
+  private final ConcurrentMap<SubTunnelDescriptor<?>, SubTunnel> subTunnels = new ConcurrentHashMap<>();
 
   @Getter
   private final EventBus eventBus = new EventBus();
@@ -82,8 +82,28 @@ public abstract class AbstractNetwork {
 
   public abstract ScheduledFuture<?> scheduleAsyncLater(Runnable run, long timeout, TimeUnit unit);
 
+
   // ***************************************************************************
-  // Connection (sending)
+  // Connection
+
+  public final void addConnection(Connection connection) throws IOException {
+    addConnection0(connection);
+    try {
+      for (Tunnel tunnel : getTunnels()) {
+        connection.registerTunnel(tunnel);
+      }
+    } catch (IOException e) {
+      removeConnection(connection);
+      throw e;
+    }
+  }
+
+  protected abstract void addConnection0(Connection connection) throws IOException;
+
+  public abstract void removeConnection(Connection connection);
+
+  // ***************************************************************************
+  // Sending
 
   protected abstract <T, R> void sendProcedureCall(ProcedureCall<T, R> call) throws IOException;
 
@@ -95,54 +115,74 @@ public abstract class AbstractNetwork {
 
   protected abstract void sendHomeNodeUpdate() throws IOException;
 
-  protected abstract void sendChannelMessage(TunnelMessage cmsg) throws IOException;
+  protected abstract void registerTunnel(Tunnel tunnel) throws IOException;
+
+  protected abstract void sendTunnelMessage(TunnelMessage cmsg) throws IOException;
 
 
   // ***************************************************************************
   // Nodes
 
-  public Tunnel getChannelIfPresent(String name) {
-    return this.channelsByName.get(name.toLowerCase());
+  public Set<Tunnel> getTunnels() {
+    try (CloseableLock l = tunnelLock.open()) {
+      return ImmutableSet.copyOf(this.tunnelsByName.values());
+    }
   }
 
+  public Set<SubTunnel> getSubTunnels() {
+    try (CloseableLock l = tunnelLock.open()) {
+      return ImmutableSet.copyOf(this.subTunnels.values());
+    }
+  }
 
+  public Tunnel getTunnelIfPresent(String name) {
+    return this.tunnelsByName.get(name.toLowerCase());
+  }
 
-  public Tunnel getChannel(String name) throws IOException {
+  public Tunnel getTunnel(String name) throws IOException {
+    return getTunnel(name, true);
+  }
+
+  private Tunnel getTunnel(String name, boolean register) throws IOException {
     final String key = name.toLowerCase();
-    Tunnel channel = this.channelsByName.get(key);
-    if (channel == null) {
-      try (CloseableLock l = channelLock.open()) {
+    Tunnel tunnel = this.tunnelsByName.get(key);
+    if (tunnel == null) {
+      try (CloseableLock l = tunnelLock.open()) {
         // Check again, but in synchronized state!
-        channel = this.channelsByName.get(key);
-        if (channel == null) {
-          channel = new Tunnel(this, key);
-          this.channelsByName.put(channel.getName(), channel);
+        tunnel = this.tunnelsByName.get(key);
+        if (tunnel == null) {
+          tunnel = new Tunnel(this, key);
+          this.tunnelsByName.put(tunnel.getName(), tunnel);
+          if (register) {
+            registerTunnel(tunnel);
+          }
         }
       }
     }
-    return channel;
+    return tunnel;
   }
 
-  public <S extends SubTunnel> S getChannelIfPresent(SubChannelDescriptor<S> descriptor) {
+  public <S extends SubTunnel> S getTunnelIfPresent(SubTunnelDescriptor<S> descriptor) {
     Preconditions.checkNotNull(descriptor);
-    return descriptor.cast(this.subChannels.get(descriptor));
+    return descriptor.cast(this.subTunnels.get(descriptor));
   }
 
-  public <S extends SubTunnel> S getChannel(SubChannelDescriptor<S> descriptor) throws IOException {
+  public <S extends SubTunnel> S getTunnel(SubTunnelDescriptor<S> descriptor) throws IOException {
     Preconditions.checkNotNull(descriptor);
-    S subChannel = getChannelIfPresent(descriptor);
-    if (subChannel == null) {
-      try (CloseableLock l = channelLock.open()) {
+    S subTunnel = getTunnelIfPresent(descriptor);
+    if (subTunnel == null) {
+      try (CloseableLock l = tunnelLock.open()) {
         // Check again, but in synchronized state!
-        subChannel = getChannelIfPresent(descriptor);
-        if (subChannel == null) {
-          Tunnel channel = getChannel(descriptor.getName());
-          subChannel = descriptor.create(channel);
-          this.subChannels.put(descriptor, subChannel);
+        subTunnel = getTunnelIfPresent(descriptor);
+        if (subTunnel == null) {
+          Tunnel tunnel = getTunnel(descriptor.getName());
+          subTunnel = descriptor.create(tunnel);
+          this.subTunnels.put(descriptor, subTunnel);
+          registerTunnel(tunnel);
         }
       }
     }
-    return subChannel;
+    return subTunnel;
   }
 
 

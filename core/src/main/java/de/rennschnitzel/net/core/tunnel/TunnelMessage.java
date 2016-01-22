@@ -17,34 +17,34 @@ import lombok.Getter;
 @Getter
 public class TunnelMessage extends Message {
 
-  private final Tunnel channel;
+  private final Tunnel tunnel;
   private final ByteString data;
 
   public TunnelMessage(TunnelMessage cmsg) {
     super(cmsg.target, cmsg.senderId);
-    this.channel = cmsg.channel;
+    this.tunnel = cmsg.tunnel;
     this.data = cmsg.data;
   }
 
-  public TunnelMessage(final Tunnel channel, final Target target, final UUID senderId, final ByteString byteData) {
+  public TunnelMessage(final Tunnel tunnel, final Target target, final UUID senderId, final ByteString byteData) {
     super(target, senderId);
-    Preconditions.checkNotNull(channel);
+    Preconditions.checkNotNull(tunnel);
     Preconditions.checkNotNull(byteData);
-    this.channel = channel;
+    this.tunnel = tunnel;
     this.data = byteData;
   }
 
-  public TunnelMessage(final Tunnel channel, final TransportProtocol.TunnelMessage message) {
+  public TunnelMessage(final Tunnel tunnel, final TransportProtocol.TunnelMessage message) {
     super(message.getTarget(), message.getSender());
-    this.channel = channel;
+    this.tunnel = tunnel;
     this.data = message.getData();
   }
 
   public final TransportProtocol.TunnelMessage toProtocolMessage(Connection connection) throws IOException {
     final TransportProtocol.TunnelMessage.Builder b = TransportProtocol.TunnelMessage.newBuilder();
-    b.setTunnelId(connection.getTunnelId(this.channel));
+    b.setTunnelId(connection.getTunnelId(this.tunnel));
     b.setTarget(this.getTarget().getProtocolMessage());
-    b.setSender(ProtocolUtils.convert(channel.getNetwork().getHome().getId()));
+    b.setSender(ProtocolUtils.convert(tunnel.getNetwork().getHome().getId()));
     b.setData(this.data);
     return b.build();
   }

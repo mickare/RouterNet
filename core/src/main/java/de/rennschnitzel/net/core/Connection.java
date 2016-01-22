@@ -15,6 +15,7 @@ import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 
@@ -113,7 +114,7 @@ public abstract class Connection {
     Integer id = getTunnelIdIfPresent(channel);
     if (id == null) {
       try {
-        id = registerTunnel(channel).get(1, TimeUnit.SECONDS);
+        id = _registerTunnel(channel).get(1, TimeUnit.SECONDS);
       } catch (InterruptedException | ExecutionException | TimeoutException e) {
         throw new IOException(e);
       }
@@ -143,16 +144,24 @@ public abstract class Connection {
 
   public abstract boolean isActive();
 
-  protected ListenableFuture<Integer> registerTunnel(Tunnel tunnel) throws IOException {
+  public ListenableFuture<Integer> registerTunnel(Tunnel tunnel) throws IOException {
+    Integer id = this.getTunnelIdIfPresent(tunnel);
+    if(id != null) {
+      return Futures.immediateFuture(id);
+    }
+    return _registerTunnel(tunnel);
+  }
+  
+  private ListenableFuture<Integer> _registerTunnel(Tunnel tunnel) throws IOException {
 
     SettableFuture<Integer> future = this.tunnelFutures.getUnchecked(tunnel.getName());
 
     try (CloseableLock l = tunnelLock.writeLock().open()) {
       if (future.isDone()) {
         try {
-          this.tunnels.put(future.get(1, TimeUnit.SECONDS), tunnel.getName());
+          this.tunnels.put(future.get(), tunnel.getName());
           return future;
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+        } catch (InterruptedException | ExecutionException e) {
           future = SettableFuture.create();
           this.tunnelFutures.put(tunnel.getName(), future);
         }

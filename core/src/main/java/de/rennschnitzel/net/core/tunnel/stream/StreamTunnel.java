@@ -1,4 +1,4 @@
-package de.rennschnitzel.net.core.channel.stream;
+package de.rennschnitzel.net.core.tunnel.stream;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -19,7 +19,7 @@ import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.tunnel.AbstractSubTunnel;
 import de.rennschnitzel.net.core.tunnel.AbstractSubTunnelDescriptor;
-import de.rennschnitzel.net.core.tunnel.SubChannelDescriptor;
+import de.rennschnitzel.net.core.tunnel.SubTunnelDescriptor;
 import de.rennschnitzel.net.core.tunnel.SubTunnel;
 import de.rennschnitzel.net.core.tunnel.TunnelHandler;
 import de.rennschnitzel.net.core.tunnel.TunnelMessage;
@@ -31,7 +31,7 @@ import lombok.RequiredArgsConstructor;
 public class StreamTunnel extends AbstractSubTunnel<StreamTunnel, StreamTunnel.Descriptor>implements TunnelHandler, SubTunnel {
 
   public static class Descriptor extends AbstractSubTunnelDescriptor<Descriptor, StreamTunnel>
-      implements SubChannelDescriptor<StreamTunnel> {
+      implements SubTunnelDescriptor<StreamTunnel> {
 
     public Descriptor(String name) {
       super(name, TunnelRegister.Type.STREAM);

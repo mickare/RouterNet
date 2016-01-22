@@ -99,7 +99,7 @@ public class Tunnel {
   }
 
   public void sendIgnoreSelf(TunnelMessage cmsg) throws IOException {
-    this.network.sendChannelMessage(cmsg);
+    this.network.sendTunnelMessage(cmsg);
   }
 
   public final void receiveProto(final TransportProtocol.TunnelMessage msg) {

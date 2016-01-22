@@ -15,6 +15,7 @@ import de.rennschnitzel.net.core.AbstractNetwork;
 import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.ProcedureManager;
 import de.rennschnitzel.net.core.Target;
+import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.procedure.ProcedureCall;
 import de.rennschnitzel.net.core.tunnel.TunnelMessage;
@@ -30,7 +31,6 @@ import lombok.Setter;
 public class DummyNetwork extends AbstractNetwork {
 
   @Getter
-  @Setter
   @NonNull
   private Connection connection = null;
 
@@ -56,6 +56,17 @@ public class DummyNetwork extends AbstractNetwork {
     Preconditions.checkNotNull(executor);
     this.executor = executor;
     home.setType(Type.BUKKIT);
+  }
+
+  public synchronized void addConnection0(Connection connection) {
+    Preconditions.checkArgument(connection.getNetwork() == this);
+    this.connection = connection;
+  }
+
+  public synchronized void removeConnection(Connection connection) {
+    if (this.connection == connection) {
+      this.connection = null;
+    }
   }
 
   @Override
@@ -85,12 +96,17 @@ public class DummyNetwork extends AbstractNetwork {
 
   @Override
   public void sendHomeNodeUpdate() throws IOException {
-    this.connection.send(Packet.newBuilder().setNodeUpdate(NodeUpdateMessage.newBuilder().setNode(this.getHome().toProtocol())));
+    connection.send(Packet.newBuilder().setNodeUpdate(NodeUpdateMessage.newBuilder().setNode(this.getHome().toProtocol())));
   }
 
   @Override
-  protected void sendChannelMessage(TunnelMessage cmsg) throws IOException {
+  protected void sendTunnelMessage(TunnelMessage cmsg) throws IOException {
     connection.send(Packet.newBuilder().setTunnelMessage(cmsg.toProtocolMessage(connection)));
+  }
+
+  @Override
+  protected void registerTunnel(Tunnel tunnel) throws IOException {
+    connection.registerTunnel(tunnel);
   }
 
 }

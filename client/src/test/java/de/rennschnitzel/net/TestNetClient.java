@@ -49,7 +49,7 @@ public class TestNetClient {
 
     final AtomicInteger received = new AtomicInteger(0);
 
-    client.getTest().getNetwork().getConnection().getChannel("testChannel")
+    client.getTest().getNetwork().getConnection().getTunnel("testChannel")
         .registerMessageListener(owner, msg -> {
           received.addAndGet(msg.getData().byteAt(0));
         });

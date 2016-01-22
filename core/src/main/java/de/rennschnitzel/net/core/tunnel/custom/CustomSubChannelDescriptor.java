@@ -1,4 +1,4 @@
-package de.rennschnitzel.net.core.channel.custom;
+package de.rennschnitzel.net.core.tunnel.custom;
 
 import de.rennschnitzel.net.core.tunnel.AbstractSubTunnelDescriptor;
 import de.rennschnitzel.net.protocol.TransportProtocol;

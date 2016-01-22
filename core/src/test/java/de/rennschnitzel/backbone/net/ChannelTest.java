@@ -1,8 +1,6 @@
 package de.rennschnitzel.backbone.net;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,11 +15,11 @@ import org.junit.Test;
 import de.rennschnitzel.net.Owner;
 import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.Target;
-import de.rennschnitzel.net.core.channel.object.ConvertObjectChannelException;
-import de.rennschnitzel.net.core.channel.object.ObjectTunnel;
-import de.rennschnitzel.net.core.channel.stream.StreamTunnel;
 import de.rennschnitzel.net.core.packet.BasePacketHandler;
 import de.rennschnitzel.net.core.tunnel.TunnelDescriptors;
+import de.rennschnitzel.net.core.tunnel.object.ConvertObjectChannelException;
+import de.rennschnitzel.net.core.tunnel.object.ObjectTunnel;
+import de.rennschnitzel.net.core.tunnel.stream.StreamTunnel;
 import de.rennschnitzel.net.dummy.DummyConnection;
 import de.rennschnitzel.net.dummy.DummyNetwork;
 import de.rennschnitzel.net.util.SimpleOwner;
@@ -44,7 +42,7 @@ public class ChannelTest {
   @Before
   public void setup() {
 
-    testingOwner = new SimpleOwner("ChannelTestOwner",  Logger.getLogger("ChannelTest"));
+    testingOwner = new SimpleOwner("ChannelTestOwner", Logger.getLogger("ChannelTest"));
 
     net_router = new DummyNetwork();
     do {
@@ -53,7 +51,6 @@ public class ChannelTest {
 
     con_router = new DummyConnection(net_router, new BasePacketHandler<>());
     con_client = new DummyConnection(net_client, new BasePacketHandler<>());
-
 
     target_client = Target.to(net_client.getHome().getId());
     target_router = Target.to(net_router.getHome().getId());
@@ -67,10 +64,25 @@ public class ChannelTest {
   @Test
   public void testChannel() throws IOException {
 
-    Tunnel base0 = con_client.getChannel("base0");
-    assertTrue(con_router.getChannelIfPresent("base0").getChannelId() == base0.getChannelId());
-    Tunnel base1 = con_router.getChannel("base1");
-    assertTrue(con_client.getChannelIfPresent("base1").getChannelId() == base1.getChannelId());
+    Tunnel base0 = net_client.getTunnel("base0");
+    assertNotNull(con_router.getTunnelIdIfPresent(base0));
+    assertNotNull(con_client.getTunnelIdIfPresent(base0));
+    assertTrue(con_router.getTunnelIdIfPresent(base0) == con_client.getTunnelIdIfPresent(base0));
+    Tunnel base1 = net_router.getTunnel("base1");
+    assertTrue(con_router.getTunnelIdIfPresent(base1) == con_client.getTunnelIdIfPresent(base1));
+
+    // Should not be initialized but be registered.
+    assertNull(net_client.getTunnelIfPresent("base1"));
+    assertNull(net_router.getTunnelIfPresent("base0"));
+    assertEquals(con_client.getTunnelIdIfPresent(base0), con_router.getTunnelIdIfPresent(base0));
+    assertEquals(con_router.getTunnelIdIfPresent(base1), con_client.getTunnelIdIfPresent(base1));
+
+
+    // Initialize the tunnels on the other side
+    net_client.getTunnel("base1");
+    net_router.getTunnel("base0");
+    assertEquals(net_client.getTunnelIfPresent("base0").getName(), net_router.getTunnelIfPresent("base0").getName());
+    assertEquals(net_router.getTunnelIfPresent("base1").getName(), net_client.getTunnelIfPresent("base1").getName());
 
     byte[] data0 = new byte[128];
     byte[] data1 = new byte[128];
@@ -80,41 +92,40 @@ public class ChannelTest {
     final AtomicInteger rec_client = new AtomicInteger(0);
     final AtomicInteger rec_router = new AtomicInteger(0);
 
-    con_client.getChannelIfPresent("base0").registerMessageListener(testingOwner, (msg) -> {
+    net_client.getTunnelIfPresent("base0").registerMessageListener(testingOwner, (msg) -> {
       assertArrayEquals(data0, msg.getData().toByteArray());
       rec_client.incrementAndGet();
     });
 
-    con_router.getChannelIfPresent("base1").registerMessageListener(testingOwner, (msg) -> {
+    net_router.getTunnelIfPresent("base1").registerMessageListener(testingOwner, (msg) -> {
       assertArrayEquals(data1, msg.getData().toByteArray());
       rec_router.incrementAndGet();
     });
 
-
-    con_client.getChannelIfPresent("base0").send(target_client, data0);
+    net_client.getTunnelIfPresent("base0").send(target_client, data0);
     assertEquals(1, rec_client.get());
-    con_client.getChannelIfPresent("base0").send(target_router, data0); // does nothing
+    net_client.getTunnelIfPresent("base0").send(target_router, data0); // does nothing
     assertEquals(0, rec_router.get());
     assertEquals(1, rec_client.get());
-    con_client.getChannelIfPresent("base1").send(target_client, data1); // does nothing
+    net_client.getTunnelIfPresent("base1").send(target_client, data1); // does nothing
     assertEquals(1, rec_client.get());
-    con_client.getChannelIfPresent("base1").send(target_router, data1);
+    net_client.getTunnelIfPresent("base1").send(target_router, data1);
     assertEquals(1, rec_router.get());
 
-    con_router.getChannelIfPresent("base0").send(target_client, data0);
+    net_router.getTunnelIfPresent("base0").send(target_client, data0);
     assertEquals(2, rec_client.get());
-    con_router.getChannelIfPresent("base0").send(target_router, data0); // does nothing
+    net_router.getTunnelIfPresent("base0").send(target_router, data0); // does nothing
     assertEquals(1, rec_router.get());
     assertEquals(2, rec_client.get());
-    con_router.getChannelIfPresent("base1").send(target_client, data1); // does nothing
+    net_router.getTunnelIfPresent("base1").send(target_client, data1); // does nothing
     assertEquals(2, rec_client.get());
-    con_router.getChannelIfPresent("base1").send(target_router, data1);
+    net_router.getTunnelIfPresent("base1").send(target_router, data1);
     assertEquals(2, rec_router.get());
 
-    con_router.getChannelIfPresent("base1").registerMessageListener(testingOwner, (msg) -> {
+    net_router.getTunnelIfPresent("base1").registerMessageListener(testingOwner, (msg) -> {
       assertEquals(con_client.getNetwork().getHome().getId(), msg.getSenderId());
     });
-    con_client.getChannelIfPresent("base1").send(target_router, data1);
+    net_client.getTunnelIfPresent("base1").send(target_router, data1);
 
   }
 
@@ -123,8 +134,8 @@ public class ChannelTest {
 
     ObjectTunnel.Descriptor<String> desc = TunnelDescriptors.getObjectTunnel("object", String.class);
 
-    ObjectTunnel<String> ch_client = con_client.getChannel(desc);
-    ObjectTunnel<String> ch_router = con_router.getChannel(desc);
+    ObjectTunnel<String> ch_client = net_client.getTunnel(desc);
+    ObjectTunnel<String> ch_router = net_router.getTunnel(desc);
 
     byte[] data = new byte[128];
     rand.nextBytes(data);
@@ -150,8 +161,8 @@ public class ChannelTest {
     StreamTunnel.Descriptor descIn = TunnelDescriptors.getStreamTunnel("stream");
     StreamTunnel.Descriptor descOut = TunnelDescriptors.getStreamTunnel("stream");
 
-    StreamTunnel client = con_client.getChannel(descOut);
-    StreamTunnel router = con_router.getChannel(descIn);
+    StreamTunnel client = net_client.getTunnel(descOut);
+    StreamTunnel router = net_router.getTunnel(descIn);
 
     try (InputStream routerIn = router.newInputBuffer()) {
       try (InputStream clientIn = client.newInputBuffer()) {

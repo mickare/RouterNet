@@ -13,7 +13,7 @@ public interface SubTunnel {
 
   Tunnel getParentTunnel();
 
-  SubChannelDescriptor<?> getDescriptor();
+  SubTunnelDescriptor<?> getDescriptor();
 
   AbstractNetwork getNetwork();
 

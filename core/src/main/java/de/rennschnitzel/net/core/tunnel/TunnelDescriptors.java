@@ -3,9 +3,9 @@ package de.rennschnitzel.net.core.tunnel;
 import java.io.InvalidClassException;
 import java.io.Serializable;
 
-import de.rennschnitzel.net.core.channel.object.ObjectTunnel;
-import de.rennschnitzel.net.core.channel.object.ObjectConverters;
-import de.rennschnitzel.net.core.channel.stream.StreamTunnel;
+import de.rennschnitzel.net.core.tunnel.object.ObjectConverters;
+import de.rennschnitzel.net.core.tunnel.object.ObjectTunnel;
+import de.rennschnitzel.net.core.tunnel.stream.StreamTunnel;
 
 public class TunnelDescriptors {
 

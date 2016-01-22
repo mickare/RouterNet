@@ -1,4 +1,4 @@
-package de.rennschnitzel.net.core.channel.object;
+package de.rennschnitzel.net.core.tunnel.object;
 
 import java.io.IOException;
 import java.io.InvalidClassException;
@@ -17,7 +17,7 @@ import de.rennschnitzel.net.core.tunnel.AbstractSubTunnelDescriptor;
 import de.rennschnitzel.net.core.tunnel.TunnelHandler;
 import de.rennschnitzel.net.core.tunnel.TunnelMessage;
 import de.rennschnitzel.net.core.tunnel.SubTunnel;
-import de.rennschnitzel.net.core.tunnel.SubChannelDescriptor;
+import de.rennschnitzel.net.core.tunnel.SubTunnelDescriptor;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import lombok.Getter;
 import lombok.NonNull;
@@ -27,7 +27,7 @@ public class ObjectTunnel<T> extends AbstractSubTunnel<ObjectTunnel<T>, ObjectTu
     implements TunnelHandler, SubTunnel {
 
   public static class Descriptor<T> extends AbstractSubTunnelDescriptor<Descriptor<T>, ObjectTunnel<T>>
-      implements SubChannelDescriptor<ObjectTunnel<T>> {
+      implements SubTunnelDescriptor<ObjectTunnel<T>> {
 
     @Getter
     private final Class<T> dataClass;

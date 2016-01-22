@@ -1,4 +1,4 @@
-package de.rennschnitzel.net.core.channel.object;
+package de.rennschnitzel.net.core.tunnel.object;
 
 import java.util.UUID;
 

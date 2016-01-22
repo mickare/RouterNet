@@ -52,7 +52,7 @@ public class BasePacketHandler<C extends Connection> implements PacketHandler<C>
     }
     String channelName = con.getTunnelNameIfPresent(msg.getTunnelId());
     if (channelName != null) {
-      Tunnel channel = con.getNetwork().getChannelIfPresent(channelName);
+      Tunnel channel = con.getNetwork().getTunnelIfPresent(channelName);
       if (channel != null && !channel.isClosed()) {
         channel.receiveProto(msg);
       }

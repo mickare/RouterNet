@@ -7,7 +7,7 @@ import de.rennschnitzel.net.protocol.TransportProtocol;
 import lombok.Getter;
 
 public abstract class AbstractSubTunnelDescriptor<SELF extends AbstractSubTunnelDescriptor<SELF, C>, C extends AbstractSubTunnel<C, SELF>>
-    implements SubChannelDescriptor<C> {
+    implements SubTunnelDescriptor<C> {
 
   @Getter
   protected final String name;

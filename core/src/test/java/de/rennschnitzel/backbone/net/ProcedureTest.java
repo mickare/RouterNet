@@ -68,9 +68,6 @@ public class ProcedureTest {
     con_router = new DummyConnection(net_router, new BasePacketHandler<>());
     con_client = new DummyConnection(net_client, new BasePacketHandler<>());
 
-    net_router.setConnection(con_router);
-    net_client.setConnection(con_client);
-
     target_client = Target.to(net_client.getHome().getId());
     target_router = Target.to(net_router.getHome().getId());
 

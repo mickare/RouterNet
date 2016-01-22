@@ -54,11 +54,11 @@ public class Net {
   }
 
   public static Tunnel getChannel(String name) throws IOException {
-    return getConnection().getChannel(name);
+    return getConnection().getTunnel(name);
   }
 
   public static Tunnel getChannelIfPresent(String name) throws NotConnectedException {
-    return getConnection().getChannelIfPresent(name);
+    return getConnection().getTunnelIfPresent(name);
   }
 
 
