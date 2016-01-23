@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import com.google.common.base.Preconditions;
@@ -21,11 +20,10 @@ import de.rennschnitzel.net.protocol.NetworkProtocol.DataBukkitMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.DataBungeecordMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.DataRouterMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
-import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage.Type;
-import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
+import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol;
-import de.rennschnitzel.net.util.FutureUtils;
+import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import io.netty.util.concurrent.Future;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -263,7 +261,7 @@ public class Node {
       if (network.getHome() != this) {
         throw new IllegalStateException();
       }
-      network.scheduleAsyncLater(() -> {
+      network.getExecutor().schedule(() -> {
         if (!this.dirty) {
           return;
         }
@@ -277,13 +275,13 @@ public class Node {
       } , 100, TimeUnit.MICROSECONDS);
     }
 
-    public void publishUpdate(Set<Connection> connections) {
+    public void sendUpdate(Set<? extends PacketOut> out) {
       Packet packet = Packet.newBuilder().setNodeUpdate(NodeUpdateMessage.newBuilder().setNode(this.toProtocol())).build();
-      connections.forEach(con -> con.send(packet));
+      out.forEach(con -> con.send(packet));
     }
 
-    public Future<?> sendUpdate(Connection connection) {
-      return connection.send(Packet.newBuilder().setNodeUpdate(NodeUpdateMessage.newBuilder().setNode(this.toProtocol())));
+    public Future<?> sendUpdate(PacketOut out) {
+      return out.send(Packet.newBuilder().setNodeUpdate(NodeUpdateMessage.newBuilder().setNode(this.toProtocol())).build());
     }
 
     @Override

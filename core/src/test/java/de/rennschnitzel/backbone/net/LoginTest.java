@@ -1,6 +1,8 @@
 package de.rennschnitzel.backbone.net;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -16,28 +18,28 @@ import de.rennschnitzel.net.core.login.AuthenticationFactory;
 import de.rennschnitzel.net.core.login.LoginHandler;
 import de.rennschnitzel.net.core.login.LoginHandler.State;
 import de.rennschnitzel.net.core.packet.BasePacketHandler;
+import de.rennschnitzel.net.dummy.DummClientNetwork;
 import de.rennschnitzel.net.dummy.DummyConnection;
 import de.rennschnitzel.net.dummy.DummyLoginClientHandler;
 import de.rennschnitzel.net.dummy.DummyLoginRouterHandler;
-import de.rennschnitzel.net.dummy.DummyNetwork;
 import de.rennschnitzel.net.exception.HandshakeException;
 import de.rennschnitzel.net.util.SimpleOwner;
 
 public class LoginTest {
 
   Owner testingOwner;
-  DummyNetwork net_router;
-  DummyNetwork net_client;
+  DummClientNetwork net_router;
+  DummClientNetwork net_client;
 
   @Before
   public void setup() {
 
     testingOwner = new SimpleOwner("ChannelTestOwner", Logger.getLogger("ChannelTest"));
 
-    net_router = new DummyNetwork();
-    do {
-      net_client = new DummyNetwork();
-    } while (net_client.getHome().getId().equals(net_router.getHome().getId()));
+    net_router = new DummClientNetwork();
+    net_router.setName("Router");
+    net_client = new DummClientNetwork(net_router.newNotUsedUUID());
+    net_client.setName("Client");
 
   }
 

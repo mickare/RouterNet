@@ -20,6 +20,11 @@ public class DummyLoginClientHandler extends LoginClientHandler<DummyConnection>
 
   private final PacketHandler<DummyConnection> upgradeHandler;
 
+  public DummyLoginClientHandler(AbstractNetwork network, AuthenticationClient authentication,
+      PacketHandler<DummyConnection> upgradeHandler) {
+    this(DummyLoginClientHandler.class.getName(), network, authentication, upgradeHandler);
+  }
+
 
   public DummyLoginClientHandler(String handlerName, AbstractNetwork network, AuthenticationClient authentication,
       PacketHandler<DummyConnection> upgradeHandler) {
@@ -44,6 +49,7 @@ public class DummyLoginClientHandler extends LoginClientHandler<DummyConnection>
       if (f.isSuccess()) {
         ctx.setHandler(upgradeHandler);
         this.setSuccess();
+        this.getConnectionPromise().setSuccess(ctx);
       } else {
         this.fail(ctx, f.cause());
       }

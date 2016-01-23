@@ -1,6 +1,5 @@
 package de.rennschnitzel.net.core;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -9,8 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Logger;
 
 import org.nustaq.serialization.FSTConfiguration;
@@ -40,6 +38,7 @@ import de.rennschnitzel.net.util.concurrent.CloseableReadWriteLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
 import io.netty.util.concurrent.Future;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -80,15 +79,22 @@ public abstract class AbstractNetwork {
     AbstractNetwork.instance = this;
   }
 
+  protected void setInstance(AbstractNetwork instance) {
+    Preconditions.checkNotNull(instance);
+    AbstractNetwork.instance = instance;
+  }
+
   public abstract Logger getLogger();
 
-  public abstract ScheduledFuture<?> scheduleAsyncLater(Runnable run, long timeout, TimeUnit unit);
+  public abstract ScheduledExecutorService getExecutor();
 
 
   // ***************************************************************************
   // Connection
 
   public final boolean addConnection(Connection connection) throws Exception {
+    Preconditions.checkArgument(connection.getNetwork() == this);
+    Preconditions.checkArgument(connection.isActive());
     try {
 
       if (addConnection0(connection)) {
@@ -111,7 +117,6 @@ public abstract class AbstractNetwork {
   }
 
   protected abstract boolean addConnection0(Connection connection) throws Exception;
-
 
   public boolean removeConnection(Connection connection) {
     if (removeConnection0(connection)) {
@@ -160,11 +165,11 @@ public abstract class AbstractNetwork {
     return this.tunnelsByName.get(name.toLowerCase());
   }
 
-  public Tunnel getTunnel(String name) throws IOException {
+  public Tunnel getTunnel(String name) {
     return getTunnel(name, true);
   }
 
-  private Tunnel getTunnel(String name, boolean register) throws IOException {
+  private Tunnel getTunnel(String name, boolean register) {
     final String key = name.toLowerCase();
     Tunnel tunnel = this.tunnelsByName.get(key);
     if (tunnel == null) {
@@ -188,7 +193,7 @@ public abstract class AbstractNetwork {
     return descriptor.cast(this.subTunnels.get(descriptor));
   }
 
-  public <S extends SubTunnel> S getTunnel(SubTunnelDescriptor<S> descriptor) throws IOException {
+  public <S extends SubTunnel> S getTunnel(SubTunnelDescriptor<S> descriptor) {
     Preconditions.checkNotNull(descriptor);
     S subTunnel = getTunnelIfPresent(descriptor);
     if (subTunnel == null) {

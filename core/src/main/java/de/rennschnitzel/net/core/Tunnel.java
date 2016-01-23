@@ -1,6 +1,5 @@
 package de.rennschnitzel.net.core;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -11,10 +10,13 @@ import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 
 import de.rennschnitzel.net.Owner;
+import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.tunnel.TunnelHandler;
 import de.rennschnitzel.net.core.tunnel.TunnelMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister;
+import de.rennschnitzel.net.util.FutureUtils;
+import io.netty.util.concurrent.Future;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -66,40 +68,45 @@ public class Tunnel {
     this.closed = true;
   }
 
-  public void broadcast(ByteBuffer data) throws IOException {
-    this.send(Target.toAll(), data);
+  public Future<?> broadcast(ByteBuffer data) {
+    return this.send(Target.toAll(), data);
   }
 
-  public void broadcast(byte[] data) throws IOException {
-    this.send(Target.toAll(), data);
+  public Future<?> broadcast(byte[] data) {
+    return this.send(Target.toAll(), data);
   }
 
-  public void broadcast(ByteString data) throws IOException {
-    this.send(Target.toAll(), data);
+  public Future<?> broadcast(ByteString data) {
+    return this.send(Target.toAll(), data);
   }
 
-  public void send(Target target, ByteBuffer data) throws IOException {
-    this.send(target, ByteString.copyFrom(data));
+  public Future<?> send(Target target, ByteBuffer data) {
+    return this.send(target, ByteString.copyFrom(data));
   }
 
-  public void send(Target target, byte[] data) throws IOException {
-    this.send(target, ByteString.copyFrom(data));
+  public Future<?> send(Target target, byte[] data) {
+    return this.send(target, ByteString.copyFrom(data));
   }
 
-  public void send(Target target, ByteString data) throws IOException {
+  public Future<?> send(Target target, ByteString data) {
     final TunnelMessage cmsg = new TunnelMessage(this, target, getNetwork().getHome().getId(), data);
-    this.send(cmsg);
+    return this.send(cmsg);
   }
 
-  public void send(TunnelMessage cmsg) throws IOException {
-    this.sendIgnoreSelf(cmsg);
+  public Future<?> send(TunnelMessage cmsg) {
+    HomeNode home = getNetwork().getHome();
+    Future<?> result = FutureUtils.SUCCESS;
+    if (!cmsg.getTarget().isOnly(home)) {
+      result = this.sendIgnoreSelf(cmsg);
+    }
     if (cmsg.getTarget().contains(getNetwork().getHome())) {
       this.receive(cmsg);
     }
+    return result;
   }
 
-  public void sendIgnoreSelf(TunnelMessage cmsg) throws IOException {
-    this.network.sendTunnelMessage(cmsg);
+  public Future<?> sendIgnoreSelf(TunnelMessage cmsg) {
+    return this.network.sendTunnelMessage(cmsg);
   }
 
   public final void receiveProto(final TransportProtocol.TunnelMessage msg) {
@@ -123,7 +130,7 @@ public class Tunnel {
 
   @Getter
   @RequiredArgsConstructor
-  private static class RegisteredMessageListener implements Consumer<TunnelMessage> {
+  private class RegisteredMessageListener implements Consumer<TunnelMessage> {
 
     @NonNull
     private final Owner owner;
@@ -135,7 +142,7 @@ public class Tunnel {
       try {
         delegate.accept(cmsg);
       } catch (Exception e) {
-        owner.getLogger().log(Level.SEVERE, "Message listener of " + owner.toString() + " threw exception: " + e.getMessage(), e);
+        getNetwork().getLogger().log(Level.SEVERE, "Message listener of " + owner + " threw exception: " + e.getMessage(), e);
       }
     }
   }

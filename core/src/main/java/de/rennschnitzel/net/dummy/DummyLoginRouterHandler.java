@@ -18,6 +18,11 @@ public class DummyLoginRouterHandler extends LoginRouterHandler<DummyConnection>
 
   private final PacketHandler<DummyConnection> upgradeHandler;
 
+  public DummyLoginRouterHandler(AbstractNetwork network, AuthenticationRouter authentication,
+      PacketHandler<DummyConnection> upgradeHandler) {
+    this(DummyLoginRouterHandler.class.getName(), network, authentication, upgradeHandler);
+  }
+
   public DummyLoginRouterHandler(String handlerName, AbstractNetwork network, AuthenticationRouter authentication,
       PacketHandler<DummyConnection> upgradeHandler) {
     super(handlerName, network, authentication);
@@ -37,8 +42,9 @@ public class DummyLoginRouterHandler extends LoginRouterHandler<DummyConnection>
 
   @Override
   protected void upgrade(DummyConnection ctx, LoginUpgradeMessage msg) throws HandshakeException {
-    this.setSuccess();
     ctx.setHandler(upgradeHandler);
+    this.setSuccess();
+    this.getConnectionPromise().setSuccess(ctx);
   }
 
   @Override

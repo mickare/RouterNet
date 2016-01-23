@@ -193,13 +193,13 @@ public class ProcedureManager {
 
   }
 
-  public void handle(Connection con, ProcedureMessage msg) throws ProtocolException {
+  public void handle(PacketOut out, ProcedureMessage msg) throws ProtocolException {
     switch (msg.getContentCase()) {
       case CALL:
-        handle(con, msg, msg.getCall());
+        handle(out, msg, msg.getCall());
         break;
       case RESPONSE:
-        handle(con, msg, msg.getResponse());
+        handle(out, msg, msg.getResponse());
         break;
       default:
         throw new ProtocolException("Unknown content!");
@@ -207,7 +207,7 @@ public class ProcedureManager {
   }
 
 
-  private void handle(Connection con, ProcedureMessage msg, ProcedureResponseMessage response) {
+  private void handle(PacketOut out, ProcedureMessage msg, ProcedureResponseMessage response) {
     ProcedureCall<?, ?> call = this.openCalls.getIfPresent(response.getId());
     if (call != null) {
       call.receive(msg, response);
@@ -222,7 +222,7 @@ public class ProcedureManager {
     return b;
   }
 
-  private void sendFail(Connection con, ProcedureMessage msg, ProcedureCallMessage call, ErrorMessage.Builder error) throws IOException {
+  private void sendFail(PacketOut out, ProcedureMessage msg, ProcedureCallMessage call, ErrorMessage.Builder error) throws IOException {
     ProcedureResponseMessage.Builder b = newResponse(call);
     b.setSuccess(false);
     b.setCancelled(false);
@@ -230,24 +230,24 @@ public class ProcedureManager {
     network.sendProcedureResponse(msg.getSender(), b.build());
   }
 
-  private void handle(Connection con, ProcedureMessage msg, ProcedureCallMessage call) {
+  private void handle(PacketOut out, ProcedureMessage msg, ProcedureCallMessage call) {
     try {
       Procedure key = new Procedure(call.getProcedure());
       CallableRegisteredProcedure<?, ?> proc = this.registeredProcedures.get(key);
       if (proc == null) {
-        sendFail(con, msg, call, ErrorMessage.newBuilder().setType(ErrorMessage.Type.UNDEFINED).setMessage("unregistered procedure"));
+        sendFail(out, msg, call, ErrorMessage.newBuilder().setType(ErrorMessage.Type.UNDEFINED).setMessage("unregistered procedure"));
       }
 
-      ProcedureResponseMessage.Builder out = newResponse(call);
-      proc.remoteCalled(call, out);
-      out.setSuccess(true);
-      out.setCancelled(false);
-      network.sendProcedureResponse(msg.getSender(), out.build());
+      ProcedureResponseMessage.Builder b = newResponse(call);
+      proc.remoteCalled(call, b);
+      b.setSuccess(true);
+      b.setCancelled(false);
+      network.sendProcedureResponse(msg.getSender(), b.build());
 
     } catch (Exception e) {
       network.getLogger().log(Level.SEVERE, "Procedure handling failed\n" + e.getMessage(), e);
       try {
-        sendFail(con, msg, call, ErrorMessage.newBuilder().setType(ErrorMessage.Type.UNDEFINED)
+        sendFail(out, msg, call, ErrorMessage.newBuilder().setType(ErrorMessage.Type.UNDEFINED)
             .setMessage("exception in procedure call + (" + e.getMessage() + ")"));
       } catch (IOException e1) {
         // not anything we can do here anymore...

@@ -3,7 +3,6 @@ package de.rennschnitzel.net.core.login;
 import java.util.UUID;
 
 import com.google.common.base.Preconditions;
-import com.google.common.util.concurrent.SettableFuture;
 
 import de.rennschnitzel.net.core.AbstractNetwork;
 import de.rennschnitzel.net.core.Connection;
@@ -16,11 +15,14 @@ import de.rennschnitzel.net.protocol.NetworkProtocol.NodeTopologyMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
+import de.rennschnitzel.net.protocol.TransportProtocol.HeartbeatMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.TunnelMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister;
 import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.ImmediateEventExecutor;
+import io.netty.util.concurrent.Promise;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -54,13 +56,19 @@ public abstract class LoginHandler<C> implements PacketHandler<C> {
   private State failureState = null;
 
   @Getter
-  private SettableFuture<Connection> connectionFuture = SettableFuture.create();
+  private Promise<Connection> connectionPromise = ImmediateEventExecutor.INSTANCE.newPromise();
 
   public LoginHandler(String handlerName, AbstractNetwork network) {
     Preconditions.checkArgument(!handlerName.isEmpty());
     Preconditions.checkNotNull(network);
     this.handlerName = handlerName;
     this.network = network;
+
+    this.connectionPromise.addListener(f -> {
+      if (!f.isSuccess()) {
+        LoginHandler.this.fail(f.cause());
+      }
+    });
   }
 
 
@@ -117,22 +125,30 @@ public abstract class LoginHandler<C> implements PacketHandler<C> {
   }
 
 
-  public final void fail(C ctx, Throwable cause) {
+  public final boolean fail(Throwable cause) {
+    return this.fail(this.context, cause);
+  }
+
+  public final boolean fail(C ctx, Throwable cause) {
     synchronized (this) {
       if (this.state.step >= State.FAILED.step) {
-        return;
+        return false;
       }
-      this.connectionFuture.setException(cause);
       this.failureCause = cause;
       this.failureState = this.state;
       this.state = State.FAILED;
     }
     onFail(ctx, cause);
+    return true;
   }
 
   protected void onFail(C ctx, Throwable cause) {
-    send(ctx, CloseMessage.newBuilder()
-        .setError(ErrorMessage.newBuilder().setType(ErrorMessage.Type.HANDSHAKE).setMessage(cause.getMessage())).build());
+    this.connectionPromise.tryFailure(cause);
+    this.getNetwork().getLogger().info(this.getName() + " (" + this.getId() + ") failed handshake: " + cause.getMessage());
+    if (ctx != null) {
+      send(ctx, CloseMessage.newBuilder()
+          .setError(ErrorMessage.newBuilder().setType(ErrorMessage.Type.HANDSHAKE).setMessage(cause.getMessage())).build());
+    }
   }
 
   protected abstract Future<?> send(C ctx, CloseMessage msg);
@@ -155,6 +171,13 @@ public abstract class LoginHandler<C> implements PacketHandler<C> {
       this.fail(ctx, e);
       throw e;
     }
+  }
+
+
+
+  @Override
+  public void handle(C ctx, HeartbeatMessage heartbeat) throws Exception {
+    throw new HandshakeException("Invalid or unknown packet!");
   }
 
   @Override

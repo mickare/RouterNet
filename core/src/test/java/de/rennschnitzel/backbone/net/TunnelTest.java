@@ -1,6 +1,10 @@
 package de.rennschnitzel.backbone.net;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,15 +17,15 @@ import org.junit.Before;
 import org.junit.Test;
 
 import de.rennschnitzel.net.Owner;
-import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.Target;
+import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.packet.BasePacketHandler;
 import de.rennschnitzel.net.core.tunnel.TunnelDescriptors;
 import de.rennschnitzel.net.core.tunnel.object.ConvertObjectChannelException;
 import de.rennschnitzel.net.core.tunnel.object.ObjectTunnel;
 import de.rennschnitzel.net.core.tunnel.stream.StreamTunnel;
+import de.rennschnitzel.net.dummy.DummClientNetwork;
 import de.rennschnitzel.net.dummy.DummyConnection;
-import de.rennschnitzel.net.dummy.DummyNetwork;
 import de.rennschnitzel.net.util.SimpleOwner;
 
 public class TunnelTest {
@@ -30,8 +34,8 @@ public class TunnelTest {
 
   Owner testingOwner;
 
-  DummyNetwork net_router;
-  DummyNetwork net_client;
+  DummClientNetwork net_router;
+  DummClientNetwork net_client;
 
   DummyConnection con_router;
   DummyConnection con_client;
@@ -44,10 +48,10 @@ public class TunnelTest {
 
     testingOwner = new SimpleOwner("TunnelTestOwner", Logger.getLogger("TunnelTest"));
 
-    net_router = new DummyNetwork();
-    do {
-      net_client = new DummyNetwork();
-    } while (net_client.getHome().getId().equals(net_router.getHome().getId()));
+    net_router = new DummClientNetwork();
+    net_router.setName("Router");
+    net_client = new DummClientNetwork(net_router.newNotUsedUUID());
+    net_client.setName("Client");
 
     con_router = new DummyConnection(net_router, new BasePacketHandler<>());
     con_client = new DummyConnection(net_client, new BasePacketHandler<>());

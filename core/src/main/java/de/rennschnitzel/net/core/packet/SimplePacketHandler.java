@@ -9,6 +9,7 @@ import de.rennschnitzel.net.protocol.NetworkProtocol.NodeRemoveMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeTopologyMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
+import de.rennschnitzel.net.protocol.TransportProtocol.HeartbeatMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.TunnelMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister;
@@ -25,6 +26,11 @@ public class SimplePacketHandler<C> implements PacketHandler<C> {
 
   @Override
   public void channelInactive(C ctx) throws Exception {}
+
+  @Override
+  public void handle(C ctx, HeartbeatMessage heartbeat) throws Exception {
+    throw new UnsupportedOperationException("Not implemented!");
+  }
 
   @Override
   public void handle(C ctx, CloseMessage msg) throws Exception {

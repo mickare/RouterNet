@@ -16,6 +16,7 @@ import de.rennschnitzel.net.protocol.NetworkProtocol.NodeTopologyMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
+import de.rennschnitzel.net.protocol.TransportProtocol.HeartbeatMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.TunnelMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister;
@@ -36,37 +37,21 @@ public class BasePacketHandler<C extends Connection> implements PacketHandler<C>
     return con.getNetwork().getHome().isPart(target);
   }
 
-  @Override
-  public void handle(C con, ProcedureMessage msg) throws Exception {
-    if (!isReceiver(con, msg.getTarget())) {
-      return; // drop packet
-    }
-    con.getNetwork().getProcedureManager().handle(con, msg);
-  }
 
-  @Override
-  public void handle(C con, TunnelRegister msg) throws Exception {
-    con.registerTunnel(msg);
-  }
-
-  @Override
-  public void handle(C con, TunnelMessage msg) throws Exception {
-    if (!isReceiver(con, msg.getTarget())) {
-      return; // drop packet
-    }
-    String channelName = con.getTunnelNameIfPresent(msg.getTunnelId());
-    if (channelName != null) {
-      Tunnel channel = con.getNetwork().getTunnelIfPresent(channelName);
-      if (channel != null && !channel.isClosed()) {
-        channel.receiveProto(msg);
-      }
-    }
-  }
-
+  // TRANSPORT
+  
   @Override
   public void handle(C con, CloseMessage msg) throws Exception {
     con.setCloseMessage(msg);
   }
+
+  @Override
+  public void handle(C ctx, HeartbeatMessage heartbeat) throws Exception {
+
+  }
+  
+
+  // LOGIN
 
   @Override
   public void handle(C con, LoginHandshakeMessage msg) throws Exception {
@@ -93,6 +78,9 @@ public class BasePacketHandler<C extends Connection> implements PacketHandler<C>
     throw new ProtocolException("Invalid packet!");
   }
 
+
+  // NETWORK
+
   @Override
   public void handle(C con, NodeTopologyMessage msg) throws Exception {
     con.getNetwork().updateNodes(msg);
@@ -108,6 +96,40 @@ public class BasePacketHandler<C extends Connection> implements PacketHandler<C>
     UUID id = ProtocolUtils.convert(msg.getId());
     con.getNetwork().removeNode(id);
   }
+  
+  
+  // TUNNEL
+  
+  @Override
+  public void handle(C con, TunnelRegister msg) throws Exception {
+    con.registerTunnel(msg);
+  }
+
+  @Override
+  public void handle(C con, TunnelMessage msg) throws Exception {
+    if (!isReceiver(con, msg.getTarget())) {
+      return; // drop packet
+    }
+    String channelName = con.getTunnelNameIfPresent(msg.getTunnelId());
+    if (channelName != null) {
+      Tunnel channel = con.getNetwork().getTunnelIfPresent(channelName);
+      if (channel != null && !channel.isClosed()) {
+        channel.receiveProto(msg);
+      }
+    }
+  }
+
+  
+  // PROCEDURE
+  
+  @Override
+  public void handle(C con, ProcedureMessage msg) throws Exception {
+    if (!isReceiver(con, msg.getTarget())) {
+      return; // drop packet
+    }
+    con.getNetwork().getProcedureManager().handle(con, msg);
+  }
+
 
 
 

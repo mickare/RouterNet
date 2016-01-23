@@ -22,24 +22,24 @@ import org.junit.Test;
 
 import de.rennschnitzel.net.Owner;
 import de.rennschnitzel.net.core.Node;
-import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.core.Node.HomeNode;
+import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.core.packet.BasePacketHandler;
 import de.rennschnitzel.net.core.procedure.BoundProcedure;
 import de.rennschnitzel.net.core.procedure.CallableProcedure;
-import de.rennschnitzel.net.core.procedure.ProcedureCallResult;
-import de.rennschnitzel.net.core.procedure.Procedure;
 import de.rennschnitzel.net.core.procedure.CallableRegisteredProcedure;
+import de.rennschnitzel.net.core.procedure.Procedure;
+import de.rennschnitzel.net.core.procedure.ProcedureCallResult;
+import de.rennschnitzel.net.dummy.DummClientNetwork;
 import de.rennschnitzel.net.dummy.DummyConnection;
-import de.rennschnitzel.net.dummy.DummyNetwork;
 import de.rennschnitzel.net.util.concurrent.DirectScheduledExecutorService;
 
 public class ProcedureTest {
 
   Owner testingOwner;
 
-  DummyNetwork net_router;
-  DummyNetwork net_client;
+  DummClientNetwork net_router;
+  DummClientNetwork net_client;
 
   DummyConnection con_router;
   DummyConnection con_client;
@@ -63,8 +63,10 @@ public class ProcedureTest {
       }
     };
 
-    net_router = new DummyNetwork(new HomeNode(new UUID(0, 1)));
-    net_client = new DummyNetwork(new HomeNode(new UUID(0, 2)));
+    net_router = new DummClientNetwork(new HomeNode(new UUID(0, 1)));
+    net_router.setName("Router");
+    net_client = new DummClientNetwork(new HomeNode(new UUID(0, 2)));
+    net_client.setName("Client");
 
     con_router = new DummyConnection(net_router, new BasePacketHandler<>());
     con_client = new DummyConnection(net_client, new BasePacketHandler<>());

@@ -37,7 +37,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 @RequiredArgsConstructor
-public abstract class Connection {
+public abstract class Connection implements PacketOut {
 
   private final AtomicInteger TUNNEL_ID_GENERATOR = new AtomicInteger(0);
 
@@ -83,6 +83,10 @@ public abstract class Connection {
 
   public void disconnect(CloseMessage.Builder builder) {
     this.disconnect(builder.build());
+  }
+
+  public void disconnect(String reason) {
+    this.disconnect(CloseMessage.newBuilder().setNormal(reason));
   }
 
   private int getNextFreeTunnelId() {
@@ -139,12 +143,6 @@ public abstract class Connection {
 
   public int getTunnelId(SubTunnel channel) throws IOException {
     return getTunnelId(channel.getParentTunnel());
-  }
-
-  public abstract Future<?> send(TransportProtocol.Packet packet);
-
-  public Future<?> send(TransportProtocol.Packet.Builder packet) {
-    return send(packet.build());
   }
 
   public Future<?> sendTunnelMessage(TransportProtocol.TunnelMessage msg) {

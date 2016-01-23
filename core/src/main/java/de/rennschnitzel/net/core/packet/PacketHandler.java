@@ -10,6 +10,7 @@ import de.rennschnitzel.net.protocol.NetworkProtocol.NodeRemoveMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeTopologyMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
+import de.rennschnitzel.net.protocol.TransportProtocol.HeartbeatMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.TunnelMessage;
@@ -28,6 +29,9 @@ public interface PacketHandler<C> {
       // Transport
       case CLOSE:
         handle(ctx, packet.getClose());
+        break;
+      case HEARTBEAT:
+        handle(ctx, packet.getHeartbeat());
         break;
 
       // Login
@@ -71,20 +75,24 @@ public interface PacketHandler<C> {
       case PROCEDUREMESSAGE:
         handle(ctx, packet.getProcedureMessage());
         break;
-                
+
       default:
         handleUndefined(ctx, packet);
     }
   }
 
+
   default void handleUndefined(C ctx, Packet packet) throws Exception {
     throw new ProtocolException("Invalid or unknown packet!");
   }
 
-  // Transport
+  // TRANSPORT
   void handle(C ctx, CloseMessage msg) throws Exception;
 
-  // Login
+  void handle(C ctx, HeartbeatMessage heartbeat) throws Exception;
+
+  
+  // LOGIN
   void handle(C ctx, LoginHandshakeMessage msg) throws Exception;
 
   void handle(C ctx, LoginResponseMessage msg) throws Exception;
@@ -96,19 +104,19 @@ public interface PacketHandler<C> {
   void handle(C ctx, LoginUpgradeMessage msg) throws Exception;
 
 
-  // Network
+  // NETWORK
   void handle(C ctx, NodeTopologyMessage msg) throws Exception;
 
   void handle(C ctx, NodeUpdateMessage msg) throws Exception;
 
   void handle(C ctx, NodeRemoveMessage msg) throws Exception;
 
-  // Channel
+  // TUNNEL
   void handle(C ctx, TunnelMessage msg) throws Exception;
 
   void handle(C ctx, TunnelRegister msg) throws Exception;
 
-  // Procedure
+  // PROCEDURE
   void handle(C ctx, ProcedureMessage msg) throws Exception;
 
 
