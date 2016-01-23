@@ -17,28 +17,6 @@
 		<jdk.version>1.8</jdk.version>
 	</properties>
 
-	<repositories>
-		<repository>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-			<id>bintray-sergei-ivanov-maven</id>
-			<name>bintray</name>
-			<url>http://dl.bintray.com/sergei-ivanov/maven</url>
-		</repository>
-	</repositories>
-	<pluginRepositories>
-		<pluginRepository>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-			<id>bintray-sergei-ivanov-maven</id>
-			<name>bintray-plugins</name>
-			<url>http://dl.bintray.com/sergei-ivanov/maven</url>
-		</pluginRepository>
-	</pluginRepositories>
-
-
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>
@@ -111,5 +89,54 @@
 			</plugin>
 		</plugins>
 	</build>
+
+
+	<repositories>
+		<repository>
+			<id>rs-protected</id>
+			<name>Rennschnitzel Protected Repository</name>
+			<url>http://nexus.spacier.de/content/repositories/rs-protected/</url>
+		</repository>
+		<repository>
+			<id>public</id>
+			<name>Rennschnitzel Public Group</name>
+			<url>http://nexus.spacier.de/content/groups/public/</url>
+		</repository>
+		<repository>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+			<id>bintray-sergei-ivanov-maven</id>
+			<name>bintray</name>
+			<url>http://dl.bintray.com/sergei-ivanov/maven</url>
+		</repository>
+	</repositories>
+
+
+	<pluginRepositories>
+		<pluginRepository>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+			<id>bintray-sergei-ivanov-maven</id>
+			<name>bintray-plugins</name>
+			<url>http://dl.bintray.com/sergei-ivanov/maven</url>
+		</pluginRepository>
+	</pluginRepositories>
+
+
+	<distributionManagement>
+		<repository>
+			<id>rs-protected</id>
+			<name>Rennschnitzel Protected Repository</name>
+			<url>http://nexus.spacier.de/content/repositories/rs-protected/</url>
+		</repository>
+		<snapshotRepository>
+			<id>rs-protected</id>
+			<name>Rennschnitzel Protected Repository</name>
+			<url>http://nexus.spacier.de/content/repositories/rs-protected/</url>
+		</snapshotRepository>
+	</distributionManagement>
+
 
 </project>
