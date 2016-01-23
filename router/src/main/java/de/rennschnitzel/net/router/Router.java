@@ -48,7 +48,6 @@ import lombok.Getter;
 
 public class Router extends AbstractIdleService implements Owner {
 
-  @Getter
   private static Router instance = null;
   @Getter
   private final Logger logger;
@@ -66,14 +65,10 @@ public class Router extends AbstractIdleService implements Owner {
   private final ScheduledExecutorService scheduler;
   @Getter
   private final EventBus eventBus = new EventBus();
-
   @Getter
   private final PluginManager pluginManager = new PluginManager(this);
-
   @Getter
   private HostAndPort address;
-
-
   @Getter
   private final RouterNetwork network;
 
