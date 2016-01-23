@@ -7,10 +7,11 @@ import org.bukkit.plugin.java.JavaPlugin;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import de.rennschnitzel.net.NetClient;
+import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
 
 public class NetPlugin extends JavaPlugin {
 
-  private final NetClient client = new NetClient();
+  private final NetClient client = new NetClient(NodeMessage.Type.BUKKIT);
 
   @Override
   public void onLoad() {

@@ -69,18 +69,8 @@ public class Procedure implements Comparable<Procedure> {
 
   @Getter
   private final String name, argumentType, resultType;
-
-  private final LazyCache<Class<?>> argumentClass = LazyCache.of(() -> {
-    synchronized (LOCK) {
-      return Class.forName(this.argumentType);
-    }
-  });
-
-  private final LazyCache<Class<?>> resultClass = LazyCache.of(() -> {
-    synchronized (LOCK) {
-      return Class.forName(this.resultType);
-    }
-  });
+  private final LazyCache<Class<?>> argumentClass;
+  private final LazyCache<Class<?>> resultClass;
 
   public Procedure(final ProcedureDescription msg) throws IllegalArgumentException, NullPointerException {
     this(msg.getName(), msg.getArgumentType(), msg.getResultType());
@@ -108,6 +98,18 @@ public class Procedure implements Comparable<Procedure> {
     this.name = name.toLowerCase();
     this.argumentType = argumentType;
     this.resultType = resultType;
+
+    argumentClass = LazyCache.of(() -> {
+      synchronized (LOCK) {
+        return Class.forName(this.argumentType);
+      }
+    });
+
+    resultClass = LazyCache.of(() -> {
+      synchronized (LOCK) {
+        return Class.forName(this.resultType);
+      }
+    });
   }
 
 
