@@ -65,7 +65,7 @@ public class NettyLoginClientHandler extends LoginClientHandler<ChannelHandlerCo
 
 
   @Override
-  public boolean isChannelActive() {
+  public boolean isContextActive() {
     if (this.getContext() != null) {
       return this.getContext().channel().isActive();
     }

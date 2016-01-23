@@ -11,13 +11,11 @@ import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.cache.RemovalCause;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
 
 import de.rennschnitzel.net.core.tunnel.SubTunnel;
 import de.rennschnitzel.net.exception.ConnectionException;
@@ -26,10 +24,13 @@ import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister;
+import de.rennschnitzel.net.util.FutureUtils;
 import de.rennschnitzel.net.util.concurrent.CloseableLock;
 import de.rennschnitzel.net.util.concurrent.CloseableReadWriteLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
 import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.ImmediateEventExecutor;
+import io.netty.util.concurrent.Promise;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
@@ -43,15 +44,19 @@ public abstract class Connection implements PacketOutWriter {
 
   private final CloseableReadWriteLock tunnelLock = new ReentrantCloseableReadWriteLock();
   private final BiMap<Integer, String> tunnels = HashBiMap.create();
-  private final LoadingCache<String, SettableFuture<Integer>> tunnelFutures = CacheBuilder.newBuilder()//
+  private final LoadingCache<String, Promise<Integer>> tunnelFutures = CacheBuilder.newBuilder()//
       .expireAfterWrite(1, TimeUnit.SECONDS)//
-      .removalListener(new RemovalListener<String, SettableFuture<Integer>>() {
+      .removalListener(new RemovalListener<String, Promise<Integer>>() {
         @Override
-        public void onRemoval(RemovalNotification<String, SettableFuture<Integer>> notification) {
-          notification.getValue().cancel(true);
+        public void onRemoval(RemovalNotification<String, Promise<Integer>> notification) {
+          if (notification.getCause() == RemovalCause.EXPIRED) {
+            notification.getValue().tryFailure(new TimeoutException("took longer than one second"));
+          } else {
+            notification.getValue().tryFailure(new Exception("was removed because " + notification.getCause()));
+          }
         }
       })//
-      .build(CacheLoader.from(SettableFuture::create));
+      .build(CacheLoader.from(ImmediateEventExecutor.INSTANCE::newPromise));
 
   @Getter
   @NonNull
@@ -117,7 +122,7 @@ public abstract class Connection implements PacketOutWriter {
 
   public Integer getTunnelIdIfPresent(String name) {
     try (CloseableLock l = tunnelLock.readLock().open()) {
-      return this.tunnels.inverse().get(name);
+      return this.tunnels.inverse().get(name.toLowerCase());
     }
   }
 
@@ -154,17 +159,17 @@ public abstract class Connection implements PacketOutWriter {
   }
 
 
-  public ListenableFuture<Integer> registerTunnel(Tunnel tunnel) {
+  public Future<Integer> registerTunnel(Tunnel tunnel) {
     Integer id = this.getTunnelIdIfPresent(tunnel);
     if (id != null) {
-      return Futures.immediateFuture(id);
+      return FutureUtils.futureSuccess(id);
     }
     return _registerTunnel(tunnel);
   }
 
-  private ListenableFuture<Integer> _registerTunnel(Tunnel tunnel) {
+  private Future<Integer> _registerTunnel(Tunnel tunnel) {
 
-    SettableFuture<Integer> future = this.tunnelFutures.getUnchecked(tunnel.getName());
+    Promise<Integer> future = this.tunnelFutures.getUnchecked(tunnel.getName());
 
     try (CloseableLock l = tunnelLock.writeLock().open()) {
       if (future.isDone()) {
@@ -172,8 +177,8 @@ public abstract class Connection implements PacketOutWriter {
           this.tunnels.put(future.get(), tunnel.getName());
           return future;
         } catch (InterruptedException | ExecutionException e) {
-          future = SettableFuture.create();
-          this.tunnelFutures.put(tunnel.getName(), future);
+          this.tunnelFutures.refresh(tunnel.getName());
+          future = this.tunnelFutures.getUnchecked(tunnel.getName());
         }
       }
     }
@@ -189,10 +194,10 @@ public abstract class Connection implements PacketOutWriter {
 
   }
 
-  public ListenableFuture<Integer> registerTunnel(TunnelRegister msg) throws IOException {
+  public Future<Integer> registerTunnel(TunnelRegister msg) throws IOException {
 
 
-    SettableFuture<Integer> future = this.tunnelFutures.getUnchecked(msg.getName());
+    Promise<Integer> future = this.tunnelFutures.getUnchecked(msg.getName());
 
 
     try (CloseableLock l = tunnelLock.writeLock().open()) {
@@ -214,8 +219,8 @@ public abstract class Connection implements PacketOutWriter {
 
           } catch (InterruptedException | ExecutionException | TimeoutException e) {
             // Failed, so then retry!
-            future = SettableFuture.create();
-            this.tunnelFutures.put(msg.getName(), future);
+            this.tunnelFutures.refresh(msg.getName());
+            future = this.tunnelFutures.getUnchecked(msg.getName());
           }
         }
         // There was no future, it could be already forgotten (a new future had been created) or it
@@ -226,7 +231,7 @@ public abstract class Connection implements PacketOutWriter {
 
         if (existingId != null) {
 
-          if (future.set(existingId.intValue())) {
+          if (future.trySuccess(existingId.intValue())) {
             send(Packet.newBuilder().setTunnelRegister(//
                 TunnelRegister.newBuilder(msg).setTunnelId(existingId.intValue()).setRequest(false))//
             ).get(100, TimeUnit.MILLISECONDS);
@@ -235,7 +240,7 @@ public abstract class Connection implements PacketOutWriter {
         } else {
 
           int id = getNextFreeTunnelId(msg.getTunnelId());
-          if (future.set(id)) {
+          if (future.trySuccess(id)) {
             this.tunnels.put(id, msg.getName());
             send(Packet.newBuilder().setTunnelRegister(//
                 TunnelRegister.newBuilder(msg).setTunnelId(id).setRequest(false))//
@@ -249,12 +254,12 @@ public abstract class Connection implements PacketOutWriter {
         // Register without any question!
 
         this.tunnels.put(msg.getTunnelId(), msg.getName());
-        future.set(msg.getTunnelId());
+        future.trySuccess(msg.getTunnelId());
 
       }
 
     } catch (Exception e) {
-      future.setException(e);
+      future.tryFailure(e);
       throw new ConnectionException(ErrorMessage.Type.UNAVAILABLE, "failed to register tunnel", e);
     }
 

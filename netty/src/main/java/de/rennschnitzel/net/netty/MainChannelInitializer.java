@@ -15,7 +15,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class BaseChannelInitializer extends ChannelInitializer<SocketChannel> {
+public class MainChannelInitializer extends ChannelInitializer<SocketChannel> {
 
   @NonNull
   private final Supplier<MainHandler<?>> mainHandler;

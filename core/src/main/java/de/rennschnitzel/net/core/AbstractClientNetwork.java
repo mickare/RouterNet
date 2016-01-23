@@ -34,7 +34,7 @@ public abstract class AbstractClientNetwork extends AbstractNetwork implements P
   }
 
   @Override
-  protected synchronized boolean addConnection0(final Connection connection) throws Exception {
+  protected boolean addConnection0(final Connection connection) throws Exception {
     try (CloseableLock l = connectionLock.writeLock().open()) {
       final Promise<Connection> old = this.connectionPromise;
       if (!old.isDone()) {
@@ -135,9 +135,9 @@ public abstract class AbstractClientNetwork extends AbstractNetwork implements P
   }
 
   @Override
-  protected Future<?> registerTunnel(Tunnel tunnel) {
+  protected Future<Integer> registerTunnel(Tunnel tunnel) {
     return FutureUtils.combine(this.getConnectionFuture(), con -> {
-      return FutureUtils.transformFuture(con.registerTunnel(tunnel));
+      return con.registerTunnel(tunnel);
     });
   }
 

@@ -71,7 +71,7 @@ public class DummyLoginClientHandler extends LoginClientHandler<DummyConnection>
 
 
   @Override
-  public boolean isChannelActive() {
+  public boolean isContextActive() {
     if (this.getContext() != null) {
       return this.getContext().isActive();
     }

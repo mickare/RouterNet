@@ -8,6 +8,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.google.common.base.Preconditions;
+import com.google.common.net.HostAndPort;
 
 import de.rennschnitzel.net.client.ClientSettings;
 import de.rennschnitzel.net.client.ConfigFile;
@@ -15,7 +16,6 @@ import de.rennschnitzel.net.client.TestFramework;
 import de.rennschnitzel.net.client.connection.ConnectService;
 import de.rennschnitzel.net.client.connection.DummyConnectService;
 import de.rennschnitzel.net.client.connection.NettyConnectService;
-import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.login.AuthenticationClient;
 import de.rennschnitzel.net.core.login.AuthenticationFactory;
@@ -46,6 +46,8 @@ public class NetClient {
   private TestFramework testFramework = null;
 
   private AuthenticationClient authentication = null;
+
+  private HostAndPort routerAddress = null;
 
   public synchronized void init(Logger logger, File directory, ScheduledExecutorService executor) {
     Preconditions.checkState(initialized == false, "NetClient already initialized");
@@ -96,6 +98,9 @@ public class NetClient {
     this.authentication =
         AuthenticationFactory.newPasswordForClient(this.getConfig().getConnection().getPassword());
 
+    this.routerAddress = HostAndPort.fromString(this.getConfig().getConnection().getAddress())
+        .withDefaultPort(NetConstants.DEFAULT_PORT);
+
     this.home = new HomeNode(getConfig().getNode().getId());
     this.home.setType(this.type);
     network = new Network(this);
@@ -111,6 +116,8 @@ public class NetClient {
       this.connectionService.startAsync();
     }
     this.connectionService.awaitRunning(1, TimeUnit.SECONDS);
+
+    this.network.resetInstance();
 
     enabled = true;
   }

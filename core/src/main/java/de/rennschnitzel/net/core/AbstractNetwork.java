@@ -38,7 +38,6 @@ import de.rennschnitzel.net.util.concurrent.CloseableReadWriteLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
 import io.netty.util.concurrent.Future;
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -141,7 +140,7 @@ public abstract class AbstractNetwork {
 
   protected abstract void publishHomeNodeUpdate();
 
-  protected abstract Future<?> registerTunnel(Tunnel tunnel);
+  protected abstract Future<Integer> registerTunnel(Tunnel tunnel);
 
   protected abstract Future<?> sendTunnelMessage(TunnelMessage cmsg);
 
@@ -180,7 +179,7 @@ public abstract class AbstractNetwork {
           tunnel = new Tunnel(this, key);
           this.tunnelsByName.put(tunnel.getName(), tunnel);
           if (register) {
-            registerTunnel(tunnel);
+            this.registerTunnel(tunnel);
           }
         }
       }
@@ -201,7 +200,7 @@ public abstract class AbstractNetwork {
         // Check again, but in synchronized state!
         subTunnel = getTunnelIfPresent(descriptor);
         if (subTunnel == null) {
-          Tunnel tunnel = getTunnel(descriptor.getName());
+          Tunnel tunnel = getTunnel(descriptor.getName(), false);
           subTunnel = descriptor.create(tunnel);
           this.subTunnels.put(descriptor, subTunnel);
           registerTunnel(tunnel);

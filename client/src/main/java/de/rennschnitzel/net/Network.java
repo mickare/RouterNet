@@ -26,4 +26,8 @@ public class Network extends AbstractClientNetwork {
     return client.getExecutor();
   }
 
+  public void resetInstance() {
+    super.setInstance(this);
+  }
+
 }

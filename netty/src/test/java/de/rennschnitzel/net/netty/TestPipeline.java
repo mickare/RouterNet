@@ -86,8 +86,8 @@ public class TestPipeline {
     Supplier<PacketHandler<NettyConnection<DummClientNetwork>>> router_packetHandler =
         () -> new BasePacketHandler<NettyConnection<DummClientNetwork>>();
 
-    BaseChannelInitializer serverInit =
-        new BaseChannelInitializer(() -> new MainHandler<DummClientNetwork>(net_router,
+    MainChannelInitializer serverInit =
+        new MainChannelInitializer(() -> new MainHandler<DummClientNetwork>(net_router,
             router_loginHandler.get(), router_packetHandler.get()));
 
 
@@ -103,15 +103,17 @@ public class TestPipeline {
     PacketHandler<NettyConnection<DummClientNetwork>> client_packetHandler =
         new BasePacketHandler<NettyConnection<DummClientNetwork>>();
 
-    BaseChannelInitializer clientInit =
-        new BaseChannelInitializer(() -> new MainHandler<DummClientNetwork>(net_client, //
+    MainChannelInitializer clientInit =
+        new MainChannelInitializer(() -> new MainHandler<DummClientNetwork>(net_client, //
             client_loginHandler, client_packetHandler));
 
 
     // CLIENT - START
     client = new NettyClient("testClient", serverAddress, clientInit);
     client.connect().get(1, TimeUnit.SECONDS);
-    client_loginHandler.getConnectionPromise().await(3, TimeUnit.SECONDS);
+    if (!client_loginHandler.getConnectionPromise().await(3, TimeUnit.SECONDS)) {
+      throw new TimeoutException();
+    }
 
     log("setup complete (took " + (System.currentTimeMillis() - start) + "ms)");
   }
@@ -203,8 +205,9 @@ public class TestPipeline {
     // copied from tunnelTest
 
     Tunnel base0 = net_client.getTunnel("base0");
-    assertNotNull(con_client.getTunnelIdIfPresent(base0));
-    Thread.sleep(5);
+    base0.register().await(100);
+    // assertTrue(con_client.registerTunnel(base0).await(1, TimeUnit.SECONDS));
+    assertNotNull(con_client.getTunnelId(base0));
     assertNotNull(con_router.getTunnelIdIfPresent(base0));
     assertTrue(con_router.getTunnelIdIfPresent(base0) == con_client.getTunnelIdIfPresent(base0));
     Tunnel base1 = net_router.getTunnel("base1");

@@ -57,7 +57,7 @@ public class DummyLoginRouterHandler extends LoginRouterHandler<DummyConnection>
 
 
   @Override
-  public boolean isChannelActive() {
+  public boolean isContextActive() {
     if (this.getContext() != null) {
       return this.getContext().isActive();
     }

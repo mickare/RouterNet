@@ -10,7 +10,7 @@ public interface ConnectionSupplier {
 
   boolean isSuccess();
 
-  boolean isChannelActive();
+  boolean isContextActive();
 
   Future<?> tryDisconnect(String reason);
 

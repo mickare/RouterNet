@@ -49,7 +49,7 @@ public class NettyLoginRouterHandler extends LoginRouterHandler<ChannelHandlerCo
   }
 
   @Override
-  public boolean isChannelActive() {
+  public boolean isContextActive() {
     if (this.getContext() != null) {
       return this.getContext().channel().isActive();
     }

@@ -13,6 +13,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.dummy.DummClientNetwork;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
@@ -54,17 +55,20 @@ public class TestClientTestFramework {
 
     final AtomicInteger received = new AtomicInteger(0);
 
-    DummClientNetwork net_test = client.getTestFramework().getRouterNetwork();
-    net_test.getConnectionFuture().get(1, TimeUnit.SECONDS);
-    client.getNetwork().getConnectionFuture().get(1, TimeUnit.SECONDS);
+    DummClientNetwork net_router = client.getTestFramework().getRouterNetwork();
+    Network net_client = client.getNetwork();
 
-    Tunnel tunnel = net_test.getTunnel("testTunnel");
+    Connection con_router = net_router.getConnectionFuture().get(1, TimeUnit.SECONDS);
+    Connection con_client = net_client.getConnectionFuture().get(1, TimeUnit.SECONDS);
+
+    Tunnel tunnel = net_router.getTunnel("testTunnel");
+    tunnel.register().await(100);
 
     tunnel.registerMessageListener(owner, msg -> {
       received.addAndGet(msg.getData().byteAt(0));
     });
 
-    assertNotNull(Net.getTunnelIfPresent("testTunnel"));
+    assertNotNull(con_client.getTunnelIdIfPresent("testTunnel"));
 
     Net.getTunnel("testTunnel").broadcast(new byte[] {1});
     assertEquals(1, received.get());

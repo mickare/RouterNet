@@ -128,6 +128,10 @@ public class Tunnel {
     listeners.add(new RegisteredMessageListener(owner, dataConsumer));
   }
 
+  public Future<Integer> register() {
+    return this.network.registerTunnel(this);
+  }
+
   @Getter
   @RequiredArgsConstructor
   private class RegisteredMessageListener implements Consumer<TunnelMessage> {

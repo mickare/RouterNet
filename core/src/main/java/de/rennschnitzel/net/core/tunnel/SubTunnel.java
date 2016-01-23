@@ -2,6 +2,7 @@ package de.rennschnitzel.net.core.tunnel;
 
 import de.rennschnitzel.net.core.AbstractNetwork;
 import de.rennschnitzel.net.core.Tunnel;
+import io.netty.util.concurrent.Future;
 
 public interface SubTunnel {
 
@@ -17,4 +18,6 @@ public interface SubTunnel {
 
   AbstractNetwork getNetwork();
 
+  Future<Integer> register();
+  
 }

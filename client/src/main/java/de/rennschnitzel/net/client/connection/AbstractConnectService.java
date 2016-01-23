@@ -12,34 +12,44 @@ import de.rennschnitzel.net.core.login.LoginClientHandler;
 import de.rennschnitzel.net.core.login.LoginHandler;
 import de.rennschnitzel.net.core.packet.BasePacketHandler;
 import de.rennschnitzel.net.core.packet.PacketHandler;
-import de.rennschnitzel.net.exception.ConnectionException;
-import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.net.util.FutureUtils;
 import de.rennschnitzel.net.util.concurrent.CloseableLock;
 import de.rennschnitzel.net.util.concurrent.CloseableReadWriteLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.concurrent.Future;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import lombok.Getter;
 
-@RequiredArgsConstructor
 public abstract class AbstractConnectService<L extends LoginClientHandler<?>, C extends Connection>
     extends AbstractScheduledService implements ConnectService<L> {
 
-  @NonNull
+  @Getter
   private final NetClient client;
 
-  private final long delay_time = 10;
-  private final TimeUnit delay_unit = TimeUnit.SECONDS;
-
+  @Getter
+  private final long delay_time;
+  @Getter
+  private final TimeUnit delay_unit;
 
   private final CloseableReadWriteLock lock = new ReentrantCloseableReadWriteLock();
   private Future<?> connectFuture = null;
   private volatile L loginHandler = null;
 
+  public AbstractConnectService(NetClient client) {
+    this(client, 10, TimeUnit.SECONDS);
+  }
+
+  public AbstractConnectService(NetClient client, long delay_time, TimeUnit delay_unit) {
+    Preconditions.checkNotNull(client);
+    Preconditions.checkArgument(delay_time > 0);
+    Preconditions.checkArgument(delay_unit.toSeconds(delay_time) > 0);
+    this.client = client;
+    this.delay_time = delay_time;
+    this.delay_unit = delay_unit;
+  }
+
+
   protected void startUp() throws Exception {
-    connect().await(100);
+    connectSoft().await(100);
   }
 
   protected void shutDown() throws Exception {
@@ -49,14 +59,7 @@ public abstract class AbstractConnectService<L extends LoginClientHandler<?>, C 
   private void disconnect() {
     try (CloseableLock l = lock.writeLock().open()) {
       if (loginHandler != null) {
-        loginHandler.fail(new ConnectionException(ErrorMessage.Type.UNAVAILABLE, "shutdown"));
-        if (loginHandler.isSuccess()) {
-          FutureUtils.on(loginHandler.getConnectionPromise(), fcon -> {
-            if (fcon.isSuccess()) {
-              fcon.get().disconnect("shutdown");
-            }
-          });
-        }
+        loginHandler.tryDisconnect("no reason");
       }
       this.loginHandler = null;
     }
@@ -64,18 +67,18 @@ public abstract class AbstractConnectService<L extends LoginClientHandler<?>, C 
 
   @Override
   protected void runOneIteration() throws Exception {
-    connectSoft();
+    connectSoft().await(100);
   }
 
-  private void connectSoft() {
+  private Future<?> connectSoft() {
     try (CloseableLock l = lock.writeLock().open()) {
       if (loginHandler != null) {
         if (loginHandler.isContextActive()) {
-          return;
+          return FutureUtils.SUCCESS;
         }
-        loginHandler = null;
+        disconnect();
       }
-      connect();
+      return connect();
     }
   }
 
@@ -85,16 +88,12 @@ public abstract class AbstractConnectService<L extends LoginClientHandler<?>, C 
       this.loginHandler = createLoginHandler();
       Preconditions.checkState(this.loginHandler.getState() == LoginHandler.State.NEW);
 
-      connectFuture = doConnect(this.loginHandler, this.createPacketHandler());
+      connectFuture = doConnect(this.loginHandler);
       return connectFuture;
-      /*
-       * BaseChannelInitializer init = new BaseChannelInitializer(() -> new
-       * MainHandler<Network>(client.getNetwork(), this.loginHandler, createPacketHandler()));
-       */
     }
   }
 
-  protected abstract Future<?> doConnect(L loginHandler, PacketHandler<C> packetHandler);
+  protected abstract Future<?> doConnect(L loginHandler);
 
   protected abstract L createLoginHandler();
 

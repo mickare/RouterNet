@@ -7,6 +7,7 @@ import com.google.common.base.Preconditions;
 import de.rennschnitzel.net.core.AbstractNetwork;
 import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister.Type;
+import io.netty.util.concurrent.Future;
 import lombok.Getter;
 
 public abstract class AbstractSubTunnel<SELF extends AbstractSubTunnel<SELF, D>, D extends AbstractSubTunnelDescriptor<D, SELF>>
@@ -50,6 +51,10 @@ public abstract class AbstractSubTunnel<SELF extends AbstractSubTunnel<SELF, D>,
   @Override
   public AbstractNetwork getNetwork() {
     return parentTunnel.getNetwork();
+  }
+
+  public Future<Integer> register() {
+    return parentTunnel.register();
   }
 
 }

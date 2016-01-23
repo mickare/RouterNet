@@ -1,17 +1,11 @@
 package de.rennschnitzel.net.netty;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -23,25 +17,17 @@ import org.junit.Test;
 
 import com.google.common.net.HostAndPort;
 
-import de.rennschnitzel.net.Owner;
-import de.rennschnitzel.net.core.Connection;
-import de.rennschnitzel.net.core.Node;
-import de.rennschnitzel.net.core.Target;
-import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.login.AuthenticationClient;
 import de.rennschnitzel.net.core.login.AuthenticationFactory;
 import de.rennschnitzel.net.core.login.AuthenticationRouter;
 import de.rennschnitzel.net.core.login.LoginHandler;
 import de.rennschnitzel.net.core.packet.BasePacketHandler;
 import de.rennschnitzel.net.core.packet.PacketHandler;
-import de.rennschnitzel.net.core.procedure.BoundProcedure;
-import de.rennschnitzel.net.core.procedure.Procedure;
 import de.rennschnitzel.net.dummy.DummClientNetwork;
 import de.rennschnitzel.net.dummy.DummyLogger;
 import de.rennschnitzel.net.netty.login.NettyLoginClientHandler;
 import de.rennschnitzel.net.netty.login.NettyLoginRouterHandler;
 import de.rennschnitzel.net.protocol.TransportProtocol.HeartbeatMessage;
-import de.rennschnitzel.net.util.SimpleOwner;
 import de.rennschnitzel.net.util.concurrent.DirectScheduledExecutorService;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.concurrent.ImmediateEventExecutor;
@@ -99,8 +85,8 @@ public class TestHeartbeat {
           }
         };
 
-    BaseChannelInitializer serverInit =
-        new BaseChannelInitializer(() -> new MainHandler<DummClientNetwork>(net_router,
+    MainChannelInitializer serverInit =
+        new MainChannelInitializer(() -> new MainHandler<DummClientNetwork>(net_router,
             router_loginHandler.get(), router_packetHandler.get()));
 
 
@@ -116,15 +102,17 @@ public class TestHeartbeat {
     PacketHandler<NettyConnection<DummClientNetwork>> client_packetHandler =
         new BasePacketHandler<NettyConnection<DummClientNetwork>>();
 
-    BaseChannelInitializer clientInit =
-        new BaseChannelInitializer(() -> new MainHandler<DummClientNetwork>(net_client, //
+    MainChannelInitializer clientInit =
+        new MainChannelInitializer(() -> new MainHandler<DummClientNetwork>(net_client, //
             client_loginHandler, client_packetHandler));
 
 
     // CLIENT - START
     client = new NettyClient("testClient", serverAddress, clientInit);
     client.connect().await(1, TimeUnit.SECONDS);
-    client_loginHandler.getConnectionPromise().await(3, TimeUnit.SECONDS);
+    if (!client_loginHandler.getConnectionPromise().await(3, TimeUnit.SECONDS)) {
+      throw new TimeoutException();
+    }
 
     log("setup complete (took " + (System.currentTimeMillis() - start) + "ms)");
   }
