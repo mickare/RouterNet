@@ -6,11 +6,7 @@ stages:
 jobd:
   stage: build
   script:
-    - cd bukkit/
     - echo "Cleaning"
     - mvn clean
     - echo "Building"
     - mvn install
-  artifacts:
-    paths:
-      - bukkit/target/
