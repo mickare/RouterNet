@@ -14,6 +14,7 @@ message ErrorMessage {
 		UNAVAILABLE = 3;
 		HANDSHAKE = 4;
 		ID_ALREADY_USED = 5;
+		TIMEOUT = 6;
 	}
 	Type type = 1;
 	string message = 2;
@@ -35,10 +36,14 @@ message TargetMessage {
 	repeated string namespacesExclude = 5;
 }
 
+message HeartbeatMessage {
+}
+
 message Packet {
 	oneof value {
 		// Transport
 		CloseMessage close = 1;
+		HeartbeatMessage heartbeat = 2;
 		
 		// Login
 		LoginHandshakeMessage loginHandshake = 10;

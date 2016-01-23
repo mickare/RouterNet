@@ -11,6 +11,7 @@ import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.util.concurrent.Future;
 import lombok.Getter;
 
 public class NettyConnection<N extends AbstractNetwork> extends Connection {
@@ -57,8 +58,9 @@ public class NettyConnection<N extends AbstractNetwork> extends Connection {
   }
 
   @Override
-  public void disconnect(CloseMessage msg) {
-    send(Packet.newBuilder().setClose(msg).build()).addListener(ChannelFutureListener.CLOSE);
+  public Future<?> disconnect(CloseMessage msg) {
+    return send(Packet.newBuilder().setClose(msg).build()).addListener(ChannelFutureListener.CLOSE)
+        .channel().closeFuture();
   }
 
 }

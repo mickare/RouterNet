@@ -275,12 +275,12 @@ public class Node {
       } , 100, TimeUnit.MICROSECONDS);
     }
 
-    public void sendUpdate(Set<? extends PacketOut> out) {
+    public void sendUpdate(Set<? extends PacketOutWriter> out) {
       Packet packet = Packet.newBuilder().setNodeUpdate(NodeUpdateMessage.newBuilder().setNode(this.toProtocol())).build();
       out.forEach(con -> con.send(packet));
     }
 
-    public Future<?> sendUpdate(PacketOut out) {
+    public Future<?> sendUpdate(PacketOutWriter out) {
       return out.send(Packet.newBuilder().setNodeUpdate(NodeUpdateMessage.newBuilder().setNode(this.toProtocol())).build());
     }
 

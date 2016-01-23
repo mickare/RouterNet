@@ -83,12 +83,12 @@ public class DummyConnection extends Connection {
     return this.isOpen() && this.connected != null;
   }
 
-  public void disconnect(CloseMessage msg) {
+  public Future<?> disconnect(CloseMessage msg) {
     Preconditions.checkNotNull(msg);
     try {
       synchronized (lockObj) {
         if (!this.valid) {
-          return;
+          return FutureUtils.SUCCESS;
         }
         this.valid = false;
         if (this.connected != null) {
@@ -102,8 +102,9 @@ public class DummyConnection extends Connection {
         this.connected = null;
         this.getNetwork().removeConnection(this);
       }
+      return FutureUtils.SUCCESS;
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      return FutureUtils.futureFailure(e);
     }
   }
 

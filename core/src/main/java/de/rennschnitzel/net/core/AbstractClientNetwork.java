@@ -18,7 +18,7 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.netty.util.concurrent.Promise;
 
-public abstract class AbstractClientNetwork extends AbstractNetwork implements PacketOut {
+public abstract class AbstractClientNetwork extends AbstractNetwork implements PacketOutWriter {
 
   public AbstractClientNetwork(HomeNode home) {
     super(home);

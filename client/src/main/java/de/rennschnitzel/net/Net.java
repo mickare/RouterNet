@@ -1,6 +1,5 @@
 package de.rennschnitzel.net;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
@@ -8,14 +7,14 @@ import java.util.logging.Logger;
 
 import com.google.common.eventbus.EventBus;
 
-import de.rennschnitzel.net.core.Tunnel;
-import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.Namespace;
 import de.rennschnitzel.net.core.Node;
+import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.ProcedureManager;
 import de.rennschnitzel.net.core.Target;
-import de.rennschnitzel.net.core.Node.HomeNode;
-import de.rennschnitzel.net.exception.NotConnectedException;
+import de.rennschnitzel.net.core.Tunnel;
+import de.rennschnitzel.net.core.tunnel.SubTunnel;
+import de.rennschnitzel.net.core.tunnel.SubTunnelDescriptor;
 import lombok.Getter;
 
 public class Net {
@@ -24,9 +23,9 @@ public class Net {
   private static Network network = null;
 
   protected static synchronized void setNetwork(Network network) {
-    //if (Net.network != null) {
-   //   throw new UnsupportedOperationException("Cannot redefine singleton Network");
-   // }
+    // if (Net.network != null) {
+    // throw new UnsupportedOperationException("Cannot redefine singleton Network");
+    // }
     Net.network = network;
   }
 
@@ -49,16 +48,30 @@ public class Net {
   // ***************************************************************************
   // Connection
 
-  public static Connection getConnection() throws NotConnectedException {
-    return network.getConnection();
+
+  public static Set<Tunnel> getTunnels() {
+    return network.getTunnels();
   }
 
-  public static Tunnel getChannel(String name) throws IOException {
-    return getConnection().getTunnel(name);
+  public static Set<SubTunnel> getSubTunnels() {
+    return network.getSubTunnels();
   }
 
-  public static Tunnel getChannelIfPresent(String name) throws NotConnectedException {
-    return getConnection().getTunnelIfPresent(name);
+  public static Tunnel getTunnelIfPresent(String name) {
+    return network.getTunnelIfPresent(name);
+  }
+
+  public static Tunnel getTunnel(String name) {
+    return network.getTunnel(name);
+  }
+
+  public static <S extends SubTunnel> S getTunnelIfPresent(SubTunnelDescriptor<S> descriptor) {
+    return network.getTunnelIfPresent(descriptor);
+  }
+
+
+  public static <S extends SubTunnel> S getTunnel(SubTunnelDescriptor<S> descriptor) {
+    return network.getTunnel(descriptor);
   }
 
 

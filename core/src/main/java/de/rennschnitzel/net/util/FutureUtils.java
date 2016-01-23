@@ -1,6 +1,6 @@
 package de.rennschnitzel.net.util;
 
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.FutureCallback;
@@ -72,25 +72,20 @@ public class FutureUtils {
     return promise;
   }
 
-
-  public static <V> void onSuccess(final ListenableFuture<V> future, final Consumer<V> callback) {
-    Futures.addCallback(future, new FutureCallback<V>() {
-      public void onFailure(Throwable cause) {}
-
-      public void onSuccess(V value) {
-        callback.accept(value);
+  public static <T, R> Future<R> lazyTransform(Future<T> future, Function<T, R> convert) {
+    final Promise<R> promise = ImmediateEventExecutor.INSTANCE.newPromise();
+    on(future, t -> {
+      if (t.isSuccess()) {
+        try {
+          promise.setSuccess(convert.apply(t.get()));
+        } catch (Exception e) {
+          promise.setFailure(e);
+        }
+      } else {
+        promise.setFailure(t.cause());
       }
     });
-  }
-
-  public static void onFailure(final ListenableFuture<?> future, final Consumer<Throwable> callback) {
-    Futures.addCallback(future, new FutureCallback<Object>() {
-      public void onFailure(Throwable cause) {
-        callback.accept(cause);
-      }
-
-      public void onSuccess(Object value) {}
-    });
+    return promise;
   }
 
 }

@@ -6,6 +6,7 @@ import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.core.AbstractNetwork;
 import de.rennschnitzel.net.core.Connection;
+import de.rennschnitzel.net.core.ConnectionSupplier;
 import de.rennschnitzel.net.core.packet.PacketHandler;
 import de.rennschnitzel.net.exception.ConnectionException;
 import de.rennschnitzel.net.exception.HandshakeException;
@@ -28,7 +29,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
-public abstract class LoginHandler<C> implements PacketHandler<C> {
+public abstract class LoginHandler<C> implements PacketHandler<C>, ConnectionSupplier {
 
 
   @Getter
@@ -70,7 +71,6 @@ public abstract class LoginHandler<C> implements PacketHandler<C> {
       }
     });
   }
-
 
   @Override
   public void channelInactive(C ctx) throws Exception {

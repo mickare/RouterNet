@@ -193,7 +193,7 @@ public class ProcedureManager {
 
   }
 
-  public void handle(PacketOut out, ProcedureMessage msg) throws ProtocolException {
+  public void handle(PacketOutWriter out, ProcedureMessage msg) throws ProtocolException {
     switch (msg.getContentCase()) {
       case CALL:
         handle(out, msg, msg.getCall());
@@ -207,7 +207,7 @@ public class ProcedureManager {
   }
 
 
-  private void handle(PacketOut out, ProcedureMessage msg, ProcedureResponseMessage response) {
+  private void handle(PacketOutWriter out, ProcedureMessage msg, ProcedureResponseMessage response) {
     ProcedureCall<?, ?> call = this.openCalls.getIfPresent(response.getId());
     if (call != null) {
       call.receive(msg, response);
@@ -222,7 +222,7 @@ public class ProcedureManager {
     return b;
   }
 
-  private void sendFail(PacketOut out, ProcedureMessage msg, ProcedureCallMessage call, ErrorMessage.Builder error) throws IOException {
+  private void sendFail(PacketOutWriter out, ProcedureMessage msg, ProcedureCallMessage call, ErrorMessage.Builder error) throws IOException {
     ProcedureResponseMessage.Builder b = newResponse(call);
     b.setSuccess(false);
     b.setCancelled(false);
@@ -230,7 +230,7 @@ public class ProcedureManager {
     network.sendProcedureResponse(msg.getSender(), b.build());
   }
 
-  private void handle(PacketOut out, ProcedureMessage msg, ProcedureCallMessage call) {
+  private void handle(PacketOutWriter out, ProcedureMessage msg, ProcedureCallMessage call) {
     try {
       Procedure key = new Procedure(call.getProcedure());
       CallableRegisteredProcedure<?, ?> proc = this.registeredProcedures.get(key);

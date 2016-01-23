@@ -8,12 +8,15 @@ import de.rennschnitzel.net.core.AbstractNetwork;
 import de.rennschnitzel.net.core.login.AuthenticationClient;
 import de.rennschnitzel.net.core.login.LoginClientHandler;
 import de.rennschnitzel.net.core.packet.PacketHandler;
+import de.rennschnitzel.net.exception.ConnectionException;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginHandshakeMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginResponseMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginSuccessMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginUpgradeMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
+import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
+import de.rennschnitzel.net.util.FutureUtils;
 import io.netty.util.concurrent.Future;
 
 public class DummyLoginClientHandler extends LoginClientHandler<DummyConnection> {
@@ -64,6 +67,26 @@ public class DummyLoginClientHandler extends LoginClientHandler<DummyConnection>
   @Override
   protected Future<?> send(DummyConnection ctx, CloseMessage msg) {
     return ctx.send(Packet.newBuilder().setClose(msg));
+  }
+
+
+  @Override
+  public boolean isChannelActive() {
+    if (this.getContext() != null) {
+      return this.getContext().isActive();
+    }
+    return false;
+  }
+
+  @Override
+  public Future<?> tryDisconnect(String reason) {
+    if (!this.isDone()) {
+      this.fail(new ConnectionException(ErrorMessage.Type.UNAVAILABLE, "shutdown"));
+    }
+    if (this.getContext() != null) {
+      return this.getContext().disconnect(reason);
+    }
+    return FutureUtils.SUCCESS;
   }
 
 }

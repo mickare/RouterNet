@@ -35,8 +35,8 @@ import de.rennschnitzel.net.core.packet.BasePacketHandler;
 import de.rennschnitzel.net.core.packet.PacketHandler;
 import de.rennschnitzel.net.core.procedure.BoundProcedure;
 import de.rennschnitzel.net.core.procedure.Procedure;
+import de.rennschnitzel.net.dummy.DummClientNetwork;
 import de.rennschnitzel.net.dummy.DummyLogger;
-import de.rennschnitzel.net.dummy.DummyNetwork;
 import de.rennschnitzel.net.netty.login.NettyLoginClientHandler;
 import de.rennschnitzel.net.netty.login.NettyLoginRouterHandler;
 import de.rennschnitzel.net.util.SimpleOwner;
@@ -51,8 +51,8 @@ public class TestPipeline {
   private AuthenticationClient authClient = AuthenticationFactory.newPasswordForClient("test");
 
   private Owner testingOwner;
-  private DummyNetwork net_router;
-  private DummyNetwork net_client;
+  private DummClientNetwork net_router;
+  private DummClientNetwork net_client;
 
   private NettyServer server;
   private HostAndPort serverAddress = HostAndPort.fromParts("localhost", 10000);
@@ -74,22 +74,20 @@ public class TestPipeline {
 
 
     // NETWORKS
-    net_router = new DummyNetwork();
+    net_router = new DummClientNetwork();
     net_router.setName("Router");
-    do {
-      net_client = new DummyNetwork();
-    } while (net_client.getHome().getId().equals(net_router.getHome().getId()));
+    net_client = new DummClientNetwork(net_router.newNotUsedUUID());
     net_client.setName("Client");
 
 
     // ROUTER - HANDLERS
     Supplier<LoginHandler<ChannelHandlerContext>> router_loginHandler =
         () -> new NettyLoginRouterHandler(net_router, authRouter);
-    Supplier<PacketHandler<NettyConnection<DummyNetwork>>> router_packetHandler =
-        () -> new BasePacketHandler<NettyConnection<DummyNetwork>>();
+    Supplier<PacketHandler<NettyConnection<DummClientNetwork>>> router_packetHandler =
+        () -> new BasePacketHandler<NettyConnection<DummClientNetwork>>();
 
     BaseChannelInitializer serverInit =
-        new BaseChannelInitializer(() -> new MainHandler<DummyNetwork>(net_router,
+        new BaseChannelInitializer(() -> new MainHandler<DummClientNetwork>(net_router,
             router_loginHandler.get(), router_packetHandler.get()));
 
 
@@ -102,18 +100,18 @@ public class TestPipeline {
     // CLIENT - HANDLERS
     LoginHandler<ChannelHandlerContext> client_loginHandler =
         new NettyLoginClientHandler(net_client, authClient);
-    PacketHandler<NettyConnection<DummyNetwork>> client_packetHandler =
-        new BasePacketHandler<NettyConnection<DummyNetwork>>();
+    PacketHandler<NettyConnection<DummClientNetwork>> client_packetHandler =
+        new BasePacketHandler<NettyConnection<DummClientNetwork>>();
 
     BaseChannelInitializer clientInit =
-        new BaseChannelInitializer(() -> new MainHandler<DummyNetwork>(net_client, //
+        new BaseChannelInitializer(() -> new MainHandler<DummClientNetwork>(net_client, //
             client_loginHandler, client_packetHandler));
 
 
     // CLIENT - START
     client = new NettyClient("testClient", serverAddress, clientInit);
     client.connect().get(1, TimeUnit.SECONDS);
-    client_loginHandler.getConnectionFuture().get(3, TimeUnit.SECONDS);
+    client_loginHandler.getConnectionPromise().await(3, TimeUnit.SECONDS);
 
     log("setup complete (took " + (System.currentTimeMillis() - start) + "ms)");
   }
@@ -162,7 +160,7 @@ public class TestPipeline {
     assertTrue(net_client.getHome().getProcedures().contains(counterProcedure));
 
 
-    net_client.getHome().sendUpdate(net_client.getConnection()).addListener(f -> {
+    net_client.getHome().sendUpdate(net_client).addListener(f -> {
       if (f.isSuccess()) {
         log("publish success");
       } else {
@@ -191,18 +189,19 @@ public class TestPipeline {
   }
 
   private final Random rand = new Random();
-  
-  @Test
-  public void testTunnel() throws IOException, InterruptedException {
 
-    Connection con_router = net_router.getConnection();
-    Connection con_client = net_client.getConnection();
+  @Test
+  public void testTunnel()
+      throws IOException, InterruptedException, ExecutionException, TimeoutException {
+
+    Connection con_router = net_router.getConnectionFuture().get(1, TimeUnit.SECONDS);
+    Connection con_client = net_client.getConnectionFuture().get(1, TimeUnit.SECONDS);
 
     Target target_client = Target.to(net_client.getHome().getId());
     Target target_router = Target.to(net_router.getHome().getId());
-    
+
     // copied from tunnelTest
-    
+
     Tunnel base0 = net_client.getTunnel("base0");
     assertNotNull(con_client.getTunnelIdIfPresent(base0));
     Thread.sleep(5);
@@ -222,8 +221,10 @@ public class TestPipeline {
     // Initialize the tunnels on the other side
     net_client.getTunnel("base1");
     net_router.getTunnel("base0");
-    assertEquals(net_client.getTunnelIfPresent("base0").getName(), net_router.getTunnelIfPresent("base0").getName());
-    assertEquals(net_router.getTunnelIfPresent("base1").getName(), net_client.getTunnelIfPresent("base1").getName());
+    assertEquals(net_client.getTunnelIfPresent("base0").getName(),
+        net_router.getTunnelIfPresent("base0").getName());
+    assertEquals(net_router.getTunnelIfPresent("base1").getName(),
+        net_client.getTunnelIfPresent("base1").getName());
 
     byte[] data0 = new byte[128];
     byte[] data1 = new byte[128];
@@ -276,7 +277,7 @@ public class TestPipeline {
     });
     Thread.sleep(5);
     net_client.getTunnelIfPresent("base1").send(target_router, data1);
-    
+
   }
 
 }

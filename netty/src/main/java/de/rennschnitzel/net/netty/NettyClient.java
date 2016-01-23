@@ -1,16 +1,15 @@
 package de.rennschnitzel.net.netty;
 
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.google.common.base.Preconditions;
 import com.google.common.net.HostAndPort;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import de.rennschnitzel.net.core.AbstractNetwork;
+import de.rennschnitzel.net.util.FutureUtils;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -19,6 +18,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.util.concurrent.Future;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -60,6 +60,9 @@ public class NettyClient {
     return state == State.FAILED;
   }
 
+  public ChannelFuture getCloseFuture() {
+    return this.client.closeFuture();
+  }
 
   public synchronized Future<NettyClient> connect() {
     Preconditions.checkState(this.state == State.NEW);
@@ -93,11 +96,11 @@ public class NettyClient {
         }
       });
 
-      return Futures.lazyTransform(clientFuture, v -> this);
+      return FutureUtils.lazyTransform(clientFuture, v -> this);
 
     } catch (Exception e) {
       fail(e);
-      return Futures.immediateFailedFuture(e);
+      return FutureUtils.futureFailure(e);
     }
 
   }

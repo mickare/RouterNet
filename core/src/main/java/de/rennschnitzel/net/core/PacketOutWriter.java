@@ -3,7 +3,7 @@ package de.rennschnitzel.net.core;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import io.netty.util.concurrent.Future;
 
-public interface PacketOut {
+public interface PacketOutWriter {
 
   public abstract Future<?> send(TransportProtocol.Packet packet);
 

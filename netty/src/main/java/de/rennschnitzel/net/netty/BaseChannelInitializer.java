@@ -36,7 +36,8 @@ public class BaseChannelInitializer extends ChannelInitializer<SocketChannel> {
     pipeline.addLast("protoDecoder",
         new ProtobufDecoder(TransportProtocol.Packet.getDefaultInstance()));
     pipeline.addLast("protoEncoder", new ProtobufEncoder());
-    pipeline.addLast("main", mainHandler.get());
+    MainHandler<?> main = mainHandler.get();
+    pipeline.addLast(main.getHandlerName(), main);
 
   }
 
