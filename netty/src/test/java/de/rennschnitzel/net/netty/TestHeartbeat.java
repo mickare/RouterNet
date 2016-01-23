@@ -30,6 +30,7 @@ import de.rennschnitzel.net.netty.login.NettyLoginRouterHandler;
 import de.rennschnitzel.net.protocol.TransportProtocol.HeartbeatMessage;
 import de.rennschnitzel.net.util.concurrent.DirectScheduledExecutorService;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.ssl.SslContext;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.netty.util.concurrent.Promise;
 
@@ -71,6 +72,8 @@ public class TestHeartbeat {
     net_client = new DummClientNetwork(net_router.newNotUsedUUID());
     net_client.setName("Client");
 
+    final SslContext sslServer = PipelineUtils.sslContextForServer();
+    final SslContext sslClient = PipelineUtils.sslContextForClient();
 
     // ROUTER - HANDLERS
     Supplier<LoginHandler<ChannelHandlerContext>> router_loginHandler =
@@ -85,9 +88,10 @@ public class TestHeartbeat {
           }
         };
 
+
     MainChannelInitializer serverInit =
         new MainChannelInitializer(() -> new MainHandler<DummClientNetwork>(net_router,
-            router_loginHandler.get(), router_packetHandler.get()));
+            router_loginHandler.get(), router_packetHandler.get()), sslServer);
 
 
     // ROUTER - START
@@ -104,7 +108,7 @@ public class TestHeartbeat {
 
     MainChannelInitializer clientInit =
         new MainChannelInitializer(() -> new MainHandler<DummClientNetwork>(net_client, //
-            client_loginHandler, client_packetHandler));
+            client_loginHandler, client_packetHandler), sslClient);
 
 
     // CLIENT - START

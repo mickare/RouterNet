@@ -2,6 +2,7 @@ package de.rennschnitzel.net.client.connection;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.AbstractScheduledService;
@@ -47,9 +48,13 @@ public abstract class AbstractConnectService<L extends LoginClientHandler<?>, C 
     this.delay_unit = delay_unit;
   }
 
+  public Logger getLogger() {
+    return client.getLogger();
+  }
 
   protected void startUp() throws Exception {
     connectSoft().await(100);
+    getLogger().info("Connect service started");
   }
 
   protected void shutDown() throws Exception {
@@ -87,6 +92,14 @@ public abstract class AbstractConnectService<L extends LoginClientHandler<?>, C 
       Preconditions.checkState(this.loginHandler == null);
       this.loginHandler = createLoginHandler();
       Preconditions.checkState(this.loginHandler.getState() == LoginHandler.State.NEW);
+
+      FutureUtils.on(this.loginHandler.getConnectionPromise(), f -> {
+        if (f.isSuccess()) {
+          getLogger().info("Connected with " + f.get().getId());
+        }
+      });
+
+
 
       connectFuture = doConnect(this.loginHandler);
       return connectFuture;

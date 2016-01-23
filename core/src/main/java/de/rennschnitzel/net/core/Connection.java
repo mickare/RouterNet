@@ -267,5 +267,10 @@ public abstract class Connection implements PacketOutWriter {
 
   }
 
+  @Override
+  public String toString() {
+    return "Connection[" + this.id + "]";
+  }
+
 
 }

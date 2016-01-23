@@ -52,6 +52,7 @@ public class NetClient {
   public synchronized void init(Logger logger, File directory, ScheduledExecutorService executor) {
     Preconditions.checkState(initialized == false, "NetClient already initialized");
     Preconditions.checkNotNull(logger);
+    directory.mkdirs();
     Preconditions.checkArgument(directory.isDirectory());
     Preconditions.checkNotNull(executor);
     this.logger = logger;
@@ -109,17 +110,18 @@ public class NetClient {
     if (this.getConfig().getConnection().isTestingMode()) {
       this.testFramework = new TestFramework(this);
       this.connectionService = new DummyConnectService(this, this.testFramework);
-      this.connectionService.startAsync();
     } else {
       this.testFramework = null;
       this.connectionService = new NettyConnectService(this);
-      this.connectionService.startAsync();
     }
+    this.connectionService.startAsync();
     this.connectionService.awaitRunning(1, TimeUnit.SECONDS);
 
     this.network.resetInstance();
 
     enabled = true;
+
+    getLogger().info("NetClient enabled!");
   }
 
   public synchronized void disable() throws Exception {
@@ -127,6 +129,8 @@ public class NetClient {
     this.connectionService.stopAsync();
     this.testFramework = null;
     enabled = false;
+
+    getLogger().info("NetClient disabled!");
   }
 
   public boolean isTestMode() {

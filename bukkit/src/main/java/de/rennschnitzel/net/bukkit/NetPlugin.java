@@ -15,7 +15,7 @@ public class NetPlugin extends JavaPlugin {
 
   @Override
   public void onLoad() {
-    client.init(getLogger(), getDataFolder(), Executors.newScheduledThreadPool(1,
+    client.init(getLogger(), this.getDataFolder(), Executors.newScheduledThreadPool(1,
         new ThreadFactoryBuilder().setNameFormat("net-pool-%d").build()));
   }
 

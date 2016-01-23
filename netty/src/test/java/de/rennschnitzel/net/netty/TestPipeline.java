@@ -42,6 +42,7 @@ import de.rennschnitzel.net.netty.login.NettyLoginRouterHandler;
 import de.rennschnitzel.net.util.SimpleOwner;
 import de.rennschnitzel.net.util.concurrent.DirectScheduledExecutorService;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.ssl.SslContext;
 
 public class TestPipeline {
 
@@ -80,6 +81,9 @@ public class TestPipeline {
     net_client.setName("Client");
 
 
+    final SslContext sslServer = PipelineUtils.sslContextForServer();
+    final SslContext sslClient = PipelineUtils.sslContextForClient();
+
     // ROUTER - HANDLERS
     Supplier<LoginHandler<ChannelHandlerContext>> router_loginHandler =
         () -> new NettyLoginRouterHandler(net_router, authRouter);
@@ -88,7 +92,7 @@ public class TestPipeline {
 
     MainChannelInitializer serverInit =
         new MainChannelInitializer(() -> new MainHandler<DummClientNetwork>(net_router,
-            router_loginHandler.get(), router_packetHandler.get()));
+            router_loginHandler.get(), router_packetHandler.get()), sslServer);
 
 
     // ROUTER - START
@@ -105,7 +109,7 @@ public class TestPipeline {
 
     MainChannelInitializer clientInit =
         new MainChannelInitializer(() -> new MainHandler<DummClientNetwork>(net_client, //
-            client_loginHandler, client_packetHandler));
+            client_loginHandler, client_packetHandler), sslClient);
 
 
     // CLIENT - START

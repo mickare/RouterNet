@@ -46,6 +46,8 @@ public class DummyConnectService
 
     con_client.connect(con_router);
 
+    getLogger().info("Connecting to TestFramework...");
+
     return FutureUtils.SUCCESS;
   }
 

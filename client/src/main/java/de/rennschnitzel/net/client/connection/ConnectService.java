@@ -1,6 +1,7 @@
 package de.rennschnitzel.net.client.connection;
 
 import java.util.UUID;
+import java.util.logging.Logger;
 
 import com.google.common.util.concurrent.Service;
 
@@ -16,5 +17,7 @@ public interface ConnectService<L> extends Service {
   String getConnectedName();
 
   UUID getConnectedId();
+
+  Logger getLogger();
 
 }

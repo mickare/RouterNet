@@ -1,12 +1,18 @@
 package de.rennschnitzel.net.client.connection;
 
+import javax.net.ssl.SSLException;
+
+import com.google.common.net.HostAndPort;
+
 import de.rennschnitzel.net.NetClient;
 import de.rennschnitzel.net.Network;
 import de.rennschnitzel.net.netty.MainChannelInitializer;
 import de.rennschnitzel.net.netty.MainHandler;
 import de.rennschnitzel.net.netty.NettyClient;
 import de.rennschnitzel.net.netty.NettyConnection;
+import de.rennschnitzel.net.netty.PipelineUtils;
 import de.rennschnitzel.net.netty.login.NettyLoginClientHandler;
+import io.netty.handler.ssl.SslContext;
 import io.netty.util.concurrent.Future;
 
 public class NettyConnectService
@@ -14,8 +20,11 @@ public class NettyConnectService
 
   private int attempt = 0;
 
-  public NettyConnectService(NetClient client) {
+  private final SslContext sslCtx;
+
+  public NettyConnectService(NetClient client) throws SSLException {
     super(client);
+    this.sslCtx = PipelineUtils.sslContextForClient();
   }
 
   @Override
@@ -24,12 +33,19 @@ public class NettyConnectService
 
     MainChannelInitializer init =
         new MainChannelInitializer(() -> new MainHandler<Network>(getClient().getNetwork(),
-            loginHandler, NettyConnectService.this.createPacketHandler()));
+            loginHandler, NettyConnectService.this.createPacketHandler()), sslCtx);
 
-    NettyClient connector =
-        new NettyClient("NettyConnect #" + attempt, getClient().getRouterAddress(), init);
+    final HostAndPort address = getClient().getRouterAddress();
 
-    return connector.connect();
+    NettyClient connector = new NettyClient("NettyConnect #" + attempt, address, init);
+
+    Future<?> future = connector.connect();
+    future.addListener(f -> {
+      if (f.isSuccess()) {
+        getLogger().info("Connecting to " + address + "...");
+      }
+    });
+    return future;
   }
 
   @Override
