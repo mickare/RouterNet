@@ -28,15 +28,15 @@ public class AuthenticationFactory {
     }
   }
 
-  public static AuthenticationClient newPasswordForClient(String password) {
+  public static ClientAuthentication newPasswordForClient(String password) {
     return new PasswordClientAuthentication(password);
   }
 
-  public static AuthenticationRouter newPasswordForRouter(String password) {
+  public static RouterAuthentication newPasswordForRouter(String password) {
     return new PasswordRouterAuthentication(password);
   }
 
-  private static final class PasswordClientAuthentication implements AuthenticationClient {
+  private static final class PasswordClientAuthentication implements ClientAuthentication {
 
     private static final int DROP_BYTE_VALUE_MAX = 64;
 
@@ -64,7 +64,7 @@ public class AuthenticationFactory {
     }
   }
 
-  private static final class PasswordRouterAuthentication implements AuthenticationRouter {
+  private static final class PasswordRouterAuthentication implements RouterAuthentication {
 
     @Getter
     private final ByteString challenge;

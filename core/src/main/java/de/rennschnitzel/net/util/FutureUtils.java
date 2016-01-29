@@ -2,11 +2,12 @@ package de.rennschnitzel.net.util;
 
 import java.util.function.Function;
 
-import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import de.rennschnitzel.net.core.Connection;
+import de.rennschnitzel.net.util.function.CheckedBiFunction;
 import de.rennschnitzel.net.util.function.CheckedConsumer;
 import de.rennschnitzel.net.util.function.CheckedFunction;
 import io.netty.util.concurrent.Future;
@@ -18,12 +19,17 @@ public class FutureUtils {
 
   public static final Future<Void> SUCCESS = futureSuccess(null);
 
-  public static <V> Future<V> futureSuccess(V value) {
+  public static <V> Future<V> futureSuccess(final V value) {
     return ImmediateEventExecutor.INSTANCE.<V>newSucceededFuture(value);
   }
 
-  public static <V> Future<V> futureFailure(Throwable t) {
+  public static <V> Future<V> futureFailure(final Throwable t) {
     return ImmediateEventExecutor.INSTANCE.<V>newFailedFuture(t);
+  }
+
+
+  public static <V> Promise<V> newPromise() {
+    return ImmediateEventExecutor.INSTANCE.newPromise();
   }
 
   public static <V> Future<V> transformFuture(final ListenableFuture<V> future) {
@@ -43,36 +49,101 @@ public class FutureUtils {
   }
 
   public static <V, F extends Future<V>> void on(F future, final CheckedConsumer<Future<V>> callback) {
-    future.addListener(new FutureListener<V>() {
-      public void operationComplete(Future<V> future) throws Exception {
-        callback.accept(future);
+    future.addListener((FutureListener<V>) callback::accept);
+  }
+
+  public static <V, F extends Future<V>> void onSuccess(F future, final CheckedConsumer<V> callback) {
+    future.addListener((FutureListener<V>) f -> {
+      if (f.isSuccess()) {
+        callback.accept(f.get());
       }
     });
   }
 
-  public static <T, R> Future<R> combine(Future<T> future, CheckedFunction<T, Future<R>> func) {
-    Preconditions.checkNotNull(future);
-    Preconditions.checkNotNull(func);
-    final Promise<R> promise = ImmediateEventExecutor.INSTANCE.newPromise();
-    if (future.isSuccess()) {
-      try {
-        on(func.apply(future.get()), f -> {
-          if (f.isSuccess()) {
-            promise.trySuccess(f.get());
-          } else {
-            promise.tryFailure(f.cause());
-          }
-        });
-      } catch (Exception e) {
-        promise.tryFailure(e);
+  public static <V> Promise<V> dereference(final Future<? extends Future<? extends V>> nested) {
+    return dereference(newPromise(), nested);
+  }
+
+  public static <V> Promise<V> dereference(final Promise<V> promise, final Future<? extends Future<? extends V>> nested) {
+    nested.addListener((FutureListener<Future<? extends V>>) future -> {
+      if (future.isSuccess()) {
+        try {
+          future.get().addListener((FutureListener<V>) result -> {
+            try {
+              if (result.isSuccess()) {
+                promise.trySuccess(result.get());
+              } else {
+                promise.tryFailure(result.cause());
+              }
+            } catch (Exception e) {
+              promise.tryFailure(e);
+            }
+          });
+        } catch (Exception e) {
+          promise.tryFailure(e);
+        }
+      } else {
+        promise.tryFailure(future.cause());
       }
-    } else {
-      promise.tryFailure(future.cause());
-    }
+    });
     return promise;
   }
 
-  public static <T, R> Future<R> lazyTransform(Future<T> future, Function<T, R> convert) {
+  public static <P> Promise<P> propagateFailure(final Promise<P> target, final Future<?> failable) {
+    failable.addListener(f -> {
+      if (!f.isSuccess()) {
+        target.tryFailure(f.cause());
+      }
+    });
+    return target;
+  }
+
+  public static <V> Promise<V> propagate(final Promise<V> target, final Future<V> delegate) {
+    on(delegate, f -> {
+      if (f.isSuccess()) {
+        target.trySuccess(f.get());
+      } else {
+        target.tryFailure(f.cause());
+      }
+    });
+    return target;
+  }
+
+
+  public static <T, U, R> Future<R> call(final Future<T> future, final CheckedBiFunction<T, U, Future<R>> func, final U value) {
+    final Promise<R> promise = ImmediateEventExecutor.INSTANCE.newPromise();
+    on(future, f -> {
+      if (f.isSuccess()) {
+        try {
+          propagate(promise, func.apply(f.get(), value));
+        } catch (Exception e) {
+          promise.tryFailure(f.cause());
+        }
+      } else {
+        promise.tryFailure(f.cause());
+      }
+    });
+    return promise;
+  }
+
+  public static <T, R> Future<R> call(final Future<T> future, final CheckedFunction<T, Future<R>> func) {
+    final Promise<R> promise = ImmediateEventExecutor.INSTANCE.newPromise();
+    future.addListener((FutureListener<T>) f -> {
+      if (f.isSuccess()) {
+        try {
+          propagate(promise, func.apply(f.get()));
+        } catch (Exception e) {
+          promise.setFailure(e);
+        }
+      } else {
+        promise.setFailure(f.cause());
+      }
+    });
+
+    return promise;
+  }
+
+  public static <T, R> Future<R> lazyTransform(final Future<T> future, final Function<T, R> convert) {
     final Promise<R> promise = ImmediateEventExecutor.INSTANCE.newPromise();
     on(future, t -> {
       if (t.isSuccess()) {
@@ -87,5 +158,6 @@ public class FutureUtils {
     });
     return promise;
   }
+
 
 }

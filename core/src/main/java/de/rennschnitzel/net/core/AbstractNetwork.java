@@ -8,7 +8,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Logger;
 
 import org.nustaq.serialization.FSTConfiguration;
@@ -27,17 +26,21 @@ import de.rennschnitzel.net.core.procedure.ProcedureCall;
 import de.rennschnitzel.net.core.tunnel.SubTunnel;
 import de.rennschnitzel.net.core.tunnel.SubTunnelDescriptor;
 import de.rennschnitzel.net.core.tunnel.TunnelMessage;
-import de.rennschnitzel.net.event.ConnectionEvent;
-import de.rennschnitzel.net.event.NetworkNodeEvent;
-import de.rennschnitzel.net.protocol.ComponentsProtocol.UUIDMessage;
+import de.rennschnitzel.net.event.ConnectionAddedEvent;
+import de.rennschnitzel.net.event.ConnectionRemovedEvent;
+import de.rennschnitzel.net.event.NodeEvent;
+import de.rennschnitzel.net.exception.ConnectionException;
+import de.rennschnitzel.net.exception.ProtocolException;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeTopologyMessage;
+import de.rennschnitzel.net.protocol.TransportProtocol;
+import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
 import de.rennschnitzel.net.util.concurrent.CloseableLock;
 import de.rennschnitzel.net.util.concurrent.CloseableReadWriteLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
-import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.EventExecutorGroup;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -64,6 +67,7 @@ public abstract class AbstractNetwork {
 
   private final CloseableLock tunnelLock = new ReentrantCloseableLock();
   private final ConcurrentMap<String, Tunnel> tunnelsByName = new ConcurrentHashMap<>();
+  private final ConcurrentMap<Integer, Tunnel> tunnelsById = new ConcurrentHashMap<>();
   private final ConcurrentMap<SubTunnelDescriptor<?>, SubTunnel> subTunnels = new ConcurrentHashMap<>();
 
   @Getter
@@ -85,7 +89,7 @@ public abstract class AbstractNetwork {
 
   public abstract Logger getLogger();
 
-  public abstract ScheduledExecutorService getExecutor();
+  public abstract EventExecutorGroup getExecutor();
 
 
   // ***************************************************************************
@@ -99,10 +103,11 @@ public abstract class AbstractNetwork {
       if (addConnection0(connection)) {
 
         for (Tunnel tunnel : getTunnels()) {
-          connection.registerTunnel(tunnel);
+          tunnel.register(connection);
         }
+        connection.getChannel().flush();
 
-        this.eventBus.post(new ConnectionEvent.AddedConnectionEvent(connection));
+        this.eventBus.post(new ConnectionAddedEvent(connection));
         this.home.sendUpdate(connection);
 
         return true;
@@ -119,7 +124,7 @@ public abstract class AbstractNetwork {
 
   public boolean removeConnection(Connection connection) {
     if (removeConnection0(connection)) {
-      this.eventBus.post(new ConnectionEvent.RemovedConnectionEvent(connection));
+      this.eventBus.post(new ConnectionRemovedEvent(connection));
       return true;
     }
     return false;
@@ -130,23 +135,22 @@ public abstract class AbstractNetwork {
   // ***************************************************************************
   // Sending
 
-  protected abstract <T, R> Future<?> sendProcedureCall(ProcedureCall<T, R> call);
+  protected abstract <T, R> void sendProcedureCall(ProcedureCall<T, R> call);
 
-  protected abstract Future<?> sendProcedureResponse(UUID receiverId, ProcedureResponseMessage build);
+  protected abstract void sendProcedureResponse(final UUID receiverId, final ProcedureResponseMessage msg) throws ProtocolException;
 
-  protected Future<?> sendProcedureResponse(UUIDMessage receiverId, ProcedureResponseMessage build) {
-    return sendProcedureResponse(ProtocolUtils.convert(receiverId), build);
-  }
+  protected abstract void sendProcedureResponse(final UUID senderId, final UUID receiverId, final ProcedureResponseMessage msg)
+      throws ProtocolException;
+
 
   protected abstract void publishHomeNodeUpdate();
 
-  protected abstract Future<Integer> registerTunnel(Tunnel tunnel);
-
-  protected abstract Future<?> sendTunnelMessage(TunnelMessage cmsg);
-
-
   // ***************************************************************************
-  // Nodes
+  // TUNNELS
+
+  protected abstract void sendTunnelMessage(TunnelMessage cmsg);
+
+  protected abstract void registerTunnel(Tunnel tunnel);
 
   public Set<Tunnel> getTunnels() {
     try (CloseableLock l = tunnelLock.open()) {
@@ -168,6 +172,12 @@ public abstract class AbstractNetwork {
     return getTunnel(name, true);
   }
 
+
+  public Tunnel getTunnelById(int tunnelId) {
+    return this.tunnelsById.get(tunnelId);
+  }
+
+
   private Tunnel getTunnel(String name, boolean register) {
     final String key = name.toLowerCase();
     Tunnel tunnel = this.tunnelsByName.get(key);
@@ -178,6 +188,7 @@ public abstract class AbstractNetwork {
         if (tunnel == null) {
           tunnel = new Tunnel(this, key);
           this.tunnelsByName.put(tunnel.getName(), tunnel);
+          this.tunnelsById.put(tunnel.getId(), tunnel);
           if (register) {
             this.registerTunnel(tunnel);
           }
@@ -210,6 +221,26 @@ public abstract class AbstractNetwork {
     return subTunnel;
   }
 
+  protected void receiveTunnelRegister(TransportProtocol.TunnelRegister msg) throws ConnectionException {
+    try (CloseableLock l = tunnelLock.open()) {
+      Tunnel old = this.tunnelsByName.get(msg.getName());
+
+      if (old != null && old.getId() != msg.getTunnelId()) {
+        throw new ConnectionException(ErrorMessage.Type.ID_ALREADY_USED, "Can't register Tunnel with id " + msg.getTunnelId()
+            + " and name \"" + msg.getName() + "\". Already as \"" + old.getName() + "\" registered!");
+      }
+      if (old != null) {
+        old.setType(msg.getType());
+      } else {
+        Tunnel tunnel = new Tunnel(this, msg.getName());
+        Preconditions.checkState(tunnel.getId() == msg.getTunnelId());
+        tunnel.setType(msg.getType());
+        this.tunnelsByName.put(tunnel.getName(), tunnel);
+        this.tunnelsById.put(tunnel.getId(), tunnel);
+      }
+    }
+  }
+
 
   // ***************************************************************************
   // Nodes
@@ -230,6 +261,10 @@ public abstract class AbstractNetwork {
 
   public Node getNode(UUID id) {
     return this.nodes.get(id);
+  }
+
+  public Node getNodeUnsafe(UUID id) {
+    return this.nodesCache.getUnchecked(id);
   }
 
   public Node getNode(String name) {
@@ -290,9 +325,9 @@ public abstract class AbstractNetwork {
     node.update(msg);
     Node old = this.nodes.put(id, node);
     if (old == null) {
-      this.eventBus.post(new NetworkNodeEvent.NetworkNodeAddedEvent(this, node));
+      this.eventBus.post(new NodeEvent.NetworkNodeAddedEvent(this, node));
     } else {
-      this.eventBus.post(new NetworkNodeEvent.NetworkNodeUpdatedEvent(this, node));
+      this.eventBus.post(new NodeEvent.NetworkNodeUpdatedEvent(this, node));
     }
     return node;
   }
@@ -315,7 +350,7 @@ public abstract class AbstractNetwork {
     Node node = this.nodes.remove(id);
     if (node != null) {
       node.disconnected();
-      this.eventBus.post(new NetworkNodeEvent.NetworkNodeRemovedEvent(this, node));
+      this.eventBus.post(new NodeEvent.NetworkNodeRemovedEvent(this, node));
     }
   }
 

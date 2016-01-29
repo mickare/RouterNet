@@ -3,8 +3,8 @@ package de.rennschnitzel.net.netty.login;
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.core.AbstractNetwork;
-import de.rennschnitzel.net.core.login.AuthenticationRouter;
-import de.rennschnitzel.net.core.login.LoginRouterHandler;
+import de.rennschnitzel.net.core.login.RouterAuthentication;
+import de.rennschnitzel.net.core.login.RouterLoginEngine;
 import de.rennschnitzel.net.exception.ConnectionException;
 import de.rennschnitzel.net.netty.PacketUtil;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginChallengeMessage;
@@ -18,10 +18,10 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.concurrent.Future;
 
-public class NettyLoginRouterHandler extends LoginRouterHandler<ChannelHandlerContext> {
+public class NettyLoginRouterHandler extends RouterLoginEngine<ChannelHandlerContext> {
 
 
-  public NettyLoginRouterHandler(AbstractNetwork network, AuthenticationRouter authentication) {
+  public NettyLoginRouterHandler(AbstractNetwork network, RouterAuthentication authentication) {
     super("NettyLoginRouterHandler", network, authentication);
   }
 

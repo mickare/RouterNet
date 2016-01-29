@@ -6,7 +6,7 @@ import java.util.logging.Logger;
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.core.AbstractNetwork;
-import de.rennschnitzel.net.core.login.LoginHandler;
+import de.rennschnitzel.net.core.login.LoginEngine;
 import de.rennschnitzel.net.core.packet.PacketHandler;
 import de.rennschnitzel.net.exception.ConnectionException;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
@@ -41,7 +41,7 @@ public class MainHandler<N extends AbstractNetwork> extends SimpleChannelInbound
   private volatile State state = State.NEW;
 
   @Getter
-  private final LoginHandler<ChannelHandlerContext> loginHandler;
+  private final LoginEngine<ChannelHandlerContext> loginHandler;
   private IdleStateHandler idleHandler = new IdleStateHandler(10, 5, 0);
 
   @Getter
@@ -52,7 +52,7 @@ public class MainHandler<N extends AbstractNetwork> extends SimpleChannelInbound
 
 
 
-  public MainHandler(N network, LoginHandler<ChannelHandlerContext> loginHandler,
+  public MainHandler(N network, LoginEngine<ChannelHandlerContext> loginHandler,
       PacketHandler<NettyConnection<N>> packetHandler) {
     super(Packet.class, true);
 

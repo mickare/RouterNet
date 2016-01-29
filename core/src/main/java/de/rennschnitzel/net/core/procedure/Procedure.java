@@ -14,7 +14,7 @@ import de.rennschnitzel.net.util.TypeUtils;
 import lombok.Getter;
 
 public class Procedure implements Comparable<Procedure> {
-
+  
   // ***************************************************************************
   // STATIC - START
 

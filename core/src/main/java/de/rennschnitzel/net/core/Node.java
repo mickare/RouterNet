@@ -5,8 +5,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Stack;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import com.google.common.base.Preconditions;
@@ -14,6 +17,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 import de.rennschnitzel.net.ProtocolUtils;
+import de.rennschnitzel.net.core.packet.PacketWriter;
 import de.rennschnitzel.net.core.procedure.CallableRegisteredProcedure;
 import de.rennschnitzel.net.core.procedure.Procedure;
 import de.rennschnitzel.net.protocol.NetworkProtocol.DataBukkitMessage;
@@ -24,7 +28,9 @@ import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage.Type;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
+import de.rennschnitzel.net.util.FutureUtils;
 import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.Promise;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
@@ -33,7 +39,6 @@ import lombok.Setter;
 
 @RequiredArgsConstructor
 public class Node {
-
 
   @Getter
   private volatile boolean connected = false;
@@ -54,6 +59,19 @@ public class Node {
 
   @Getter
   private Data data = new Data();
+
+  private final Stack<Consumer<Node>> updateListeners = new Stack<>();
+
+  public void addUpdateListener(Consumer<Node> listener) {
+    Preconditions.checkNotNull(listener);
+    this.updateListeners.push(listener);
+  }
+
+  public Future<Node> newUpdatePromise() {
+    Promise<Node> promise = FutureUtils.newPromise();
+    addUpdateListener(node -> promise.trySuccess(node));
+    return promise;
+  }
 
   protected synchronized boolean update(NodeMessage msg) {
     UUID id = ProtocolUtils.convert(msg.getId());
@@ -80,6 +98,16 @@ public class Node {
     this.data.set(msg);
     this.startTimestamp = msg.getStartTimestamp();
     this.connected = true;
+
+
+    while (!this.updateListeners.isEmpty()) {
+      try {
+        this.updateListeners.pop().accept(this);
+      } catch (Exception e) {
+        AbstractNetwork.getInstance().getLogger().log(Level.SEVERE, "Listener failed: " + e.getMessage(), e);
+      }
+    }
+
     return true;
   }
 
@@ -216,19 +244,19 @@ public class Node {
       this.type = type;
     }
 
-    public void addNamespace(String namespace) {
+    public Future<?> addNamespace(String namespace) {
       Preconditions.checkArgument(!namespace.isEmpty());
       dirty |= this.namespaces.add(namespace.toLowerCase());
-      publishChanges();
+      return publishChanges();
     }
 
-    public void removeNamespace(String namespace) {
+    public Future<?> removeNamespace(String namespace) {
       Preconditions.checkArgument(!namespace.isEmpty());
       dirty |= this.namespaces.remove(namespace.toLowerCase());
-      publishChanges();
+      return publishChanges();
     }
 
-    public void setName(String name) {
+    public Future<?> setName(String name) {
       Optional<String> old = this.name;
       if (name == null || name.isEmpty()) {
         this.name = Optional.empty();
@@ -241,47 +269,47 @@ public class Node {
           dirty = true;
         }
       }
-      publishChanges();
+      return publishChanges();
     }
 
-    protected void addRegisteredProcedure(CallableRegisteredProcedure<?, ?> procedure) {
+    protected Future<?> addRegisteredProcedure(CallableRegisteredProcedure<?, ?> procedure) {
       dirty |= this.procedures.add(procedure);
-      publishChanges();
+      return publishChanges();
     }
 
-    protected void removeRegisteredProcedure(CallableRegisteredProcedure<?, ?> procedure) {
+    protected Future<?> removeRegisteredProcedure(CallableRegisteredProcedure<?, ?> procedure) {
       dirty |= this.procedures.remove(procedure);
-      publishChanges();
+      return publishChanges();
     }
 
-    public void publishChanges() {
+    public Future<?> publishChanges() {
       if (!this.dirty) {
-        return;
+        return FutureUtils.SUCCESS;
       }
       if (network.getHome() != this) {
         throw new IllegalStateException();
       }
-      network.getExecutor().schedule(() -> {
-        if (!this.dirty) {
-          return;
-        }
-        synchronized (HomeNode.this) {
-          if (!this.dirty) {
-            return;
+      return network.getExecutor().schedule(() -> {
+        if (this.dirty) {
+          synchronized (HomeNode.this) {
+            if (this.dirty) {
+              this.dirty = false;
+              network.publishHomeNodeUpdate();
+            }
           }
-          this.dirty = false;
         }
-        network.publishHomeNodeUpdate();
-      } , 100, TimeUnit.MICROSECONDS);
+      } , 1, TimeUnit.MILLISECONDS);
     }
 
-    public void sendUpdate(Set<? extends PacketOutWriter> out) {
-      Packet packet = Packet.newBuilder().setNodeUpdate(NodeUpdateMessage.newBuilder().setNode(this.toProtocol())).build();
-      out.forEach(con -> con.send(packet));
+    public void sendUpdate(final Set<? extends PacketWriter<?>> connections) {
+      final NodeUpdateMessage msg = NodeUpdateMessage.newBuilder().setNode(this.toProtocol()).build();
+      final Packet packet = Packet.newBuilder().setNodeUpdate(msg).build();
+      connections.forEach(con -> con.writeAndFlushFast(packet));
     }
 
-    public Future<?> sendUpdate(PacketOutWriter out) {
-      return out.send(Packet.newBuilder().setNodeUpdate(NodeUpdateMessage.newBuilder().setNode(this.toProtocol())).build());
+    public void sendUpdate(final PacketWriter<?> out) {
+      final NodeUpdateMessage packet = NodeUpdateMessage.newBuilder().setNode(this.toProtocol()).build();
+      out.writeAndFlushFast(packet);
     }
 
     @Override

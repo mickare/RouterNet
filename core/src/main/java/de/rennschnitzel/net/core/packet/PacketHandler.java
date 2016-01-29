@@ -18,12 +18,6 @@ import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister;
 
 public interface PacketHandler<C> {
 
-  void channelActive(C ctx) throws Exception;
-
-  void channelInactive(C ctx) throws Exception;
-
-  void handlerAdded(C ctx) throws Exception;
-
   default void handle(C ctx, Packet packet) throws Exception {
     switch (packet.getValueCase()) {
       // Transport
@@ -91,7 +85,7 @@ public interface PacketHandler<C> {
 
   void handle(C ctx, HeartbeatMessage heartbeat) throws Exception;
 
-  
+
   // LOGIN
   void handle(C ctx, LoginHandshakeMessage msg) throws Exception;
 

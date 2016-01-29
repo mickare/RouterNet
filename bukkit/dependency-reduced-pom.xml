@@ -55,6 +55,8 @@
                   <include>com.fasterxml.jackson.core:jackson-core:*</include>
                   <include>org.javassist:javassist:*</include>
                   <include>org.objenesis:objenesis:*</include>
+                  <include>org.projectlombok:*</include>
+                  <include>com.google.guava:*</include>
                 </includes>
               </artifactSet>
               <relocations>
@@ -69,6 +71,18 @@
       </plugin>
     </plugins>
   </build>
+  <repositories>
+    <repository>
+      <id>rs-protected</id>
+      <name>Rennschnitzel Protected Repository</name>
+      <url>http://nexus.spacier.de/content/repositories/rs-protected/</url>
+    </repository>
+    <repository>
+      <id>public</id>
+      <name>Rennschnitzel Public Group</name>
+      <url>http://nexus.spacier.de/content/groups/public/</url>
+    </repository>
+  </repositories>
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
@@ -85,21 +99,21 @@
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
-      <version>1.8.8-R0.1-SNAPSHOT</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <version>1.14.8</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>18.0</version>
+      <version>LATEST</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>
+  <distributionManagement>
+    <repository>
+      <id>rs-protected</id>
+      <name>Rennschnitzel Protected Repository</name>
+      <url>http://nexus.spacier.de/content/repositories/rs-protected/</url>
+    </repository>
+    <snapshotRepository>
+      <id>rs-protected</id>
+      <name>Rennschnitzel Protected Repository</name>
+      <url>http://nexus.spacier.de/content/repositories/rs-protected/</url>
+    </snapshotRepository>
+  </distributionManagement>
 </project>
 

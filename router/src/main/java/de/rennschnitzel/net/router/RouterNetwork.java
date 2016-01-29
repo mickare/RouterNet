@@ -9,8 +9,8 @@ import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.core.AbstractNetwork;
 import de.rennschnitzel.net.core.Connection;
-import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.Tunnel;
+import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.procedure.ProcedureCall;
 import de.rennschnitzel.net.core.tunnel.TunnelMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;

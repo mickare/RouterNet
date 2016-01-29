@@ -27,7 +27,7 @@
 		<dependency>
 			<groupId>org.spigotmc</groupId>
 			<artifactId>spigot-api</artifactId>
-			<version>1.8.8-R0.1-SNAPSHOT</version>
+			<version>LATEST</version>
 		</dependency>
 	</dependencies>
 
@@ -81,8 +81,10 @@
 									<include>com.fasterxml.jackson.core:jackson-core:*</include>
 									<include>org.javassist:javassist:*</include>
 									<include>org.objenesis:objenesis:*</include>
+									<include>org.projectlombok:*</include>
+									<include>com.google.guava:*</include>
 								</includes>
-							</artifactSet>							
+							</artifactSet>
 							<relocations>
 								<relocation>
 									<pattern>io.netty</pattern>

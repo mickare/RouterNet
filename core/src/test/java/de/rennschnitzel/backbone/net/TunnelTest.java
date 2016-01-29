@@ -3,30 +3,43 @@ package de.rennschnitzel.backbone.net;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.Owner;
 import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.core.Tunnel;
+import de.rennschnitzel.net.core.login.AuthenticationFactory;
+import de.rennschnitzel.net.core.login.ClientLoginEngine;
+import de.rennschnitzel.net.core.login.RouterLoginEngine;
 import de.rennschnitzel.net.core.packet.BasePacketHandler;
 import de.rennschnitzel.net.core.tunnel.TunnelDescriptors;
 import de.rennschnitzel.net.core.tunnel.object.ConvertObjectChannelException;
 import de.rennschnitzel.net.core.tunnel.object.ObjectTunnel;
 import de.rennschnitzel.net.core.tunnel.stream.StreamTunnel;
 import de.rennschnitzel.net.dummy.DummClientNetwork;
-import de.rennschnitzel.net.dummy.DummyConnection;
-import de.rennschnitzel.net.util.SimpleOwner;
+import de.rennschnitzel.net.netty.LocalCoupling;
+import de.rennschnitzel.net.netty.LoginHandler;
+import de.rennschnitzel.net.netty.MainHandler;
+import de.rennschnitzel.net.netty.PipelineUtils;
+import io.netty.channel.DefaultEventLoopGroup;
+import io.netty.channel.EventLoopGroup;
+import io.netty.util.concurrent.Future;
 
 public class TunnelTest {
 
@@ -37,49 +50,99 @@ public class TunnelTest {
   DummClientNetwork net_router;
   DummClientNetwork net_client;
 
-  DummyConnection con_router;
-  DummyConnection con_client;
-
   Target target_client;
   Target target_router;
 
+  private LocalCoupling con;
+  EventLoopGroup group = new DefaultEventLoopGroup();
+
   @Before
-  public void setup() {
+  public void setup() throws InterruptedException {
 
-    testingOwner = new SimpleOwner("TunnelTestOwner", Logger.getLogger("TunnelTest"));
+    testingOwner = new Owner() {
+      @Override
+      public Logger getLogger() {
+        return Logger.getLogger("ProcedureTest");
+      }
 
-    net_router = new DummClientNetwork();
+      @Override
+      public String getName() {
+        return "ProcedureTestOwner";
+      }
+    };
+
+    net_router = new DummClientNetwork(group, new UUID(0, 1));
     net_router.setName("Router");
-    net_client = new DummClientNetwork(net_router.newNotUsedUUID());
+    net_client = new DummClientNetwork(group, new UUID(0, 2));
     net_client.setName("Client");
 
-    con_router = new DummyConnection(net_router, new BasePacketHandler<>());
-    con_client = new DummyConnection(net_client, new BasePacketHandler<>());
+    RouterLoginEngine routerEngine = new RouterLoginEngine(net_router, AuthenticationFactory.newPasswordForRouter("pw"));
+    ClientLoginEngine clientEngine = new ClientLoginEngine(net_client, AuthenticationFactory.newPasswordForClient("pw"));
 
     target_client = Target.to(net_client.getHome().getId());
     target_router = Target.to(net_router.getHome().getId());
 
-    con_router.connect(con_client);
+    con = new LocalCoupling(PipelineUtils.baseInitAnd(ch -> {
+      ch.pipeline().addLast(new LoginHandler(routerEngine));
+      ch.pipeline().addLast(new MainHandler(net_router, new BasePacketHandler<>()));
+    }), PipelineUtils.baseInitAnd(ch -> {
+      ch.pipeline().addLast(new LoginHandler(clientEngine));
+      ch.pipeline().addLast(new MainHandler(net_client, new BasePacketHandler<>()));
+    }), group);
+
+    con.open();
+    con.awaitRunning();
+    Preconditions.checkState(con.getState() == LocalCoupling.State.ACTIVE);
+
+    Future<?> clientOnRouter = net_client.getNodeUnsafe(net_router.getHome().getId()).newUpdatePromise();
+    Future<?> routerOnClient = net_router.getNodeUnsafe(net_client.getHome().getId()).newUpdatePromise();
+
+    routerEngine.getLoginFuture().awaitUninterruptibly();
+    clientEngine.getLoginFuture().awaitUninterruptibly();
+
+    clientOnRouter.await(1000);
+    routerOnClient.await(1000);
+
+    Preconditions.checkNotNull(net_client.getNode(net_router.getHome().getId()));
+    Preconditions.checkNotNull(net_router.getNode(net_client.getHome().getId()));
 
   }
 
+  @After
+  public void tearDown() {
+    con.close();
+    group.shutdownGracefully(1, 100, TimeUnit.MILLISECONDS);
+  }
 
+  private boolean busyWaiting(final int tries, final Callable<Boolean> condition, final long millis) throws Exception {
+    int _try = 0;
+    boolean result = condition.call();
+    while (_try++ < tries && !result) {
+      Thread.sleep(millis);
+      result = condition.call();
+    }
+    return result;
+  }
+
+  private void assertWaiting(final int tries, final Callable<Boolean> condition, final long millis) throws Exception {
+    assertTrue(busyWaiting(tries, condition, millis));
+  }
 
   @Test
-  public void testTunnel() throws IOException {
+  public void testTunnel() throws Exception {
 
     Tunnel base0 = net_client.getTunnel("base0");
-    assertNotNull(con_router.getTunnelIdIfPresent(base0));
-    assertNotNull(con_client.getTunnelIdIfPresent(base0));
-    assertTrue(con_router.getTunnelIdIfPresent(base0) == con_client.getTunnelIdIfPresent(base0));
     Tunnel base1 = net_router.getTunnel("base1");
-    assertTrue(con_router.getTunnelIdIfPresent(base1) == con_client.getTunnelIdIfPresent(base1));
+
+    assertWaiting(10, () -> net_client.getTunnelIfPresent("base1") != null, 100);
 
     // Should not be initialized but be registered.
-    assertNull(net_client.getTunnelIfPresent("base1"));
-    assertNull(net_router.getTunnelIfPresent("base0"));
-    assertEquals(con_client.getTunnelIdIfPresent(base0), con_router.getTunnelIdIfPresent(base0));
-    assertEquals(con_router.getTunnelIdIfPresent(base1), con_client.getTunnelIdIfPresent(base1));
+    Tunnel base1_client = net_client.getTunnelIfPresent("base1");
+    Tunnel base0_router = net_router.getTunnelIfPresent("base0");
+    assertNotNull(base1_client);
+    assertNotNull(base0_router);
+    assertEquals(base1.getId(), base1_client.getId());
+    assertEquals(base0.getId(), base0_router.getId());
 
 
     // Initialize the tunnels on the other side
@@ -114,10 +177,11 @@ public class TunnelTest {
     net_client.getTunnelIfPresent("base1").send(target_client, data1); // does nothing
     assertEquals(1, rec_client.get());
     net_client.getTunnelIfPresent("base1").send(target_router, data1);
-    assertEquals(1, rec_router.get());
+    assertWaiting(10, () -> 1 == rec_router.get(), 100);
+   // assertEquals(1, rec_router.get());
 
     net_router.getTunnelIfPresent("base0").send(target_client, data0);
-    assertEquals(2, rec_client.get());
+    assertWaiting(10, () -> 2 == rec_client.get(), 100);
     net_router.getTunnelIfPresent("base0").send(target_router, data0); // does nothing
     assertEquals(1, rec_router.get());
     assertEquals(2, rec_client.get());
@@ -127,8 +191,9 @@ public class TunnelTest {
     assertEquals(2, rec_router.get());
 
     net_router.getTunnelIfPresent("base1").registerMessageListener(testingOwner, (msg) -> {
-      assertEquals(con_client.getNetwork().getHome().getId(), msg.getSenderId());
+      assertEquals(net_client.getHome().getId(), msg.getSenderId());
     });
+
     net_client.getTunnelIfPresent("base1").send(target_router, data1);
 
   }

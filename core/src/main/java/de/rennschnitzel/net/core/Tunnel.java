@@ -15,8 +15,6 @@ import de.rennschnitzel.net.core.tunnel.TunnelHandler;
 import de.rennschnitzel.net.core.tunnel.TunnelMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister;
-import de.rennschnitzel.net.util.FutureUtils;
-import io.netty.util.concurrent.Future;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +27,9 @@ public class Tunnel {
   @Getter
   private final String name;
 
+  @Getter
+  private final int id;
+
   private Optional<TunnelRegister.Type> type = Optional.empty();
   private TunnelHandler handler = null;
 
@@ -37,14 +38,15 @@ public class Tunnel {
   @Getter
   private volatile boolean closed = false;
 
-  public Tunnel(AbstractNetwork network, String name) {
+  public Tunnel(final AbstractNetwork network, final String name) {
     Preconditions.checkNotNull(network);
     Preconditions.checkArgument(!name.isEmpty());
     this.network = network;
     this.name = name.toLowerCase();
+    this.id = this.name.hashCode();
   }
 
-  public synchronized void registerHandler(TunnelHandler handler) throws IllegalStateException {
+  public synchronized void registerHandler(final TunnelHandler handler) throws IllegalStateException {
     Preconditions.checkNotNull(handler);
     Preconditions.checkState(this.handler == null);
     if (this.type.isPresent()) {
@@ -54,9 +56,14 @@ public class Tunnel {
     this.type = Optional.of(handler.getType());
   }
 
-  public synchronized void setType(TunnelRegister.Type type) {
+  public synchronized void setType(final TunnelRegister.Type type) {
     Preconditions.checkNotNull(type);
-    Preconditions.checkState(!this.type.isPresent());
+    if (this.type.isPresent()) {
+      if (this.type.get() == type) {
+        return;
+      }
+      throw new IllegalStateException("Type already defined as " + this.type.get() + "!");
+    }
     this.type = Optional.of(type);
   }
 
@@ -68,45 +75,43 @@ public class Tunnel {
     this.closed = true;
   }
 
-  public Future<?> broadcast(ByteBuffer data) {
-    return this.send(Target.toAll(), data);
+  public void broadcast(final ByteBuffer data) {
+    this.send(Target.toAll(), data);
   }
 
-  public Future<?> broadcast(byte[] data) {
-    return this.send(Target.toAll(), data);
+  public void broadcast(final byte[] data) {
+    this.send(Target.toAll(), data);
   }
 
-  public Future<?> broadcast(ByteString data) {
-    return this.send(Target.toAll(), data);
+  public void broadcast(final ByteString data) {
+    this.send(Target.toAll(), data);
   }
 
-  public Future<?> send(Target target, ByteBuffer data) {
-    return this.send(target, ByteString.copyFrom(data));
+  public void send(final Target target, final ByteBuffer data) {
+    this.send(target, ByteString.copyFrom(data));
   }
 
-  public Future<?> send(Target target, byte[] data) {
-    return this.send(target, ByteString.copyFrom(data));
+  public void send(final Target target, final byte[] data) {
+    this.send(target, ByteString.copyFrom(data));
   }
 
-  public Future<?> send(Target target, ByteString data) {
+  public void send(final Target target, final ByteString data) {
     final TunnelMessage cmsg = new TunnelMessage(this, target, getNetwork().getHome().getId(), data);
-    return this.send(cmsg);
+    this.send(cmsg);
   }
 
-  public Future<?> send(TunnelMessage cmsg) {
-    HomeNode home = getNetwork().getHome();
-    Future<?> result = FutureUtils.SUCCESS;
+  public void send(final TunnelMessage cmsg) {
+    final HomeNode home = getNetwork().getHome();
     if (!cmsg.getTarget().isOnly(home)) {
-      result = this.sendIgnoreSelf(cmsg);
+      this.sendIgnoreSelf(cmsg);
     }
     if (cmsg.getTarget().contains(getNetwork().getHome())) {
       this.receive(cmsg);
     }
-    return result;
   }
 
-  public Future<?> sendIgnoreSelf(TunnelMessage cmsg) {
-    return this.network.sendTunnelMessage(cmsg);
+  private void sendIgnoreSelf(final TunnelMessage cmsg) {
+    this.network.sendTunnelMessage(cmsg);
   }
 
   public final void receiveProto(final TransportProtocol.TunnelMessage msg) {
@@ -128,8 +133,12 @@ public class Tunnel {
     listeners.add(new RegisteredMessageListener(owner, dataConsumer));
   }
 
-  public Future<Integer> register() {
-    return this.network.registerTunnel(this);
+  public void register(Connection connection) {
+    TunnelRegister.Builder b = TunnelRegister.newBuilder();
+    b.setTunnelId(this.getId());
+    b.setName(this.getName());
+    b.setType(this.getType());
+    connection.writeAndFlushFast(b.build());
   }
 
   @Getter

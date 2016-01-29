@@ -3,8 +3,8 @@ package de.rennschnitzel.net.netty.login;
 import java.io.IOException;
 
 import de.rennschnitzel.net.core.AbstractNetwork;
-import de.rennschnitzel.net.core.login.AuthenticationClient;
-import de.rennschnitzel.net.core.login.LoginClientHandler;
+import de.rennschnitzel.net.core.login.ClientAuthentication;
+import de.rennschnitzel.net.core.login.ClientLoginEngine;
 import de.rennschnitzel.net.exception.ConnectionException;
 import de.rennschnitzel.net.netty.PacketUtil;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginHandshakeMessage;
@@ -19,9 +19,9 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.concurrent.Future;
 
-public class NettyLoginClientHandler extends LoginClientHandler<ChannelHandlerContext> {
+public class NettyLoginClientHandler extends ClientLoginEngine<ChannelHandlerContext> {
 
-  public NettyLoginClientHandler(AbstractNetwork network, AuthenticationClient authentication) {
+  public NettyLoginClientHandler(AbstractNetwork network, ClientAuthentication authentication) {
     super("NettyLoginClientHandler", network, authentication);
   }
 

@@ -1,16 +1,14 @@
 package de.rennschnitzel.net.core.tunnel;
 
-import java.io.IOException;
 import java.util.UUID;
 
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 
 import de.rennschnitzel.net.ProtocolUtils;
-import de.rennschnitzel.net.core.Tunnel;
-import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.Message;
 import de.rennschnitzel.net.core.Target;
+import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import lombok.Getter;
 
@@ -40,9 +38,9 @@ public class TunnelMessage extends Message {
     this.data = message.getData();
   }
 
-  public final TransportProtocol.TunnelMessage toProtocolMessage(Connection connection) throws IOException {
+  public final TransportProtocol.TunnelMessage toProtocolMessage() {
     final TransportProtocol.TunnelMessage.Builder b = TransportProtocol.TunnelMessage.newBuilder();
-    b.setTunnelId(connection.getTunnelId(this.tunnel));
+    b.setTunnelId(tunnel.getId());
     b.setTarget(this.getTarget().getProtocolMessage());
     b.setSender(ProtocolUtils.convert(tunnel.getNetwork().getHome().getId()));
     b.setData(this.data);

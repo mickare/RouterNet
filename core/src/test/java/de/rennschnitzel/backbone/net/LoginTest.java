@@ -4,9 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 
 import org.junit.After;
@@ -15,96 +12,134 @@ import org.junit.Test;
 
 import de.rennschnitzel.net.Owner;
 import de.rennschnitzel.net.core.login.AuthenticationFactory;
-import de.rennschnitzel.net.core.login.LoginHandler;
-import de.rennschnitzel.net.core.login.LoginHandler.State;
-import de.rennschnitzel.net.core.packet.BasePacketHandler;
+import de.rennschnitzel.net.core.login.ClientLoginEngine;
+import de.rennschnitzel.net.core.login.LoginEngine;
+import de.rennschnitzel.net.core.login.LoginEngine.State;
+import de.rennschnitzel.net.core.login.RouterLoginEngine;
 import de.rennschnitzel.net.dummy.DummClientNetwork;
-import de.rennschnitzel.net.dummy.DummyConnection;
-import de.rennschnitzel.net.dummy.DummyLoginClientHandler;
-import de.rennschnitzel.net.dummy.DummyLoginRouterHandler;
 import de.rennschnitzel.net.exception.HandshakeException;
+import de.rennschnitzel.net.netty.LocalCoupling;
+import de.rennschnitzel.net.netty.LoginHandler;
+import de.rennschnitzel.net.netty.PipelineUtils;
 import de.rennschnitzel.net.util.SimpleOwner;
+import io.netty.channel.DefaultEventLoopGroup;
+import io.netty.channel.EventLoopGroup;
 
 public class LoginTest {
 
   Owner testingOwner;
   DummClientNetwork net_router;
   DummClientNetwork net_client;
+  EventLoopGroup group = new DefaultEventLoopGroup();
 
   @Before
   public void setup() {
 
     testingOwner = new SimpleOwner("ChannelTestOwner", Logger.getLogger("ChannelTest"));
 
-    net_router = new DummClientNetwork();
+    net_router = new DummClientNetwork(group);
     net_router.setName("Router");
-    net_client = new DummClientNetwork(net_router.newNotUsedUUID());
+    net_client = new DummClientNetwork(group, net_router.newNotUsedUUID());
     net_client.setName("Client");
 
   }
 
   @After
-  public void tearDown() {}
+  public void tearDown() {
+    group.shutdownGracefully();
+  }
+
+
 
   @Test
-  public void testLoginSuccessful() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+  public void testLoginSuccessful() throws Throwable {
 
     final String password = "testLogin";
 
-    DummyLoginRouterHandler routerHandler = new DummyLoginRouterHandler("routerHandshake", net_router,
-        AuthenticationFactory.newPasswordForRouter(password), new BasePacketHandler<>());
-    DummyLoginClientHandler clientHandler = new DummyLoginClientHandler("clientHandshake", net_client,
-        AuthenticationFactory.newPasswordForClient(password), new BasePacketHandler<>());
+    RouterLoginEngine routerEngine = new RouterLoginEngine(net_router, AuthenticationFactory.newPasswordForRouter(password));
+    ClientLoginEngine clientEngine = new ClientLoginEngine(net_client, AuthenticationFactory.newPasswordForClient(password));
 
 
-    DummyConnection con_router = new DummyConnection(net_router, routerHandler);
-    DummyConnection con_client = new DummyConnection(net_client, clientHandler);
+    LocalCoupling con = new LocalCoupling(PipelineUtils.baseInitAnd(ch -> {
+      ch.pipeline().addLast(new LoginHandler(routerEngine));
+    }), PipelineUtils.baseInitAnd(ch -> {
+      ch.pipeline().addLast(new LoginHandler(clientEngine));
+    }), group);
 
-    con_client.connect(con_router);
+    try (AutoCloseable l = con.open()) {
+      con.awaitRunning();
 
-    assertTrue(routerHandler.isDone());
-    assertTrue(clientHandler.isDone());
-    assertEquals(State.SUCCESS, routerHandler.getState());
-    assertEquals(State.SUCCESS, clientHandler.getState());
-    assertEquals(net_client.getHome().getId(), routerHandler.getId());
-    assertEquals(net_router.getHome().getId(), clientHandler.getId());
+      routerEngine.getLoginFuture().await(1000);
+
+      if (routerEngine.getFailureCause() != null) {
+        throw routerEngine.getFailureCause();
+      }
+      if (clientEngine.getFailureCause() != null) {
+        throw clientEngine.getFailureCause();
+      }
+
+      System.out.println(routerEngine.getState());
+
+      assertTrue(routerEngine.isDone());
+      assertTrue(clientEngine.isDone());
+      assertEquals(State.SUCCESS, routerEngine.getState());
+      assertEquals(State.SUCCESS, clientEngine.getState());
+      assertEquals(net_client.getHome().getId(), routerEngine.getLoginId());
+      assertEquals(net_router.getHome().getId(), clientEngine.getLoginId());
+
+    } finally {
+      con.close();
+    }
+
   }
 
   @Test
-  public void testLoginFailed() throws IOException {
+  public void testLoginFailed() throws Exception {
 
     final String password1 = "testLogin";
     final String password2 = "falsePassword";
 
-    DummyLoginRouterHandler routerHandler = new DummyLoginRouterHandler("routerHandshake", net_router,
-        AuthenticationFactory.newPasswordForRouter(password1), new BasePacketHandler<>());
-    DummyLoginClientHandler clientHandler = new DummyLoginClientHandler("clientHandshake", net_client,
-        AuthenticationFactory.newPasswordForClient(password2), new BasePacketHandler<>());
+    RouterLoginEngine routerEngine = new RouterLoginEngine(net_router, AuthenticationFactory.newPasswordForRouter(password1));
+    ClientLoginEngine clientEngine = new ClientLoginEngine(net_client, AuthenticationFactory.newPasswordForClient(password2));
 
 
-    DummyConnection con_router = new DummyConnection(net_router, routerHandler);
-    DummyConnection con_client = new DummyConnection(net_client, clientHandler);
+    LocalCoupling con = new LocalCoupling(PipelineUtils.baseInitAnd(ch -> {
+      ch.pipeline().addLast(new LoginHandler(routerEngine));
+    }), PipelineUtils.baseInitAnd(ch -> {
+      ch.pipeline().addLast(new LoginHandler(clientEngine));
+    }));
 
-    con_client.connect(con_router);
+    try (AutoCloseable l = con.open()) {
+      con.awaitRunning();
 
-    assertTrue(routerHandler.isDone());
-    assertFalse(routerHandler.isSuccess());
+      routerEngine.getLoginFuture().await(1000);
 
-    assertTrue(clientHandler.isDone());
-    assertFalse(clientHandler.isSuccess());
+      assertTrue(routerEngine.isDone());
+      assertFalse(routerEngine.isSuccess());
+
+      clientEngine.getLoginFuture().await(1000);
+
+      assertTrue(clientEngine.isDone());
+      assertFalse(clientEngine.isSuccess());
 
 
-    assertTrue(routerHandler.isDone());
-    assertTrue(clientHandler.isDone());
-    assertEquals(State.FAILED, routerHandler.getState());
-    assertEquals(State.FAILED, clientHandler.getState());
+      assertTrue(routerEngine.isDone());
+      assertTrue(clientEngine.isDone());
+      assertEquals(State.FAILED, routerEngine.getState());
+      assertEquals(State.FAILED, clientEngine.getState());
 
-    assertEquals(LoginHandler.State.AUTH, routerHandler.getFailureState());
-    assertEquals(LoginHandler.State.AUTH, clientHandler.getFailureState());
-    assertEquals(HandshakeException.class, routerHandler.getFailureCause().getClass());
-    assertEquals(HandshakeException.class, clientHandler.getFailureCause().getClass());
-    assertEquals("invalid login", routerHandler.getFailureCause().getMessage());
-    assertEquals("invalid login", clientHandler.getFailureCause().getMessage());
+      assertEquals(LoginEngine.State.AUTH, routerEngine.getFailureState());
+      assertEquals(LoginEngine.State.AUTH, clientEngine.getFailureState());
+      assertEquals(HandshakeException.class, routerEngine.getFailureCause().getClass());
+      assertEquals(HandshakeException.class, clientEngine.getFailureCause().getClass());
+
+      assertEquals("invalid login", routerEngine.getFailureCause().getMessage());
+      assertEquals("invalid login", clientEngine.getFailureCause().getMessage());
+
+    } finally {
+      con.close();
+    }
+
 
 
   }

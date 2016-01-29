@@ -23,23 +23,13 @@ import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister;
 
 public class BasePacketHandler<C extends Connection> implements PacketHandler<C> {
 
-  @Override
-  public void handlerAdded(C ctx) throws Exception {}
-
-  @Override
-  public void channelActive(C ctx) throws Exception {}
-
-  @Override
-  public void channelInactive(C ctx) throws Exception {}
-
-
   public boolean isReceiver(C con, TransportProtocol.TargetMessage target) {
     return con.getNetwork().getHome().isPart(target);
   }
 
 
   // TRANSPORT
-  
+
   @Override
   public void handle(C con, CloseMessage msg) throws Exception {
     con.setCloseMessage(msg);
@@ -49,7 +39,7 @@ public class BasePacketHandler<C extends Connection> implements PacketHandler<C>
   public void handle(C ctx, HeartbeatMessage heartbeat) throws Exception {
 
   }
-  
+
 
   // LOGIN
 
@@ -96,13 +86,13 @@ public class BasePacketHandler<C extends Connection> implements PacketHandler<C>
     UUID id = ProtocolUtils.convert(msg.getId());
     con.getNetwork().removeNode(id);
   }
-  
-  
+
+
   // TUNNEL
-  
+
   @Override
   public void handle(C con, TunnelRegister msg) throws Exception {
-    con.registerTunnel(msg);
+    con.receive(con, msg);
   }
 
   @Override
@@ -110,26 +100,19 @@ public class BasePacketHandler<C extends Connection> implements PacketHandler<C>
     if (!isReceiver(con, msg.getTarget())) {
       return; // drop packet
     }
-    String channelName = con.getTunnelNameIfPresent(msg.getTunnelId());
-    if (channelName != null) {
-      Tunnel channel = con.getNetwork().getTunnelIfPresent(channelName);
-      if (channel != null && !channel.isClosed()) {
-        channel.receiveProto(msg);
-      }
+    Tunnel tunnel = con.getNetwork().getTunnelById(msg.getTunnelId());
+    if (tunnel != null && !tunnel.isClosed()) {
+      tunnel.receiveProto(msg);
     }
   }
 
-  
+
   // PROCEDURE
-  
+
   @Override
   public void handle(C con, ProcedureMessage msg) throws Exception {
-    if (!isReceiver(con, msg.getTarget())) {
-      return; // drop packet
-    }
-    con.getNetwork().getProcedureManager().handle(con, msg);
+    con.getNetwork().getProcedureManager().handle(msg);
   }
-
 
 
 

@@ -1,9 +1,6 @@
 package de.rennschnitzel.backbone.net;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -20,10 +17,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.base.Preconditions;
+
 import de.rennschnitzel.net.Owner;
 import de.rennschnitzel.net.core.Node;
-import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.Target;
+import de.rennschnitzel.net.core.login.AuthenticationFactory;
+import de.rennschnitzel.net.core.login.ClientLoginEngine;
+import de.rennschnitzel.net.core.login.RouterLoginEngine;
 import de.rennschnitzel.net.core.packet.BasePacketHandler;
 import de.rennschnitzel.net.core.procedure.BoundProcedure;
 import de.rennschnitzel.net.core.procedure.CallableProcedure;
@@ -31,8 +32,14 @@ import de.rennschnitzel.net.core.procedure.CallableRegisteredProcedure;
 import de.rennschnitzel.net.core.procedure.Procedure;
 import de.rennschnitzel.net.core.procedure.ProcedureCallResult;
 import de.rennschnitzel.net.dummy.DummClientNetwork;
-import de.rennschnitzel.net.dummy.DummyConnection;
+import de.rennschnitzel.net.netty.LocalCoupling;
+import de.rennschnitzel.net.netty.LoginHandler;
+import de.rennschnitzel.net.netty.MainHandler;
+import de.rennschnitzel.net.netty.PipelineUtils;
 import de.rennschnitzel.net.util.concurrent.DirectScheduledExecutorService;
+import io.netty.channel.DefaultEventLoopGroup;
+import io.netty.channel.EventLoopGroup;
+import io.netty.util.concurrent.Future;
 
 public class ProcedureTest {
 
@@ -41,16 +48,15 @@ public class ProcedureTest {
   DummClientNetwork net_router;
   DummClientNetwork net_client;
 
-  DummyConnection con_router;
-  DummyConnection con_client;
-
   Target target_client;
   Target target_router;
 
-  @Before
-  public void setup() {
-    DirectScheduledExecutorService.disableWarning();
+  private LocalCoupling con;
+  EventLoopGroup group = new DefaultEventLoopGroup();
 
+  @Before
+  public void setup() throws InterruptedException {
+    
     testingOwner = new Owner() {
       @Override
       public Logger getLogger() {
@@ -63,56 +69,75 @@ public class ProcedureTest {
       }
     };
 
-    net_router = new DummClientNetwork(new HomeNode(new UUID(0, 1)));
+    net_router = new DummClientNetwork(group, new UUID(0, 1));
     net_router.setName("Router");
-    net_client = new DummClientNetwork(new HomeNode(new UUID(0, 2)));
+    net_client = new DummClientNetwork(group, new UUID(0, 2));
     net_client.setName("Client");
 
-    con_router = new DummyConnection(net_router, new BasePacketHandler<>());
-    con_client = new DummyConnection(net_client, new BasePacketHandler<>());
+    RouterLoginEngine routerEngine = new RouterLoginEngine(net_router, AuthenticationFactory.newPasswordForRouter("pw"));
+    ClientLoginEngine clientEngine = new ClientLoginEngine(net_client, AuthenticationFactory.newPasswordForClient("pw"));
 
     target_client = Target.to(net_client.getHome().getId());
     target_router = Target.to(net_router.getHome().getId());
 
-    con_router.connect(con_client);
+    con = new LocalCoupling(PipelineUtils.baseInitAnd(ch -> {
+      ch.pipeline().addLast(new LoginHandler(routerEngine));
+      ch.pipeline().addLast(new MainHandler(net_router, new BasePacketHandler<>()));
+    }), PipelineUtils.baseInitAnd(ch -> {
+      ch.pipeline().addLast(new LoginHandler(clientEngine));
+      ch.pipeline().addLast(new MainHandler(net_client, new BasePacketHandler<>()));
+    }), group);
+
+    con.open();
+    con.awaitRunning();
+    Preconditions.checkState(con.getState() == LocalCoupling.State.ACTIVE);
+
+    Future<?> clientOnRouter = net_client.getNodeUnsafe(net_router.getHome().getId()).newUpdatePromise();
+    Future<?> routerOnClient = net_router.getNodeUnsafe(net_client.getHome().getId()).newUpdatePromise();
+
+    System.out.println("info");
+    
+    routerEngine.getLoginFuture().awaitUninterruptibly();
+    clientEngine.getLoginFuture().awaitUninterruptibly();
+
+    clientOnRouter.await(1000);
+    routerOnClient.await(1000);
+
+    Preconditions.checkNotNull(net_client.getNode(net_router.getHome().getId()));
+    Preconditions.checkNotNull(net_router.getNode(net_client.getHome().getId()));
 
   }
 
   @After
   public void tearDown() {
-    DirectScheduledExecutorService.enableWarning();
-  }
-
-  public static <T> Function<String, T> test(Class<T> c) {
-    return new Function<String, T>() {
-      @Override
-      public T apply(String t) {
-        // TODO Auto-generated method stub
-        return null;
-      }
-    };
+    con.close();
+    group.shutdownGracefully(1, 100, TimeUnit.MILLISECONDS);
   }
 
   @Test
   public void testUsability() throws InterruptedException, TimeoutException, ExecutionException {
-
-    Function<String, String> usability = (str) -> str + "success";
-
-    // net client was last initialized, so static instance is net_client!
-    BoundProcedure<String, String> proc = Procedure.of("usability", usability);
-    net_router.getProcedureManager().registerProcedure(proc);
     
     Node node = net_client.getNode(net_router.getHome().getId());
+
+    Function<String, String> usability = (str) -> str + "success";
+    BoundProcedure<String, String> proc = Procedure.of("usability", usability);
+    net_router.getProcedureManager().registerProcedure(proc).getRegisterFuture().await(1000);
+
+    assertNotNull(node);
     assertTrue(node.hasProcedure(proc));
 
     String result = Procedure.of("usability", usability)//
-        .call(net_client.getNode(net_router.getHome().getId()), "test").get(1, TimeUnit.MILLISECONDS);
+        .call(net_client.getNode(net_router.getHome().getId()), "test").get(1, TimeUnit.SECONDS);
     assertEquals("testsuccess", result);
+
 
   }
 
   @Test
   public void testTypetools() throws IOException, InterruptedException, TimeoutException, ExecutionException {
+
+    Node client_on_router = net_router.getNode(net_client.getHome().getId());
+
 
     String helloWorld = "Hello World!";
     final AtomicInteger runCount = new AtomicInteger(0);
@@ -121,7 +146,7 @@ public class ProcedureTest {
       int i = runCount.incrementAndGet();
       return i;
     };
-    net_client.getProcedureManager().registerProcedure("testTypetools", func);
+    net_client.getProcedureManager().registerProcedure("testTypetools", func).getRegisterFuture().await(1000);
 
     Procedure info1 = Procedure.of("testTypetools", String.class, Integer.class);
     Procedure info2 = Procedure.of("testTypetools", func);
@@ -130,12 +155,13 @@ public class ProcedureTest {
     assertTrue(info1.equals(info2));
     assertTrue(info1.compareTo(info2) == 0);
     CallableRegisteredProcedure<?, ?> p = net_client.getProcedureManager().getRegisteredProcedure(info1);
+
     assertNotNull(p);
     assertTrue(p == net_client.getProcedureManager().getRegisteredProcedure(info2));
     assertTrue(net_client.getHome().hasProcedure(info1));
     assertTrue(net_client.getHome().hasProcedure(info2));
 
-    Node client_on_router = net_router.getNode(net_client.getHome().getId());
+    assertNotNull(client_on_router);
     assertTrue(client_on_router.getProcedures().size() > 0);
     assertTrue(client_on_router.hasProcedure(info1));
     assertTrue(client_on_router.hasProcedure(info2));
@@ -154,15 +180,18 @@ public class ProcedureTest {
 
   @Test
   public void testFunction() throws IOException, InterruptedException, TimeoutException, ExecutionException {
-    String helloWorld = "Hello World!";
 
+    Node client_on_router = net_router.getNode(net_client.getHome().getId());
+
+
+    String helloWorld = "Hello World!";
     final AtomicInteger runCount = new AtomicInteger(0);
     Function<String, String> func = (t) -> {
       runCount.incrementAndGet();
       return t;
     };
 
-    net_client.getProcedureManager().registerProcedure("testFunction", func);
+    net_client.getProcedureManager().registerProcedure("testFunction", func).getRegisterFuture().await(1000);
 
     Procedure info1 = Procedure.of("testFunction", String.class, String.class);
     Procedure info2 = Procedure.of("testFunction", func);
@@ -171,12 +200,13 @@ public class ProcedureTest {
     assertTrue(info1.equals(info2));
     assertTrue(info1.compareTo(info2) == 0);
     CallableRegisteredProcedure<?, ?> p = net_client.getProcedureManager().getRegisteredProcedure(info1);
+
     assertNotNull(p);
     assertTrue(p == net_client.getProcedureManager().getRegisteredProcedure(info2));
     assertTrue(net_client.getHome().hasProcedure(info1));
     assertTrue(net_client.getHome().hasProcedure(info2));
 
-    Node client_on_router = net_router.getNode(net_client.getHome().getId());
+    assertNotNull(client_on_router);
     assertTrue(client_on_router.getProcedures().size() > 0);
     assertTrue(client_on_router.hasProcedure(info1));
     assertTrue(client_on_router.hasProcedure(info2));
@@ -198,11 +228,14 @@ public class ProcedureTest {
   @Test
   public void testRunnable() throws InterruptedException, TimeoutException, ExecutionException {
 
+    Node client_on_router = net_router.getNode(net_client.getHome().getId());
+
+
     final AtomicInteger runCount = new AtomicInteger(0);
     Runnable func = () -> {
       runCount.incrementAndGet();
     };
-    net_client.getProcedureManager().registerProcedure("testRunnable", func);
+    net_client.getProcedureManager().registerProcedure("testRunnable", func).getRegisterFuture().await(1000);
 
     Procedure info1 = Procedure.of("testRunnable", Void.class, Void.class);
     Procedure info2 = Procedure.of("testRunnable", func);
@@ -211,12 +244,13 @@ public class ProcedureTest {
     assertTrue(info1.equals(info2));
     assertTrue(info1.compareTo(info2) == 0);
     CallableRegisteredProcedure<?, ?> p = net_client.getProcedureManager().getRegisteredProcedure(info1);
+
     assertNotNull(p);
     assertTrue(p == net_client.getProcedureManager().getRegisteredProcedure(info2));
     assertTrue(net_client.getHome().hasProcedure(info1));
     assertTrue(net_client.getHome().hasProcedure(info2));
 
-    Node client_on_router = net_router.getNode(net_client.getHome().getId());
+    assertNotNull(client_on_router);
     assertTrue(client_on_router.getProcedures().size() > 0);
     assertTrue(client_on_router.hasProcedure(info1));
     assertTrue(client_on_router.hasProcedure(info2));
@@ -234,8 +268,11 @@ public class ProcedureTest {
 
   @Test
   public void testConsumer() throws InterruptedException, TimeoutException, ExecutionException {
-    String helloWorld = "Hello World!";
 
+    Node client_on_router = net_router.getNode(net_client.getHome().getId());
+
+
+    String helloWorld = "Hello World!";
     final AtomicInteger runCount = new AtomicInteger(0);
     Consumer<String> func = (t) -> {
       if (helloWorld.equals(t)) {
@@ -244,7 +281,7 @@ public class ProcedureTest {
         fail();
       }
     };
-    net_client.getProcedureManager().registerProcedure("testConsumer", func);
+    net_client.getProcedureManager().registerProcedure("testConsumer", func).getRegisterFuture().await(1000);
 
     Procedure info1 = Procedure.of("testConsumer", String.class, Void.class);
     Procedure info2 = Procedure.of("testConsumer", func);
@@ -253,12 +290,13 @@ public class ProcedureTest {
     assertTrue(info1.equals(info2));
     assertTrue(info1.compareTo(info2) == 0);
     CallableRegisteredProcedure<?, ?> p = net_client.getProcedureManager().getRegisteredProcedure(info1);
+
     assertNotNull(p);
     assertTrue(p == net_client.getProcedureManager().getRegisteredProcedure(info2));
     assertTrue(net_client.getHome().hasProcedure(info1));
     assertTrue(net_client.getHome().hasProcedure(info2));
 
-    Node client_on_router = net_router.getNode(net_client.getHome().getId());
+    assertNotNull(client_on_router);
     assertTrue(client_on_router.getProcedures().size() > 0);
     assertTrue(client_on_router.hasProcedure(info1));
     assertTrue(client_on_router.hasProcedure(info2));
@@ -277,14 +315,20 @@ public class ProcedureTest {
 
   @Test
   public void testSupplier() throws InterruptedException, TimeoutException, ExecutionException {
-    String helloWorld = "Hello World!";
 
+    Node client_on_router = net_router.getNode(net_client.getHome().getId());
+
+
+    String helloWorld = "Hello World!";
     final AtomicInteger runCount = new AtomicInteger(0);
     Supplier<String> func = () -> {
       runCount.incrementAndGet();
       return helloWorld;
     };
-    net_client.getProcedureManager().registerProcedure("testSupplier", func);
+
+    long start = System.currentTimeMillis();
+    net_client.getProcedureManager().registerProcedure("testSupplier", func).getRegisterFuture().await(1000);
+
 
     Procedure info1 = Procedure.of("testSupplier", Void.class, String.class);
     Procedure info2 = Procedure.of("testSupplier", func);
@@ -293,12 +337,13 @@ public class ProcedureTest {
     assertTrue(info1.equals(info2));
     assertTrue(info1.compareTo(info2) == 0);
     CallableRegisteredProcedure<?, ?> p = net_client.getProcedureManager().getRegisteredProcedure(info1);
+
     assertNotNull(p);
     assertTrue(p == net_client.getProcedureManager().getRegisteredProcedure(info2));
     assertTrue(net_client.getHome().hasProcedure(info1));
     assertTrue(net_client.getHome().hasProcedure(info2));
 
-    Node client_on_router = net_router.getNode(net_client.getHome().getId());
+    assertNotNull(client_on_router);
     assertTrue(client_on_router.getProcedures().size() > 0);
     assertTrue(client_on_router.hasProcedure(info1));
     assertTrue(client_on_router.hasProcedure(info2));
@@ -312,6 +357,7 @@ public class ProcedureTest {
     assertEquals(helloWorld, call.get(1, TimeUnit.MILLISECONDS));
     assertEquals(1, runCount.get());
 
+    System.out.println("publish: " + (System.currentTimeMillis() - start));
   }
 
 }

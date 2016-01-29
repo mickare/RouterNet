@@ -13,10 +13,6 @@ public class ConnectionException extends IOException {
   @Getter
   private final ErrorMessage.Type type;
 
-  @Getter
-  private boolean doLog = false;
-
-
   public static ConnectionException of(ErrorMessage error) {
     if (error.getType() == ErrorMessage.Type.HANDSHAKE) {
       return new HandshakeException(error.getMessage());
@@ -25,8 +21,6 @@ public class ConnectionException extends IOException {
     }
     return new ConnectionException(error.getType(), error.getMessage());
   }
-
-
 
   public ConnectionException(ErrorMessage.Type type) {
     Preconditions.checkNotNull(type);
@@ -49,11 +43,6 @@ public class ConnectionException extends IOException {
     super(message, cause);
     Preconditions.checkNotNull(type);
     this.type = type;
-  }
-
-  public ConnectionException doLog() {
-    this.doLog = true;
-    return this;
   }
 
 }

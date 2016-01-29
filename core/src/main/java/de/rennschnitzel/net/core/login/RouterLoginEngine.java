@@ -8,6 +8,7 @@ import com.google.common.base.Preconditions;
 import de.rennschnitzel.net.Protocol;
 import de.rennschnitzel.net.ProtocolUtils;
 import de.rennschnitzel.net.core.AbstractNetwork;
+import de.rennschnitzel.net.event.LoginSuccessEvent.ClientLoginSuccessEvent;
 import de.rennschnitzel.net.exception.HandshakeException;
 import de.rennschnitzel.net.exception.ProtocolException;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginChallengeMessage;
@@ -15,36 +16,37 @@ import de.rennschnitzel.net.protocol.LoginProtocol.LoginHandshakeMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginResponseMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginSuccessMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginUpgradeMessage;
-import io.netty.util.concurrent.Future;
+import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
 import lombok.Getter;
 
-public abstract class LoginRouterHandler<C> extends LoginHandler<C> {
+public class RouterLoginEngine extends LoginEngine {
 
-  private final AuthenticationRouter authentication;
+  private final RouterAuthentication authentication;
 
   @Getter
   private int protocolVersion = -1;
   @Getter
-  private UUID id = null;
+  private UUID loginId = null;
   @Getter
-  private String name = null;
+  private String loginName = null;
 
   @Getter
-  private LoginUpgradeMessage finalMessage;
+  private LoginUpgradeMessage finalMessage = null;
 
-  public LoginRouterHandler(String handlerName, AbstractNetwork network, AuthenticationRouter authentication) {
-    super(handlerName, network);
+  public RouterLoginEngine(AbstractNetwork network, RouterAuthentication authentication) {
+    super(network);
     Preconditions.checkNotNull(authentication);
     this.authentication = authentication;
   }
 
   @Override
-  public void channelActive(C ctx) throws Exception {
+  public void start() throws Exception {
+    Preconditions.checkState(this.getChannel() != null);
     checkState(State.NEW);
   }
 
   @Override
-  public void handle(C ctx, LoginHandshakeMessage msg) throws Exception {
+  public void handle(LoginEngine ctx, LoginHandshakeMessage msg) throws Exception {
     checkAndSetState(State.NEW, State.LOGIN);
 
     if (msg.getProtocolVersion() > Protocol.VERSION) {
@@ -54,22 +56,22 @@ public abstract class LoginRouterHandler<C> extends LoginHandler<C> {
     }
 
     this.protocolVersion = msg.getProtocolVersion();
-    this.id = ProtocolUtils.convert(msg.getId());
-    this.name = msg.getName();
+    this.loginId = ProtocolUtils.convert(msg.getId());
+    this.loginName = msg.getName();
 
-    Preconditions.checkState(this.id != null);
+    Preconditions.checkState(this.loginId != null);
 
-    addFailListener(ctx, send(ctx, LoginChallengeMessage.newBuilder().setToken(this.authentication.getChallenge()).build()));
+    this.getChannel().writeAndFlush(LoginChallengeMessage.newBuilder().setToken(this.authentication.getChallenge()))
+        .addListener(FAIL_LISTENER);
   }
 
-  protected abstract Future<?> send(C ctx, LoginChallengeMessage msg) throws Exception;
-
   @Override
-  public void handle(C ctx, LoginResponseMessage msg) throws Exception {
+  public void handle(LoginEngine ctx, LoginResponseMessage msg) throws Exception {
     checkAndSetState(State.LOGIN, State.AUTH);
 
     if (!this.authentication.checkResponse(msg.getToken())) {
-      throw new HandshakeException("invalid login");
+      this.fail(new HandshakeException("invalid login"));
+      return;
     }
 
     LoginSuccessMessage.Builder b = LoginSuccessMessage.newBuilder();
@@ -79,32 +81,31 @@ public abstract class LoginRouterHandler<C> extends LoginHandler<C> {
       b.setRouterName(name.get());
     }
     b.setTopology(this.getNetwork().getTopologyMessage());
-    addFailListener(ctx, send(ctx, b.build()));
+    this.getChannel().writeAndFlush(b).addListener(FAIL_LISTENER);
   }
 
-  protected abstract Future<?> send(C ctx, LoginSuccessMessage msg) throws Exception;
-
   @Override
-  public void handle(C ctx, LoginUpgradeMessage msg) throws Exception {
+  public void handle(LoginEngine ctx, LoginUpgradeMessage msg) throws Exception {
     checkState(State.AUTH);
     this.finalMessage = msg;
-    upgrade(ctx, msg);
+    NodeMessage node = msg.getNode();
+    Preconditions.checkState(node != null);
+    setSuccess();
   }
 
-  protected abstract void upgrade(C ctx, LoginUpgradeMessage msg) throws Exception;
-
   @Override
-  public void handle(C ctx, LoginChallengeMessage msg) throws Exception {
+  public void handle(LoginEngine ctx, LoginChallengeMessage msg) throws Exception {
     throw new ProtocolException("invalid packet");
   }
 
   @Override
-  public void handle(C ctx, LoginSuccessMessage msg) throws Exception {
+  public void handle(LoginEngine ctx, LoginSuccessMessage msg) throws Exception {
     throw new ProtocolException("invalid packet");
   }
 
   @Override
-  public void registerNodes() {
-    this.getNetwork().updateNode(this.getFinalMessage().getNode());
+  public ClientLoginSuccessEvent newLoginSuccessEvent() {
+    return new ClientLoginSuccessEvent(this.getNetwork(), this.getLoginId(), this.getLoginName(), this.finalMessage.getNode());
   }
+
 }

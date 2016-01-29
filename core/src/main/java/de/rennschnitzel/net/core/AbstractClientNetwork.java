@@ -5,8 +5,11 @@ import java.util.concurrent.ExecutionException;
 
 import de.rennschnitzel.net.ProtocolUtils;
 import de.rennschnitzel.net.core.Node.HomeNode;
+import de.rennschnitzel.net.core.packet.Packer;
 import de.rennschnitzel.net.core.procedure.ProcedureCall;
 import de.rennschnitzel.net.core.tunnel.TunnelMessage;
+import de.rennschnitzel.net.exception.ProtocolException;
+import de.rennschnitzel.net.protocol.TransportProtocol;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
@@ -18,7 +21,7 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.netty.util.concurrent.Promise;
 
-public abstract class AbstractClientNetwork extends AbstractNetwork implements PacketOutWriter {
+public abstract class AbstractClientNetwork extends AbstractNetwork {
 
   public AbstractClientNetwork(HomeNode home) {
     super(home);
@@ -72,73 +75,62 @@ public abstract class AbstractClientNetwork extends AbstractNetwork implements P
   }
 
   @Override
-  public <T, R> Future<?> sendProcedureCall(ProcedureCall<T, R> call) {
-    try {
+  public <T, R> void sendProcedureCall(ProcedureCall<T, R> call) {
 
+    if (!call.getTarget().isOnly(this.getHome())) {
       ProcedureMessage.Builder b = ProcedureMessage.newBuilder();
       b.setTarget(call.getTarget().getProtocolMessage());
       b.setSender(ProtocolUtils.convert(getHome().getId()));
       b.setCall(call.toProtocol());
-      ProcedureMessage msg = b.build();
-      Packet packet = Packet.newBuilder().setProcedureMessage(msg).build();
+      send(Packer.pack(b.build()));
 
-      Future<?> future = FutureUtils.SUCCESS;
-      if (!call.getTarget().isOnly(this.getHome())) {
-        future = send(packet);
-
-      }
-      if (call.getTarget().contains(this.getHome())) {
-        this.getProcedureManager().handle(call);
-      }
-      return future;
-
-    } catch (Exception e) {
-      return FutureUtils.futureFailure(e);
     }
-  }
+    if (call.getTarget().contains(this.getHome())) {
+      this.getProcedureManager().handle(call);
+    }
 
-  public Future<?> send(Packet packet) {
-    return FutureUtils.combine(getConnectionFuture(), con -> con.send(packet));
-  }
-
-  public Future<?> send(Packet.Builder packet) {
-    return send(packet.build());
   }
 
   @Override
-  public Future<?> sendProcedureResponse(UUID receiverId, ProcedureResponseMessage build) {
-    ProcedureMessage pmsg = ProcedureMessage.newBuilder().setSender(ProtocolUtils.convert(getHome().getId()))
-        .setTarget(Target.to(receiverId).getProtocolMessage()).setResponse(build).build();
+  protected void sendProcedureResponse(final UUID receiverId, final ProcedureResponseMessage msg) throws ProtocolException {
+    sendProcedureResponse(this.getHome().getId(), receiverId, msg);
+  }
+
+  @Override
+  protected void sendProcedureResponse(final UUID senderId, final UUID receiverId, final ProcedureResponseMessage msg)
+      throws ProtocolException {
+    final ProcedureMessage pmsg = ProcedureMessage.newBuilder().setSender(ProtocolUtils.convert(senderId))
+        .setTarget(Target.to(receiverId).getProtocolMessage()).setResponse(msg).build();
     if (this.getHome().getId().equals(receiverId)) {
-      try {
-        this.getProcedureManager().handle(this, pmsg);
-        return FutureUtils.SUCCESS;
-      } catch (Exception e) {
-        return FutureUtils.futureFailure(e);
-      }
+      this.getProcedureManager().handle(pmsg);
     } else {
-      return send(Packet.newBuilder().setProcedureMessage(pmsg));
+      send(Packer.pack(pmsg));
     }
   }
 
+
+  private void send(final Packet packet) {
+    FutureUtils.onSuccess(this.getConnectionFuture(), con -> {
+      con.writeAndFlushFast(packet);
+    });
+  }
 
   @Override
   public void publishHomeNodeUpdate() {
-    this.getHome().sendUpdate(this);
+    FutureUtils.onSuccess(this.getConnectionFuture(), getHome()::sendUpdate);
   }
 
   @Override
-  protected Future<?> sendTunnelMessage(TunnelMessage cmsg) {
-    return FutureUtils.combine(this.getConnectionFuture(), con -> {
-      return send(Packet.newBuilder().setTunnelMessage(cmsg.toProtocolMessage(con)));
+  protected void sendTunnelMessage(final TunnelMessage cmsg) {
+    final TransportProtocol.TunnelMessage msg = cmsg.toProtocolMessage();
+    FutureUtils.onSuccess(this.getConnectionFuture(), con -> {
+      con.writeAndFlushFast(msg);
     });
   }
 
   @Override
-  protected Future<Integer> registerTunnel(Tunnel tunnel) {
-    return FutureUtils.combine(this.getConnectionFuture(), con -> {
-      return con.registerTunnel(tunnel);
-    });
+  protected void registerTunnel(final Tunnel tunnel) {
+    FutureUtils.onSuccess(this.getConnectionFuture(), tunnel::register);
   }
 
 }

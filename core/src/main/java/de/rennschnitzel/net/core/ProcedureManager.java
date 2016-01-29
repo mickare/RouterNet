@@ -1,6 +1,5 @@
 package de.rennschnitzel.net.core;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
@@ -18,6 +17,7 @@ import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import de.rennschnitzel.net.ProtocolUtils;
 import de.rennschnitzel.net.core.procedure.BoundProcedure;
 import de.rennschnitzel.net.core.procedure.CallableProcedure;
 import de.rennschnitzel.net.core.procedure.CallableRegisteredProcedure;
@@ -34,6 +34,7 @@ import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
 import de.rennschnitzel.net.util.TypeUtils;
 import de.rennschnitzel.net.util.concurrent.CloseableLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
+import io.netty.util.concurrent.Future;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -103,30 +104,31 @@ public class ProcedureManager {
     Preconditions.checkArgument(argClass != TypeResolver.Unknown.class);
     Preconditions.checkArgument(resultClass != TypeResolver.Unknown.class);
     final CallableRegisteredProcedure<T, R> proc = new CallableRegisteredProcedure<T, R>(network, name, argClass, resultClass, function);
-    _registerProcedure(proc);
+    proc.setRegisterFuture(_registerProcedure(proc));
     return proc;
   }
 
 
   public <T, R> CallableRegisteredProcedure<T, R> registerProcedure(CallableProcedure<T, R> procedure, Function<T, R> function) {
     final CallableRegisteredProcedure<T, R> proc = new CallableRegisteredProcedure<>(network, procedure, function);
-    _registerProcedure(proc);
+    proc.setRegisterFuture(_registerProcedure(proc));
     return proc;
   }
 
   public <T, R> CallableRegisteredProcedure<T, R> registerProcedure(BoundProcedure<T, R> procedure) {
     final CallableRegisteredProcedure<T, R> proc = new CallableRegisteredProcedure<>(network, procedure, procedure.getFunction());
-    _registerProcedure(proc);
+    proc.setRegisterFuture(_registerProcedure(proc));
     return proc;
   }
 
 
 
-  private void _registerProcedure(CallableRegisteredProcedure<?, ?> proc) {
+  private Future<?> _registerProcedure(CallableRegisteredProcedure<?, ?> proc) {
     try (CloseableLock l = lock.writeLock().open()) {
       registeredProcedures.put(proc, proc);
     }
     network.getHome().addRegisteredProcedure(proc);
+    return network.getHome().newUpdatePromise();
   }
 
   public CallableRegisteredProcedure<?, ?> getRegisteredProcedure(Procedure info) {
@@ -178,7 +180,7 @@ public class ProcedureManager {
     return call.getResult();
   }
 
-  public <T, R> void handle(ProcedureCall<T, R> call) {
+  public <T, R> void handle(final ProcedureCall<T, R> call) {
 
     try {
       @SuppressWarnings("unchecked")
@@ -193,28 +195,31 @@ public class ProcedureManager {
 
   }
 
-  public void handle(PacketOutWriter out, ProcedureMessage msg) throws ProtocolException {
+  public void handle(final ProcedureMessage msg) throws ProtocolException {
     switch (msg.getContentCase()) {
       case CALL:
-        handle(out, msg, msg.getCall());
+        if (!this.getNetwork().getHome().isPart(msg.getTarget())) {
+          sendFail(msg, msg.getCall(), ErrorMessage.newBuilder().setType(ErrorMessage.Type.UNDEFINED).setMessage("wrong target"));
+        }
+        handle(msg, msg.getCall());
         break;
       case RESPONSE:
-        handle(out, msg, msg.getResponse());
+        handle(msg, msg.getResponse());
         break;
       default:
-        throw new ProtocolException("Unknown content!");
+        throw new ProtocolException("unknown procedure content!");
     }
   }
 
 
-  private void handle(PacketOutWriter out, ProcedureMessage msg, ProcedureResponseMessage response) {
+  private void handle(final ProcedureMessage msg, final ProcedureResponseMessage response) {
     ProcedureCall<?, ?> call = this.openCalls.getIfPresent(response.getId());
     if (call != null) {
       call.receive(msg, response);
     }
   }
 
-  private ProcedureResponseMessage.Builder newResponse(ProcedureCallMessage call) {
+  private ProcedureResponseMessage.Builder newResponse(final ProcedureCallMessage call) {
     ProcedureResponseMessage.Builder b = ProcedureResponseMessage.newBuilder();
     b.setProcedure(call.getProcedure());
     b.setId(call.getId());
@@ -222,38 +227,41 @@ public class ProcedureManager {
     return b;
   }
 
-  private void sendFail(PacketOutWriter out, ProcedureMessage msg, ProcedureCallMessage call, ErrorMessage.Builder error) throws IOException {
+  private void sendFail(final ProcedureMessage msg, final ProcedureCallMessage call, final ErrorMessage.Builder error)
+      throws ProtocolException {
     ProcedureResponseMessage.Builder b = newResponse(call);
     b.setSuccess(false);
     b.setCancelled(false);
     b.setError(error);
-    network.sendProcedureResponse(msg.getSender(), b.build());
+    network.sendProcedureResponse(ProtocolUtils.convert(msg.getSender()), b.build());
   }
 
-  private void handle(PacketOutWriter out, ProcedureMessage msg, ProcedureCallMessage call) {
-    try {
-      Procedure key = new Procedure(call.getProcedure());
-      CallableRegisteredProcedure<?, ?> proc = this.registeredProcedures.get(key);
-      if (proc == null) {
-        sendFail(out, msg, call, ErrorMessage.newBuilder().setType(ErrorMessage.Type.UNDEFINED).setMessage("unregistered procedure"));
-      }
+  private void handle(final ProcedureMessage msg, final ProcedureCallMessage call) throws ProtocolException {
 
-      ProcedureResponseMessage.Builder b = newResponse(call);
-      proc.remoteCalled(call, b);
-      b.setSuccess(true);
-      b.setCancelled(false);
-      network.sendProcedureResponse(msg.getSender(), b.build());
-
-    } catch (Exception e) {
-      network.getLogger().log(Level.SEVERE, "Procedure handling failed\n" + e.getMessage(), e);
-      try {
-        sendFail(out, msg, call, ErrorMessage.newBuilder().setType(ErrorMessage.Type.UNDEFINED)
-            .setMessage("exception in procedure call + (" + e.getMessage() + ")"));
-      } catch (IOException e1) {
-        // not anything we can do here anymore...
-        this.getNetwork().getLogger().log(Level.SEVERE, "Unrecoverable exception: " + e1.getMessage(), e1);
-      }
+    final Procedure key = new Procedure(call.getProcedure());
+    final CallableRegisteredProcedure<?, ?> proc = this.registeredProcedures.get(key);
+    if (proc == null) {
+      sendFail(msg, call, ErrorMessage.newBuilder().setType(ErrorMessage.Type.UNDEFINED).setMessage("unregistered procedure"));
     }
+
+    this.getNetwork().getExecutor().execute(() -> {
+      try {
+        ProcedureResponseMessage.Builder b = newResponse(call);
+        proc.remoteCalled(call, b);
+        b.setSuccess(true);
+        b.setCancelled(false);
+        network.sendProcedureResponse(ProtocolUtils.convert(msg.getSender()), b.build());
+      } catch (final Exception e) {
+        network.getLogger().log(Level.SEVERE, "Procedure handling failed\n" + e.getMessage(), e);
+        try {
+          sendFail(msg, call, ErrorMessage.newBuilder().setType(ErrorMessage.Type.UNDEFINED)
+              .setMessage("exception in procedure call + (" + e.getMessage() + ")"));
+        } catch (Exception e1) {
+          network.getLogger().log(Level.SEVERE, e1.getMessage(), e1);
+        }
+      }
+    });
+
   }
 
 

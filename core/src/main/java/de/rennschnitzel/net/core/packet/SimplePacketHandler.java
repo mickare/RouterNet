@@ -19,15 +19,6 @@ public class SimplePacketHandler<C> implements PacketHandler<C> {
   public SimplePacketHandler() {}
 
   @Override
-  public void handlerAdded(C ctx) throws Exception {}
-
-  @Override
-  public void channelActive(C ctx) throws Exception {}
-
-  @Override
-  public void channelInactive(C ctx) throws Exception {}
-
-  @Override
   public void handle(C ctx, HeartbeatMessage heartbeat) throws Exception {
     throw new UnsupportedOperationException("Not implemented!");
   }

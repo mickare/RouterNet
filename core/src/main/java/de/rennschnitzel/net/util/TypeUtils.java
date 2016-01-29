@@ -14,7 +14,6 @@ public class TypeUtils {
     // TODO Auto-generated constructor stub
   }
 
-
   public static <T, R> Class<?>[] resolveArgumentClass(Function<T, R> function) {
     Preconditions.checkNotNull(function);
     return TypeResolver.resolveRawArguments(Function.class, function.getClass());

@@ -7,7 +7,7 @@ import com.google.common.base.Preconditions;
 import de.rennschnitzel.net.NetClient;
 import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.login.AuthenticationFactory;
-import de.rennschnitzel.net.core.login.AuthenticationRouter;
+import de.rennschnitzel.net.core.login.RouterAuthentication;
 import de.rennschnitzel.net.dummy.DummClientNetwork;
 import lombok.Getter;
 
@@ -20,7 +20,7 @@ public class TestFramework {
   private final DummClientNetwork routerNetwork;
 
   @Getter
-  private AuthenticationRouter authenticationRouter;
+  private RouterAuthentication authenticationRouter;
 
   public TestFramework(NetClient client) {
     Preconditions.checkNotNull(client);

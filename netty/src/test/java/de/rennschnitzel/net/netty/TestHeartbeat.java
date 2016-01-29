@@ -17,10 +17,10 @@ import org.junit.Test;
 
 import com.google.common.net.HostAndPort;
 
-import de.rennschnitzel.net.core.login.AuthenticationClient;
+import de.rennschnitzel.net.core.login.ClientAuthentication;
 import de.rennschnitzel.net.core.login.AuthenticationFactory;
-import de.rennschnitzel.net.core.login.AuthenticationRouter;
-import de.rennschnitzel.net.core.login.LoginHandler;
+import de.rennschnitzel.net.core.login.RouterAuthentication;
+import de.rennschnitzel.net.core.login.LoginEngine;
 import de.rennschnitzel.net.core.packet.BasePacketHandler;
 import de.rennschnitzel.net.core.packet.PacketHandler;
 import de.rennschnitzel.net.dummy.DummClientNetwork;
@@ -38,8 +38,8 @@ public class TestHeartbeat {
 
   private Logger logger = new DummyLogger("TestHeartbeat", System.out);
 
-  private AuthenticationRouter authRouter = AuthenticationFactory.newPasswordForRouter("test2");
-  private AuthenticationClient authClient = AuthenticationFactory.newPasswordForClient("test2");
+  private RouterAuthentication authRouter = AuthenticationFactory.newPasswordForRouter("test2");
+  private ClientAuthentication authClient = AuthenticationFactory.newPasswordForClient("test2");
 
   private DummClientNetwork net_router;
   private DummClientNetwork net_client;
@@ -76,7 +76,7 @@ public class TestHeartbeat {
     final SslContext sslClient = PipelineUtils.sslContextForClient();
 
     // ROUTER - HANDLERS
-    Supplier<LoginHandler<ChannelHandlerContext>> router_loginHandler =
+    Supplier<LoginEngine<ChannelHandlerContext>> router_loginHandler =
         () -> new NettyLoginRouterHandler(net_router, authRouter);
     Supplier<PacketHandler<NettyConnection<DummClientNetwork>>> router_packetHandler =
         () -> new BasePacketHandler<NettyConnection<DummClientNetwork>>() {
@@ -101,7 +101,7 @@ public class TestHeartbeat {
 
 
     // CLIENT - HANDLERS
-    LoginHandler<ChannelHandlerContext> client_loginHandler =
+    LoginEngine<ChannelHandlerContext> client_loginHandler =
         new NettyLoginClientHandler(net_client, authClient);
     PacketHandler<NettyConnection<DummClientNetwork>> client_packetHandler =
         new BasePacketHandler<NettyConnection<DummClientNetwork>>();

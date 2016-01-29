@@ -7,7 +7,7 @@ import de.rennschnitzel.net.core.Node;
 import lombok.Getter;
 import lombok.NonNull;
 
-public class NetworkNodeEvent extends NetworkEvent {
+public class NodeEvent extends NetworkEvent {
 
 
   @Getter
@@ -15,7 +15,7 @@ public class NetworkNodeEvent extends NetworkEvent {
   private final Node node;
 
 
-  public NetworkNodeEvent(AbstractNetwork network, Node node) {
+  public NodeEvent(AbstractNetwork network, Node node) {
     super(network);
     // TODO Auto-generated constructor stub
     Preconditions.checkNotNull(node);
@@ -23,19 +23,19 @@ public class NetworkNodeEvent extends NetworkEvent {
   }
 
 
-  public static class NetworkNodeAddedEvent extends NetworkNodeEvent {
+  public static class NetworkNodeAddedEvent extends NodeEvent {
     public NetworkNodeAddedEvent(AbstractNetwork network, Node node) {
       super(network, node);
     }
   }
 
-  public static class NetworkNodeUpdatedEvent extends NetworkNodeEvent {
+  public static class NetworkNodeUpdatedEvent extends NodeEvent {
     public NetworkNodeUpdatedEvent(AbstractNetwork network, Node node) {
       super(network, node);
     }
   }
 
-  public static class NetworkNodeRemovedEvent extends NetworkNodeEvent {
+  public static class NetworkNodeRemovedEvent extends NodeEvent {
     public NetworkNodeRemovedEvent(AbstractNetwork network, Node node) {
       super(network, node);
     }

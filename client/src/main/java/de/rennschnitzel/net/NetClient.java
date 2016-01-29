@@ -17,7 +17,7 @@ import de.rennschnitzel.net.client.connection.ConnectService;
 import de.rennschnitzel.net.client.connection.DummyConnectService;
 import de.rennschnitzel.net.client.connection.NettyConnectService;
 import de.rennschnitzel.net.core.Node.HomeNode;
-import de.rennschnitzel.net.core.login.AuthenticationClient;
+import de.rennschnitzel.net.core.login.ClientAuthentication;
 import de.rennschnitzel.net.core.login.AuthenticationFactory;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
 import lombok.Getter;
@@ -45,7 +45,7 @@ public class NetClient {
 
   private TestFramework testFramework = null;
 
-  private AuthenticationClient authentication = null;
+  private ClientAuthentication authentication = null;
 
   private HostAndPort routerAddress = null;
 

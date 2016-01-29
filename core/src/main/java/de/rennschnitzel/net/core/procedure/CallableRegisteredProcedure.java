@@ -3,8 +3,15 @@ package de.rennschnitzel.net.core.procedure;
 import java.util.function.Function;
 
 import de.rennschnitzel.net.core.AbstractNetwork;
+import io.netty.util.concurrent.Future;
+import lombok.Getter;
+import lombok.Setter;
 
 public class CallableRegisteredProcedure<T, R> extends BoundProcedure<T, R> {
+
+  @Getter
+  @Setter
+  private Future<?> registerFuture = null;
 
   public CallableRegisteredProcedure(AbstractNetwork network, CallableProcedure<T, R> procedure, Function<T, R> function) {
     super(network, procedure, function);

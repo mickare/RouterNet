@@ -122,7 +122,8 @@ public final class PacketUtil {
   }
 
   // ******************************************************************************
-  // Transport
+  // Tunnel
+  
   public static final ChannelFuture writeAndFlush(final Channel ch, //
       final TunnelMessage.Builder value) {
     return writeAndFlush(ch, Packet.newBuilder().setTunnelMessage(value));

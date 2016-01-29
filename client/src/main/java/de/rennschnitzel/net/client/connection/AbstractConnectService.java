@@ -9,8 +9,8 @@ import com.google.common.util.concurrent.AbstractScheduledService;
 
 import de.rennschnitzel.net.NetClient;
 import de.rennschnitzel.net.core.Connection;
-import de.rennschnitzel.net.core.login.LoginClientHandler;
-import de.rennschnitzel.net.core.login.LoginHandler;
+import de.rennschnitzel.net.core.login.ClientLoginEngine;
+import de.rennschnitzel.net.core.login.LoginEngine;
 import de.rennschnitzel.net.core.packet.BasePacketHandler;
 import de.rennschnitzel.net.core.packet.PacketHandler;
 import de.rennschnitzel.net.util.FutureUtils;
@@ -20,7 +20,7 @@ import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
 import io.netty.util.concurrent.Future;
 import lombok.Getter;
 
-public abstract class AbstractConnectService<L extends LoginClientHandler<?>, C extends Connection>
+public abstract class AbstractConnectService<L extends ClientLoginEngine<?>, C extends Connection>
     extends AbstractScheduledService implements ConnectService<L> {
 
   @Getter
@@ -91,7 +91,7 @@ public abstract class AbstractConnectService<L extends LoginClientHandler<?>, C 
     try (CloseableLock l = lock.writeLock().open()) {
       Preconditions.checkState(this.loginHandler == null);
       this.loginHandler = createLoginHandler();
-      Preconditions.checkState(this.loginHandler.getState() == LoginHandler.State.NEW);
+      Preconditions.checkState(this.loginHandler.getState() == LoginEngine.State.NEW);
 
       FutureUtils.on(this.loginHandler.getConnectionPromise(), f -> {
         if (f.isSuccess()) {

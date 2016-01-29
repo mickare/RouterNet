@@ -27,10 +27,10 @@ import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.Node;
 import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.core.Tunnel;
-import de.rennschnitzel.net.core.login.AuthenticationClient;
+import de.rennschnitzel.net.core.login.ClientAuthentication;
 import de.rennschnitzel.net.core.login.AuthenticationFactory;
-import de.rennschnitzel.net.core.login.AuthenticationRouter;
-import de.rennschnitzel.net.core.login.LoginHandler;
+import de.rennschnitzel.net.core.login.RouterAuthentication;
+import de.rennschnitzel.net.core.login.LoginEngine;
 import de.rennschnitzel.net.core.packet.BasePacketHandler;
 import de.rennschnitzel.net.core.packet.PacketHandler;
 import de.rennschnitzel.net.core.procedure.BoundProcedure;
@@ -48,8 +48,8 @@ public class TestPipeline {
 
   private Logger logger = new DummyLogger("TestPipeline", System.out);
 
-  private AuthenticationRouter authRouter = AuthenticationFactory.newPasswordForRouter("test");
-  private AuthenticationClient authClient = AuthenticationFactory.newPasswordForClient("test");
+  private RouterAuthentication authRouter = AuthenticationFactory.newPasswordForRouter("test");
+  private ClientAuthentication authClient = AuthenticationFactory.newPasswordForClient("test");
 
   private Owner testingOwner;
   private DummClientNetwork net_router;
@@ -85,7 +85,7 @@ public class TestPipeline {
     final SslContext sslClient = PipelineUtils.sslContextForClient();
 
     // ROUTER - HANDLERS
-    Supplier<LoginHandler<ChannelHandlerContext>> router_loginHandler =
+    Supplier<LoginEngine<ChannelHandlerContext>> router_loginHandler =
         () -> new NettyLoginRouterHandler(net_router, authRouter);
     Supplier<PacketHandler<NettyConnection<DummClientNetwork>>> router_packetHandler =
         () -> new BasePacketHandler<NettyConnection<DummClientNetwork>>();
@@ -102,7 +102,7 @@ public class TestPipeline {
 
 
     // CLIENT - HANDLERS
-    LoginHandler<ChannelHandlerContext> client_loginHandler =
+    LoginEngine<ChannelHandlerContext> client_loginHandler =
         new NettyLoginClientHandler(net_client, authClient);
     PacketHandler<NettyConnection<DummClientNetwork>> client_packetHandler =
         new BasePacketHandler<NettyConnection<DummClientNetwork>>();
