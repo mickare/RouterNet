@@ -31,7 +31,7 @@
 		</dependency>
 		<dependency>
 			<groupId>de.rennschnitzel.net</groupId>
-			<artifactId>netty</artifactId>
+			<artifactId>core</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 	</dependencies>

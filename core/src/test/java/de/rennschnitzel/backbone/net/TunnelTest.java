@@ -11,6 +11,7 @@ import java.io.OutputStream;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -37,6 +38,7 @@ import de.rennschnitzel.net.netty.LocalCoupling;
 import de.rennschnitzel.net.netty.LoginHandler;
 import de.rennschnitzel.net.netty.MainHandler;
 import de.rennschnitzel.net.netty.PipelineUtils;
+import de.rennschnitzel.net.util.concurrent.DirectExecutorService;
 import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.concurrent.Future;
@@ -170,6 +172,7 @@ public class TunnelTest {
     });
 
     net_client.getTunnelIfPresent("base0").send(target_client, data0);
+    assertWaiting(10, () -> 1 == rec_client.get(), 100);
     assertEquals(1, rec_client.get());
     net_client.getTunnelIfPresent("base0").send(target_router, data0); // does nothing
     assertEquals(0, rec_router.get());
@@ -178,7 +181,7 @@ public class TunnelTest {
     assertEquals(1, rec_client.get());
     net_client.getTunnelIfPresent("base1").send(target_router, data1);
     assertWaiting(10, () -> 1 == rec_router.get(), 100);
-   // assertEquals(1, rec_router.get());
+    // assertEquals(1, rec_router.get());
 
     net_router.getTunnelIfPresent("base0").send(target_client, data0);
     assertWaiting(10, () -> 2 == rec_client.get(), 100);
@@ -188,6 +191,7 @@ public class TunnelTest {
     net_router.getTunnelIfPresent("base1").send(target_client, data1); // does nothing
     assertEquals(2, rec_client.get());
     net_router.getTunnelIfPresent("base1").send(target_router, data1);
+    assertWaiting(10, () -> 2 == rec_router.get(), 100);
     assertEquals(2, rec_router.get());
 
     net_router.getTunnelIfPresent("base1").registerMessageListener(testingOwner, (msg) -> {
@@ -225,14 +229,14 @@ public class TunnelTest {
   }
 
   @Test
-  public void testStreamTunnel() throws IOException {
+  public void testStreamTunnel() throws Exception {
 
     StreamTunnel.Descriptor descIn = TunnelDescriptors.getStreamTunnel("stream");
     StreamTunnel.Descriptor descOut = TunnelDescriptors.getStreamTunnel("stream");
 
     StreamTunnel client = net_client.getTunnel(descOut);
     StreamTunnel router = net_router.getTunnel(descIn);
-
+    
     try (InputStream routerIn = router.newInputBuffer()) {
       try (InputStream clientIn = client.newInputBuffer()) {
 
@@ -249,12 +253,12 @@ public class TunnelTest {
         for (int i = 0; i < data.length; ++i) {
           byte[] buf = new byte[128];
           routerIn.read(buf);
-          assertArrayEquals(buf, data[i]);
+          assertArrayEquals(data[i], buf);
         }
         for (int i = 0; i < data.length; ++i) {
           byte[] buf = new byte[128];
           clientIn.read(buf);
-          assertArrayEquals(buf, data[i]);
+          assertArrayEquals(data[i], buf);
         }
 
         try (OutputStream out = client.newOutputBuffer(Target.to(net_router.getHome()))) {
@@ -267,7 +271,7 @@ public class TunnelTest {
         for (int i = 0; i < data.length; ++i) {
           byte[] buf = new byte[128];
           routerIn.read(buf);
-          assertArrayEquals(buf, data[i]);
+          assertArrayEquals(data[i], buf);
         }
         assertTrue(clientIn.available() == 0);
 

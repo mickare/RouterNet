@@ -23,8 +23,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-public class ObjectTunnel<T> extends AbstractSubTunnel<ObjectTunnel<T>, ObjectTunnel.Descriptor<T>>
-    implements TunnelHandler, SubTunnel {
+public class ObjectTunnel<T> extends AbstractSubTunnel<ObjectTunnel<T>, ObjectTunnel.Descriptor<T>>implements TunnelHandler, SubTunnel {
 
   public static class Descriptor<T> extends AbstractSubTunnelDescriptor<Descriptor<T>, ObjectTunnel<T>>
       implements SubTunnelDescriptor<ObjectTunnel<T>> {
@@ -103,8 +102,12 @@ public class ObjectTunnel<T> extends AbstractSubTunnel<ObjectTunnel<T>, ObjectTu
   }
 
   @Override
-  public void receive(TunnelMessage cmsg) throws ConvertObjectChannelException {
-    this.receive(new ObjectChannelMessage<T>(this, cmsg));
+  public void receive(final TunnelMessage cmsg) throws ConvertObjectChannelException {
+    if (this.listeners.size() > 0) {
+      this.getExectutor().orElseGet(this.getNetwork()::getExecutor).execute(() -> {
+        this.receive(new ObjectChannelMessage<T>(this, cmsg));
+      });
+    }
   }
 
   public void receive(ObjectChannelMessage<T> ocmsg) {

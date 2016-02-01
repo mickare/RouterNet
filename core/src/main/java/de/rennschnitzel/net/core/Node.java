@@ -244,19 +244,19 @@ public class Node {
       this.type = type;
     }
 
-    public Future<?> addNamespace(String namespace) {
+    public void addNamespace(String namespace) {
       Preconditions.checkArgument(!namespace.isEmpty());
       dirty |= this.namespaces.add(namespace.toLowerCase());
-      return publishChanges();
+      publishChanges();
     }
 
-    public Future<?> removeNamespace(String namespace) {
+    public void removeNamespace(String namespace) {
       Preconditions.checkArgument(!namespace.isEmpty());
       dirty |= this.namespaces.remove(namespace.toLowerCase());
-      return publishChanges();
+      publishChanges();
     }
 
-    public Future<?> setName(String name) {
+    public void setName(String name) {
       Optional<String> old = this.name;
       if (name == null || name.isEmpty()) {
         this.name = Optional.empty();
@@ -269,27 +269,27 @@ public class Node {
           dirty = true;
         }
       }
-      return publishChanges();
+      publishChanges();
     }
 
-    protected Future<?> addRegisteredProcedure(CallableRegisteredProcedure<?, ?> procedure) {
+    protected void addRegisteredProcedure(CallableRegisteredProcedure<?, ?> procedure) {
       dirty |= this.procedures.add(procedure);
-      return publishChanges();
+      publishChanges();
     }
 
-    protected Future<?> removeRegisteredProcedure(CallableRegisteredProcedure<?, ?> procedure) {
+    protected void removeRegisteredProcedure(CallableRegisteredProcedure<?, ?> procedure) {
       dirty |= this.procedures.remove(procedure);
-      return publishChanges();
+      publishChanges();
     }
 
-    public Future<?> publishChanges() {
+    public void publishChanges() {
       if (!this.dirty) {
-        return FutureUtils.SUCCESS;
+        return;
       }
       if (network.getHome() != this) {
         throw new IllegalStateException();
       }
-      return network.getExecutor().schedule(() -> {
+      network.getExecutor().schedule(() -> {
         if (this.dirty) {
           synchronized (HomeNode.this) {
             if (this.dirty) {

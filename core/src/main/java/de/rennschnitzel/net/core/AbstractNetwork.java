@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Logger;
 
 import org.nustaq.serialization.FSTConfiguration;
@@ -40,7 +41,6 @@ import de.rennschnitzel.net.util.concurrent.CloseableLock;
 import de.rennschnitzel.net.util.concurrent.CloseableReadWriteLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
-import io.netty.util.concurrent.EventExecutorGroup;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -89,7 +89,7 @@ public abstract class AbstractNetwork {
 
   public abstract Logger getLogger();
 
-  public abstract EventExecutorGroup getExecutor();
+  public abstract ScheduledExecutorService getExecutor();
 
 
   // ***************************************************************************
@@ -225,14 +225,18 @@ public abstract class AbstractNetwork {
     try (CloseableLock l = tunnelLock.open()) {
       Tunnel old = this.tunnelsByName.get(msg.getName());
 
-      if (old != null && old.getId() != msg.getTunnelId()) {
-        throw new ConnectionException(ErrorMessage.Type.ID_ALREADY_USED, "Can't register Tunnel with id " + msg.getTunnelId()
-            + " and name \"" + msg.getName() + "\". Already as \"" + old.getName() + "\" registered!");
-      }
       if (old != null) {
+
+        if (old.getId() != msg.getTunnelId()) {
+          throw new ConnectionException(ErrorMessage.Type.ID_ALREADY_USED, "Can't register Tunnel with id " + msg.getTunnelId()
+              + " and name \"" + msg.getName() + "\". Already as \"" + old.getName() + "\" registered!");
+        }
         old.setType(msg.getType());
+
       } else {
+        
         Tunnel tunnel = new Tunnel(this, msg.getName());
+        
         Preconditions.checkState(tunnel.getId() == msg.getTunnelId());
         tunnel.setType(msg.getType());
         this.tunnelsByName.put(tunnel.getName(), tunnel);

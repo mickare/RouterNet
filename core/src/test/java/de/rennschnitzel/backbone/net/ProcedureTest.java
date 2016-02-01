@@ -1,6 +1,9 @@
 package de.rennschnitzel.backbone.net;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -36,7 +39,6 @@ import de.rennschnitzel.net.netty.LocalCoupling;
 import de.rennschnitzel.net.netty.LoginHandler;
 import de.rennschnitzel.net.netty.MainHandler;
 import de.rennschnitzel.net.netty.PipelineUtils;
-import de.rennschnitzel.net.util.concurrent.DirectScheduledExecutorService;
 import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.concurrent.Future;

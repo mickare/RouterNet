@@ -21,7 +21,7 @@
 		<module>client</module>
 		<module>bukkit</module>
 		<module>router</module>
-		<module>netty</module>
+		
 	</modules>
 
 	<dependencies>

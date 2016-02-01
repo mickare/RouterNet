@@ -9,6 +9,7 @@ import com.google.protobuf.ByteString;
 import de.rennschnitzel.net.Protocol;
 import de.rennschnitzel.net.ProtocolUtils;
 import de.rennschnitzel.net.core.AbstractNetwork;
+import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.event.LoginSuccessEvent.RouterLoginSuccessEvent;
 import de.rennschnitzel.net.exception.ProtocolException;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginChallengeMessage;
@@ -88,8 +89,9 @@ public class ClientLoginEngine extends LoginEngine {
   }
 
   @Override
-  public RouterLoginSuccessEvent newLoginSuccessEvent() {
-    return new RouterLoginSuccessEvent(this.getNetwork(), this.getLoginId(), this.getLoginName(), this.finalMessage.getTopology());
+  public RouterLoginSuccessEvent newLoginSuccessEvent(Connection connection) {
+    return new RouterLoginSuccessEvent(this.getNetwork(), this.getLoginId(), this.getLoginName(), connection,
+        this.finalMessage.getTopology());
   }
 
 }

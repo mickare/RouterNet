@@ -5,6 +5,7 @@ import java.util.UUID;
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.core.AbstractNetwork;
+import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.packet.PacketHandler;
 import de.rennschnitzel.net.event.LoginSuccessEvent;
 import de.rennschnitzel.net.exception.ConnectionException;
@@ -77,7 +78,7 @@ public abstract class LoginEngine implements PacketHandler<LoginEngine> {
 
   public abstract String getLoginName();
 
-  public abstract LoginSuccessEvent newLoginSuccessEvent();
+  public abstract LoginSuccessEvent newLoginSuccessEvent(Connection connection);
 
   public boolean isSuccess() {
     return this.promise.isSuccess();

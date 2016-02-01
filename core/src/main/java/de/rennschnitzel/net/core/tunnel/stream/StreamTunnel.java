@@ -30,8 +30,7 @@ import lombok.RequiredArgsConstructor;
 
 public class StreamTunnel extends AbstractSubTunnel<StreamTunnel, StreamTunnel.Descriptor>implements TunnelHandler, SubTunnel {
 
-  public static class Descriptor extends AbstractSubTunnelDescriptor<Descriptor, StreamTunnel>
-      implements SubTunnelDescriptor<StreamTunnel> {
+  public static class Descriptor extends AbstractSubTunnelDescriptor<Descriptor, StreamTunnel>implements SubTunnelDescriptor<StreamTunnel> {
 
     public Descriptor(String name) {
       super(name, TunnelRegister.Type.STREAM);
@@ -93,7 +92,7 @@ public class StreamTunnel extends AbstractSubTunnel<StreamTunnel, StreamTunnel.D
 
 
   public OutputStream newOutputBuffer(Target target) throws IOException {
-    return newOutputBuffer(target, 512);
+    return newOutputBuffer(target, 1024);
   }
 
   public OutputStream newOutputBuffer(Target target, int bufferSize) throws IOException {
@@ -101,7 +100,7 @@ public class StreamTunnel extends AbstractSubTunnel<StreamTunnel, StreamTunnel.D
     Preconditions.checkArgument(!target.isEmpty());
     checkChannel();
     try {
-      if (!outputStreamSemaphore.tryAcquire(3, TimeUnit.SECONDS)) {
+      if (!outputStreamSemaphore.tryAcquire(20, TimeUnit.SECONDS)) {
         if (this.outputStream != null) {
           this.getNetwork().getLogger().log(Level.WARNING, "Resource is blocked by a not-closed OutputStream!",
               this.outputStream.getThrowable());
@@ -113,7 +112,8 @@ public class StreamTunnel extends AbstractSubTunnel<StreamTunnel, StreamTunnel.D
     }
     try {
       checkChannel();
-      return new ChannelOutputStream(target, bufferSize);
+      this.outputStream = new ChannelOutputStream(target, bufferSize);
+      return this.outputStream;
     } catch (Exception e) {
       outputStreamSemaphore.release();
       throw e;
@@ -138,13 +138,12 @@ public class StreamTunnel extends AbstractSubTunnel<StreamTunnel, StreamTunnel.D
   }
 
   @Override
-  public void receive(TunnelMessage cmsg) throws IOException {
-    this.receive(cmsg.getData().toByteArray());
-  }
+  public synchronized void receive(final TunnelMessage cmsg) throws IOException {
+    if (!isClosed() && this.inputBuffers.size() > 0) {
 
-  private synchronized void receive(byte[] data) throws IOException {
-    if (!isClosed()) {
-      for (ChannelInputStream in : this.inputBuffers) {
+      final byte[] data = cmsg.getData().toByteArray();
+
+      for (final ChannelInputStream in : this.inputBuffers) {
         try {
           in.write(data);
         } catch (IOException e) {
@@ -152,7 +151,9 @@ public class StreamTunnel extends AbstractSubTunnel<StreamTunnel, StreamTunnel.D
         }
       }
     }
+
   }
+
 
   private void checkChannel() throws IOException {
     if (isClosed()) {
@@ -277,7 +278,7 @@ public class StreamTunnel extends AbstractSubTunnel<StreamTunnel, StreamTunnel.D
         boolean old = closed;
         closed = true;
         if (!old) {
-          outputStreamSemaphore.release();
+          StreamTunnel.this.outputStreamSemaphore.release();
         }
       }
 

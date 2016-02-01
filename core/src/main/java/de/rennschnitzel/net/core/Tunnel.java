@@ -3,6 +3,7 @@ package de.rennschnitzel.net.core;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 
@@ -38,12 +39,19 @@ public class Tunnel {
   @Getter
   private volatile boolean closed = false;
 
+  @Getter
+  private Optional<Executor> executor = Optional.empty();
+
   public Tunnel(final AbstractNetwork network, final String name) {
     Preconditions.checkNotNull(network);
     Preconditions.checkArgument(!name.isEmpty());
     this.network = network;
     this.name = name.toLowerCase();
     this.id = this.name.hashCode();
+  }
+
+  public void setExectutor(Executor executor) {
+    this.executor = Optional.ofNullable(executor);
   }
 
   public synchronized void registerHandler(final TunnelHandler handler) throws IllegalStateException {
@@ -119,7 +127,11 @@ public class Tunnel {
   }
 
   public final void receive(final TunnelMessage cmsg) {
-    this.listeners.forEach(c -> c.accept(cmsg));
+    if (this.listeners.size() > 0) {
+      this.executor.orElseGet(this.network::getExecutor).execute(() -> {
+        this.listeners.forEach(c -> c.accept(cmsg));
+      });
+    }
     if (this.handler != null) {
       try {
         this.handler.receive(cmsg);

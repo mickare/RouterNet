@@ -8,6 +8,7 @@ import com.google.common.base.Preconditions;
 import de.rennschnitzel.net.Protocol;
 import de.rennschnitzel.net.ProtocolUtils;
 import de.rennschnitzel.net.core.AbstractNetwork;
+import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.event.LoginSuccessEvent.ClientLoginSuccessEvent;
 import de.rennschnitzel.net.exception.HandshakeException;
 import de.rennschnitzel.net.exception.ProtocolException;
@@ -104,8 +105,8 @@ public class RouterLoginEngine extends LoginEngine {
   }
 
   @Override
-  public ClientLoginSuccessEvent newLoginSuccessEvent() {
-    return new ClientLoginSuccessEvent(this.getNetwork(), this.getLoginId(), this.getLoginName(), this.finalMessage.getNode());
+  public ClientLoginSuccessEvent newLoginSuccessEvent(Connection connection) {
+    return new ClientLoginSuccessEvent(this.getNetwork(), this.getLoginId(), this.getLoginName(), connection, this.finalMessage.getNode());
   }
 
 }

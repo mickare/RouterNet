@@ -33,12 +33,21 @@ public class MainHandler extends SimpleChannelInboundHandler<Packet> {
     this.handler = handler;
   }
 
+
+  private void log(Object msg) {
+    log(msg != null ? msg.toString() : "null");
+  }
+  
+  private void log(String msg) {
+    getLogger().info(msg);
+  }
+  
   @Override
   protected void channelRead0(ChannelHandlerContext ctx, Packet msg) throws Exception {
-    System.out.println(msg);
+    log(msg);
     long start = System.currentTimeMillis();
     this.handler.handle(getConnection(ctx), msg);
-    System.out.println("channelRead0: " + (System.currentTimeMillis() - start));
+    log("channelRead0: " + (System.currentTimeMillis() - start));
   }
 
   private Connection getConnection(ChannelHandlerContext ctx) {
@@ -84,7 +93,7 @@ public class MainHandler extends SimpleChannelInboundHandler<Packet> {
   @Override
   public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
 
-    System.out.println(evt);
+    log(evt);
 
     if (evt instanceof LoginSuccessEvent) {
       LoginSuccessEvent login = (LoginSuccessEvent) evt;

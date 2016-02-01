@@ -46,16 +46,6 @@
 		</dependency>
 		<dependency>
 			<groupId>de.rennschnitzel.net</groupId>
-			<artifactId>protocol</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>de.rennschnitzel.net</groupId>
-			<artifactId>netty</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>de.rennschnitzel.net</groupId>
 			<artifactId>core</artifactId>
 			<version>${project.version}</version>
 		</dependency>

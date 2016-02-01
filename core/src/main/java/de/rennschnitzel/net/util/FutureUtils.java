@@ -6,7 +6,6 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
-import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.util.function.CheckedBiFunction;
 import de.rennschnitzel.net.util.function.CheckedConsumer;
 import de.rennschnitzel.net.util.function.CheckedFunction;
@@ -49,15 +48,31 @@ public class FutureUtils {
   }
 
   public static <V, F extends Future<V>> void on(F future, final CheckedConsumer<Future<V>> callback) {
-    future.addListener((FutureListener<V>) callback::accept);
+    if (future.isDone()) {
+      try {
+        callback.accept(future);
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    } else {
+      future.addListener((FutureListener<V>) callback::accept);
+    }
   }
 
   public static <V, F extends Future<V>> void onSuccess(F future, final CheckedConsumer<V> callback) {
-    future.addListener((FutureListener<V>) f -> {
-      if (f.isSuccess()) {
-        callback.accept(f.get());
+    if (future.isSuccess()) {
+      try {
+        callback.accept(future.get());
+      } catch (Exception e) {
+        throw new RuntimeException(e);
       }
-    });
+    } else {
+      future.addListener((FutureListener<V>) f -> {
+        if (f.isSuccess()) {
+          callback.accept(f.get());
+        }
+      });
+    }
   }
 
   public static <V> Promise<V> dereference(final Future<? extends Future<? extends V>> nested) {

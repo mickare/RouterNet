@@ -215,7 +215,9 @@ public class ProcedureManager {
   private void handle(final ProcedureMessage msg, final ProcedureResponseMessage response) {
     ProcedureCall<?, ?> call = this.openCalls.getIfPresent(response.getId());
     if (call != null) {
-      call.receive(msg, response);
+      this.getNetwork().getExecutor().execute(() -> {
+        call.receive(msg, response);
+      });
     }
   }
 

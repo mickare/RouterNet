@@ -5,13 +5,18 @@ import java.util.logging.Logger;
 
 import com.google.common.base.Preconditions;
 
+import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.login.LoginEngine;
 import de.rennschnitzel.net.core.login.LoginEngine.State;
+import de.rennschnitzel.net.event.LoginSuccessEvent;
 import de.rennschnitzel.net.exception.ConnectionException;
 import de.rennschnitzel.net.exception.HandshakeException;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
+import de.rennschnitzel.net.util.FutureUtils;
+import io.netty.util.concurrent.Promise;
+import lombok.Getter;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -22,6 +27,9 @@ public class LoginHandler extends SimpleChannelInboundHandler<Packet> {
 
   private final LoginEngine engine;
   int id = ++counter;
+
+  @Getter
+  private Promise<Connection> connectionPromise = FutureUtils.newPromise();
 
   public LoginHandler(LoginEngine engine) {
     super(Packet.class);
@@ -39,11 +47,15 @@ public class LoginHandler extends SimpleChannelInboundHandler<Packet> {
     this.engine.checkState(State.NEW);
     this.engine.getLoginFuture().addListener(f -> {
       if (f.isSuccess()) {
-        ctx.fireUserEventTriggered(engine.newLoginSuccessEvent());
+        Connection connection = new Connection(engine.getNetwork(), engine.getLoginId(), engine.getChannel());
+        LoginSuccessEvent event = engine.newLoginSuccessEvent(connection);
+        ctx.fireUserEventTriggered(event);
         ctx.pipeline().remove(LoginHandler.this);
+        connectionPromise.trySuccess(connection);
       } else {
         Throwable cause = f.cause();
         getLogger().log(Level.WARNING, "Failed login (" + engine.getFailureState() + "): " + cause.getMessage(), cause);
+        connectionPromise.tryFailure(cause);
         ctx.writeAndFlush(Packet.newBuilder().setClose(createCloseMessage(cause)).build()).addListener(ChannelFutureListener.CLOSE);
       }
     });

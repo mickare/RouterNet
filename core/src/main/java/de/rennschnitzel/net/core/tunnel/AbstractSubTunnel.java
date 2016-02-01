@@ -1,6 +1,8 @@
 package de.rennschnitzel.net.core.tunnel;
 
 import java.io.IOException;
+import java.util.Optional;
+import java.util.concurrent.Executor;
 
 import com.google.common.base.Preconditions;
 
@@ -61,6 +63,15 @@ public abstract class AbstractSubTunnel<SELF extends AbstractSubTunnel<SELF, D>,
 
   public void register(Connection connection) {
     parentTunnel.register(connection);
+  }
+
+
+  public Optional<Executor> getExectutor() {
+    return this.parentTunnel.getExecutor();
+  }
+
+  public void setExectutor(Executor executor) {
+    this.parentTunnel.setExectutor(executor);
   }
 
 }

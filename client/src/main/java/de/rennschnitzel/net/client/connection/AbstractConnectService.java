@@ -13,6 +13,9 @@ import de.rennschnitzel.net.core.login.ClientLoginEngine;
 import de.rennschnitzel.net.core.login.LoginEngine;
 import de.rennschnitzel.net.core.packet.BasePacketHandler;
 import de.rennschnitzel.net.core.packet.PacketHandler;
+import de.rennschnitzel.net.exception.ConnectionException;
+import de.rennschnitzel.net.netty.LoginHandler;
+import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.net.util.FutureUtils;
 import de.rennschnitzel.net.util.concurrent.CloseableLock;
 import de.rennschnitzel.net.util.concurrent.CloseableReadWriteLock;
@@ -20,8 +23,8 @@ import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
 import io.netty.util.concurrent.Future;
 import lombok.Getter;
 
-public abstract class AbstractConnectService<L extends ClientLoginEngine<?>, C extends Connection>
-    extends AbstractScheduledService implements ConnectService<L> {
+public abstract class AbstractConnectService
+    extends AbstractScheduledService implements ConnectService {
 
   @Getter
   private final NetClient client;
@@ -32,8 +35,7 @@ public abstract class AbstractConnectService<L extends ClientLoginEngine<?>, C e
   private final TimeUnit delay_unit;
 
   private final CloseableReadWriteLock lock = new ReentrantCloseableReadWriteLock();
-  private Future<?> connectFuture = null;
-  private volatile L loginHandler = null;
+  private LoginHandler loginHandler = null;
 
   public AbstractConnectService(NetClient client) {
     this(client, 10, TimeUnit.SECONDS);
@@ -64,7 +66,10 @@ public abstract class AbstractConnectService<L extends ClientLoginEngine<?>, C e
   private void disconnect() {
     try (CloseableLock l = lock.writeLock().open()) {
       if (loginHandler != null) {
-        loginHandler.tryDisconnect("no reason");
+        if (!loginHandler.isDone()) {
+          loginHandler.fail(new ConnectionException(ErrorMessage.Type.UNAVAILABLE, "disconnect"));
+        }
+        loginHandler.getChannel().close();
       }
       this.loginHandler = null;
     }
@@ -78,7 +83,7 @@ public abstract class AbstractConnectService<L extends ClientLoginEngine<?>, C e
   private Future<?> connectSoft() {
     try (CloseableLock l = lock.writeLock().open()) {
       if (loginHandler != null) {
-        if (loginHandler.isContextActive()) {
+        if (loginHandler.getChannel().isActive()) {
           return FutureUtils.SUCCESS;
         }
         disconnect();
@@ -121,7 +126,7 @@ public abstract class AbstractConnectService<L extends ClientLoginEngine<?>, C e
 
   @Override
   public Future<Connection> getConnectionPromise() {
-    return getLoginHandler().getConnectionPromise();
+    return getLoginHandler().getLoginFuture();
   }
 
   @Override
