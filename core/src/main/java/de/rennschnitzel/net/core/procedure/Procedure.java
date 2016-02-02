@@ -67,8 +67,8 @@ public class Procedure implements Comparable<Procedure> {
   // STATIC - END
   // ***************************************************************************
 
-  @Getter
-  private final String name, argumentType, resultType;
+  
+  private @Getter final String name, argumentType, resultType;
   private final LazyCache<Class<?>> argumentClass;
   private final LazyCache<Class<?>> resultClass;
 

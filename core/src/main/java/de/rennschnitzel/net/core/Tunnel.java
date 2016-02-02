@@ -22,25 +22,15 @@ import lombok.RequiredArgsConstructor;
 
 public class Tunnel {
 
-  @Getter
-  private final AbstractNetwork network;
-
-  @Getter
-  private final String name;
-
-  @Getter
-  private final int id;
+  private @Getter final AbstractNetwork network;
+  private @Getter final String name;
+  private @Getter final int id;
+  private @Getter volatile boolean closed = false;
+  private @Getter Optional<Executor> executor = Optional.empty();
 
   private Optional<TunnelRegister.Type> type = Optional.empty();
   private TunnelHandler handler = null;
-
   private final CopyOnWriteArraySet<RegisteredMessageListener> listeners = new CopyOnWriteArraySet<>();
-
-  @Getter
-  private volatile boolean closed = false;
-
-  @Getter
-  private Optional<Executor> executor = Optional.empty();
 
   public Tunnel(final AbstractNetwork network, final String name) {
     Preconditions.checkNotNull(network);
@@ -83,43 +73,45 @@ public class Tunnel {
     this.closed = true;
   }
 
-  public void broadcast(final ByteBuffer data) {
-    this.send(Target.toAll(), data);
+  public boolean broadcast(final ByteBuffer data) {
+    return this.send(Target.toAll(), data);
   }
 
-  public void broadcast(final byte[] data) {
-    this.send(Target.toAll(), data);
+  public boolean broadcast(final byte[] data) {
+    return this.send(Target.toAll(), data);
   }
 
-  public void broadcast(final ByteString data) {
-    this.send(Target.toAll(), data);
+  public boolean broadcast(final ByteString data) {
+    return this.send(Target.toAll(), data);
   }
 
-  public void send(final Target target, final ByteBuffer data) {
-    this.send(target, ByteString.copyFrom(data));
+  public boolean send(final Target target, final ByteBuffer data) {
+    return this.send(target, ByteString.copyFrom(data));
   }
 
-  public void send(final Target target, final byte[] data) {
-    this.send(target, ByteString.copyFrom(data));
+  public boolean send(final Target target, final byte[] data) {
+    return this.send(target, ByteString.copyFrom(data));
   }
 
-  public void send(final Target target, final ByteString data) {
+  public boolean send(final Target target, final ByteString data) {
     final TunnelMessage cmsg = new TunnelMessage(this, target, getNetwork().getHome().getId(), data);
-    this.send(cmsg);
+    return this.send(cmsg);
   }
 
-  public void send(final TunnelMessage cmsg) {
+  public boolean send(final TunnelMessage cmsg) {
     final HomeNode home = getNetwork().getHome();
+    boolean success = true;
     if (!cmsg.getTarget().isOnly(home)) {
-      this.sendIgnoreSelf(cmsg);
+      success &= this.sendIgnoreSelf(cmsg);
     }
     if (cmsg.getTarget().contains(getNetwork().getHome())) {
       this.receive(cmsg);
     }
+    return success;
   }
 
-  private void sendIgnoreSelf(final TunnelMessage cmsg) {
-    this.network.sendTunnelMessage(cmsg);
+  private boolean sendIgnoreSelf(final TunnelMessage cmsg) {
+    return this.network.sendTunnelMessage(cmsg);
   }
 
   public final void receiveProto(final TransportProtocol.TunnelMessage msg) {
@@ -146,21 +138,25 @@ public class Tunnel {
   }
 
   public void register(Connection connection) {
+    register(connection, true);
+  }
+
+  public void register(Connection connection, boolean flush) {
     TunnelRegister.Builder b = TunnelRegister.newBuilder();
     b.setTunnelId(this.getId());
     b.setName(this.getName());
     b.setType(this.getType());
-    connection.writeAndFlushFast(b.build());
+    if (flush) {
+      connection.writeAndFlushFast(b.build());
+    } else {
+      connection.writeFast(b.build());
+    }
   }
 
-  @Getter
-  @RequiredArgsConstructor
-  private class RegisteredMessageListener implements Consumer<TunnelMessage> {
+  private @Getter @RequiredArgsConstructor class RegisteredMessageListener implements Consumer<TunnelMessage> {
 
-    @NonNull
-    private final Owner owner;
-    @NonNull
-    private final Consumer<TunnelMessage> delegate;
+    private @NonNull final Owner owner;
+    private @NonNull final Consumer<TunnelMessage> delegate;
 
     @Override
     public void accept(TunnelMessage cmsg) {

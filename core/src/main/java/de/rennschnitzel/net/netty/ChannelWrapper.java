@@ -7,11 +7,11 @@ import io.netty.channel.ChannelFuture;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
-public class ChannelWrapper implements PacketWriter<ChannelFuture> {
+
+public @RequiredArgsConstructor class ChannelWrapper implements PacketWriter<ChannelFuture> {
   
-  @Getter
-  private final Channel channel;
+  
+  private @Getter final Channel channel;
 
   public boolean isActive() {
     return channel.isActive();

@@ -8,16 +8,12 @@ import lombok.Getter;
 import lombok.NonNull;
 
 public class NodeEvent extends NetworkEvent {
-
-
-  @Getter
-  @NonNull
-  private final Node node;
+  
+  private @Getter @NonNull final Node node;
 
 
   public NodeEvent(AbstractNetwork network, Node node) {
     super(network);
-    // TODO Auto-generated constructor stub
     Preconditions.checkNotNull(node);
     this.node = node;
   }

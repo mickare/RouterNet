@@ -20,13 +20,14 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.Getter;
 
-public class MainHandler extends SimpleChannelInboundHandler<Packet> {
+public class ConnectionHandler extends SimpleChannelInboundHandler<Packet> {
 
-  @Getter
-  private final AbstractNetwork network;
-  private final PacketHandler<Connection> handler;
+  
+  private @Getter final AbstractNetwork network;
+  private final PacketHandler<Connection> handler;  
+  private @Getter Connection connection = null;
 
-  public MainHandler(AbstractNetwork network, PacketHandler<Connection> handler) {
+  public ConnectionHandler(AbstractNetwork network, PacketHandler<Connection> handler) {
     super(Packet.class);
     Preconditions.checkNotNull(network);
     this.network = network;
@@ -37,28 +38,23 @@ public class MainHandler extends SimpleChannelInboundHandler<Packet> {
   private void log(Object msg) {
     log(msg != null ? msg.toString() : "null");
   }
-  
+
   private void log(String msg) {
     getLogger().info(msg);
   }
-  
+
   @Override
   protected void channelRead0(ChannelHandlerContext ctx, Packet msg) throws Exception {
     log(msg);
     long start = System.currentTimeMillis();
-    this.handler.handle(getConnection(ctx), msg);
+    this.handler.handle(connection, msg);
     log("channelRead0: " + (System.currentTimeMillis() - start));
-  }
-
-  private Connection getConnection(ChannelHandlerContext ctx) {
-    return ctx.attr(PipelineUtils.ATTR_CONNECTION).get();
   }
 
   @Override
   public void channelInactive(final ChannelHandlerContext ctx) throws Exception {
-    Connection con = getConnection(ctx);
-    if (con != null) {
-      this.network.removeConnection(con);
+    if (connection != null) {
+      connection.removeFromNetwork();
     }
   }
 
@@ -96,15 +92,11 @@ public class MainHandler extends SimpleChannelInboundHandler<Packet> {
     log(evt);
 
     if (evt instanceof LoginSuccessEvent) {
+
       LoginSuccessEvent login = (LoginSuccessEvent) evt;
-      Connection con = new Connection(network, login.getId(), new ChannelWrapper(ctx.channel()));
-      ctx.attr(PipelineUtils.ATTR_CONNECTION).set(con);
-      if (!network.addConnection(con)) {
-        ErrorMessage error =
-            ErrorMessage.newBuilder().setType(ErrorMessage.Type.UNAVAILABLE).setMessage("could not add connection").build();
-        ctx.writeAndFlush(Packet.newBuilder().setClose(CloseMessage.newBuilder().setError(error))).addListener(ChannelFutureListener.CLOSE);
-        return;
-      }
+      this.connection = login.getConnection();
+      this.connection.addToNetwork();
+
       if (login instanceof ClientLoginSuccessEvent) {
         network.updateNode(((ClientLoginSuccessEvent) login).getNodeMessage());
       } else if (login instanceof RouterLoginSuccessEvent) {

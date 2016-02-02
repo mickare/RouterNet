@@ -66,10 +66,9 @@ public class AuthenticationFactory {
 
   private static final class PasswordRouterAuthentication implements RouterAuthentication {
 
-    @Getter
-    private final ByteString challenge;
-    @Getter
-    private final ByteString expectedResponse;
+    
+    private @Getter final ByteString challenge;
+    private @Getter final ByteString expectedResponse;
 
     public PasswordRouterAuthentication(String password) {
       byte[] challengeBuffer = new byte[128];

@@ -6,12 +6,10 @@ import de.rennschnitzel.net.Owner;
 import lombok.Data;
 import lombok.NonNull;
 
-@Data
-public class SimpleOwner implements Owner {
 
-  @NonNull
-  private final String name;
-  @NonNull
-  private final Logger logger;
-  
+public @Data class SimpleOwner implements Owner {
+
+  private @NonNull final String name;
+  private @NonNull final Logger logger;
+
 }

@@ -1,11 +1,11 @@
 package de.rennschnitzel.net.netty;
 
-import java.nio.channels.ClosedChannelException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.base.Preconditions;
 
-import de.rennschnitzel.net.util.FutureUtils;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -16,46 +16,38 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.local.LocalServerChannel;
-import io.netty.util.concurrent.Promise;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
-@RequiredArgsConstructor
-public class LocalCoupling implements AutoCloseable {
+
+public @RequiredArgsConstructor class LocalClientCouple implements AutoCloseable {
+
+  private static final AtomicInteger COUNTER = new AtomicInteger(0);
 
   public static enum State {
     NEW, STARTING, ACTIVE, CLOSED, FAILED;
   };
 
-  private static final AtomicInteger COUNTER = new AtomicInteger(0);
-
-  private final LocalAddress addr = new LocalAddress("localconnection." + COUNTER.getAndIncrement());
-
-  @NonNull
-  private final ChannelInitializer<LocalChannel> serverInit;
-  @NonNull
-  private final ChannelInitializer<LocalChannel> clientInit;
-
-  @Getter
-  private volatile State state = State.NEW;
-
-  @Setter
-  @Getter
-  private boolean shutdownGroup = true;
+  private @Getter final LocalAddress addr = new LocalAddress("localconnection." + COUNTER.getAndIncrement());
+  private @NonNull final ChannelInitializer<LocalChannel> serverInit;
+  private @NonNull final ChannelInitializer<LocalChannel> clientInit;
+  private @Getter volatile State state = State.NEW;
+  private @Getter Throwable failureCause = null;
+  private @Getter @Setter boolean shutdownGroup = true;
   private EventLoopGroup group = null;
   private Channel serverChannel;
   private Channel clientChannel;
 
-  public LocalCoupling(ChannelInitializer<LocalChannel> serverInit, ChannelInitializer<LocalChannel> clientInit, EventLoopGroup group) {
+  private final CountDownLatch latch = new CountDownLatch(1);
+
+  public LocalClientCouple(ChannelInitializer<LocalChannel> serverInit, ChannelInitializer<LocalChannel> clientInit, EventLoopGroup group) {
     this(serverInit, clientInit);
     Preconditions.checkArgument(!group.isShutdown());
     this.group = group;
     this.shutdownGroup = false;
   }
-
-  private final Promise<Void> promise = FutureUtils.newPromise();
 
   public AutoCloseable open() {
     Preconditions.checkState(state == State.NEW);
@@ -81,10 +73,10 @@ public class LocalCoupling implements AutoCloseable {
             if (cf.isSuccess()) {
               clientChannel = cf.channel();
               state = State.ACTIVE;
-              promise.trySuccess(null);
             } else {
               fail(cf.cause());
             }
+            latch.countDown();
           });
         } else {
           fail(sf.cause());
@@ -98,26 +90,29 @@ public class LocalCoupling implements AutoCloseable {
   }
 
   public void awaitRunning() throws InterruptedException {
-    promise.await();
+    latch.await();
   }
 
   public void awaitRunning(long timeoutMillis) throws InterruptedException {
-    promise.await(timeoutMillis);
+    latch.await(timeoutMillis, TimeUnit.MILLISECONDS);
   }
 
   private void fail(Throwable cause) {
-    this.promise.tryFailure(cause);
-    close();
     this.state = State.FAILED;
+    this.failureCause = cause;
+    _close();
   }
 
   @Override
   public void close() {
-    if (state == State.CLOSED) {
+    if (state == State.CLOSED || state == State.FAILED) {
       return;
     }
     state = State.CLOSED;
-    this.promise.tryFailure(new ClosedChannelException());
+    _close();
+  }
+
+  private void _close() {
     if (serverChannel != null) {
       serverChannel.close().awaitUninterruptibly();
     }
@@ -127,6 +122,7 @@ public class LocalCoupling implements AutoCloseable {
     if (shutdownGroup) {
       group.shutdownGracefully();
     }
+    latch.countDown();
   }
 
 

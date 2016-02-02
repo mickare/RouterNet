@@ -40,8 +40,8 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.jodah.typetools.TypeResolver;
 
-@RequiredArgsConstructor
-public class ProcedureManager {
+
+public @RequiredArgsConstructor class ProcedureManager {
 
 
   /**
@@ -52,10 +52,7 @@ public class ProcedureManager {
 
   private final ReentrantCloseableReadWriteLock lock = new ReentrantCloseableReadWriteLock();
   private final Map<Procedure, CallableRegisteredProcedure<?, ?>> registeredProcedures = Maps.newHashMap();
-
-  @NonNull
-  @Getter
-  private final AbstractNetwork network;
+  private final @NonNull @Getter AbstractNetwork network;
 
   private final Cache<Integer, ProcedureCall<?, ?>> openCalls = CacheBuilder.newBuilder()//
       .expireAfterWrite(MAX_TIMEOUT, TimeUnit.MILLISECONDS)//
@@ -149,7 +146,10 @@ public class ProcedureManager {
     if (!call.isDone()) {
       openCalls.put(call.getId(), call);
       try {
-        network.sendProcedureCall(call);
+        if(!network.sendProcedureCall(call)) {
+          call.setException(new NotConnectedException());
+          openCalls.invalidate(call.getId());
+        }
       } catch (Exception e) {
         call.setException(e);
       }
@@ -172,7 +172,10 @@ public class ProcedureManager {
     if (!call.isDone()) {
       openCalls.put(call.getId(), call);
       try {
-        network.sendProcedureCall(call);
+        if(!network.sendProcedureCall(call)) {
+          call.setException(new NotConnectedException());
+          openCalls.invalidate(call.getId());
+        }
       } catch (Exception e) {
         call.setException(e);
       }

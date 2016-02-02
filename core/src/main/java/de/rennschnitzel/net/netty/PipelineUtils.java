@@ -7,7 +7,6 @@ import java.util.logging.Level;
 import javax.net.ssl.SSLException;
 
 import de.rennschnitzel.net.core.AbstractNetwork;
-import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import de.rennschnitzel.net.util.ThrowableUtils;
 import de.rennschnitzel.net.util.function.CheckedConsumer;
@@ -31,15 +30,11 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
-import io.netty.util.AttributeKey;
 import io.netty.util.internal.PlatformDependent;
 
 public class PipelineUtils {
 
   private PipelineUtils() {}
-
-
-  public static final AttributeKey<Connection> ATTR_CONNECTION = AttributeKey.newInstance("connection");
 
   private static boolean epoll;
 

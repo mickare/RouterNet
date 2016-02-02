@@ -8,12 +8,9 @@ import lombok.Getter;
 
 public class ProcedureCallResult<T, R> extends AbstractFuture<R> {
 
-  @Getter
-  private final ProcedureCall<T, R> call;
-  @Getter
-  private final Node node;
-  @Getter
-  private long completionTime = -1;
+  private @Getter final ProcedureCall<T, R> call;
+  private @Getter final Node node;
+  private @Getter long completionTime = -1;
 
   protected ProcedureCallResult(ProcedureCall<T, R> call, Node node) {
     Preconditions.checkNotNull(call);

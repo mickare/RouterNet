@@ -14,18 +14,12 @@ public abstract class AbstractProcedureCall<T, R> implements ProcedureCall<T, R>
 
   private static final AtomicInteger ID_COUNTER = new AtomicInteger(new Random().nextInt());
 
-  @Getter
-  private final int id = ID_COUNTER.incrementAndGet();
-  @Getter
-  private final long timestamp = System.currentTimeMillis();
-  @Getter
-  private final long maxTimeout; // in milliseconds
-  @Getter
-  private final CallableProcedure<T, R> procedure;
-  @Getter
-  private final Target target;
-  @Getter
-  private final T argument;
+  private @Getter final int id = ID_COUNTER.incrementAndGet();
+  private @Getter final long timestamp = System.currentTimeMillis();
+  private @Getter final long maxTimeout; // in milliseconds
+  private @Getter final CallableProcedure<T, R> procedure;
+  private @Getter final Target target;
+  private @Getter final T argument;
 
   /**
    * 

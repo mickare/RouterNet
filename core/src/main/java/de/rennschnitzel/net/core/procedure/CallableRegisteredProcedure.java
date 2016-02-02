@@ -9,9 +9,7 @@ import lombok.Setter;
 
 public class CallableRegisteredProcedure<T, R> extends BoundProcedure<T, R> {
 
-  @Getter
-  @Setter
-  private Future<?> registerFuture = null;
+  private @Getter @Setter Future<?> registerFuture = null;
 
   public CallableRegisteredProcedure(AbstractNetwork network, CallableProcedure<T, R> procedure, Function<T, R> function) {
     super(network, procedure, function);

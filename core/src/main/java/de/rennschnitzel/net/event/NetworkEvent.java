@@ -5,12 +5,9 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
-public class NetworkEvent {
 
-  @Getter
-  @NonNull
-  private final AbstractNetwork network;
+public @RequiredArgsConstructor class NetworkEvent {
 
+  private @Getter @NonNull final AbstractNetwork network;
 
 }

@@ -22,14 +22,9 @@ import lombok.Getter;
 public class ClientLoginEngine extends LoginEngine {
 
   private final ClientAuthentication auth;
-
-  @Getter
-  private UUID loginId = null;
-  @Getter
-  private String loginName = null;
-
-  @Getter
-  private LoginSuccessMessage finalMessage = null;
+  private @Getter UUID loginId = null;
+  private @Getter String loginName = null;
+  private @Getter LoginSuccessMessage finalMessage = null;
 
   public ClientLoginEngine(AbstractNetwork network, ClientAuthentication authentication) {
     super(network);

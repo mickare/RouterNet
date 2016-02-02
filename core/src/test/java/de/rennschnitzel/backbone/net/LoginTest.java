@@ -11,6 +11,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import de.rennschnitzel.net.Owner;
+import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.login.AuthenticationFactory;
 import de.rennschnitzel.net.core.login.ClientLoginEngine;
 import de.rennschnitzel.net.core.login.LoginEngine;
@@ -18,12 +19,14 @@ import de.rennschnitzel.net.core.login.LoginEngine.State;
 import de.rennschnitzel.net.core.login.RouterLoginEngine;
 import de.rennschnitzel.net.dummy.DummClientNetwork;
 import de.rennschnitzel.net.exception.HandshakeException;
-import de.rennschnitzel.net.netty.LocalCoupling;
+import de.rennschnitzel.net.netty.LocalClientCouple;
 import de.rennschnitzel.net.netty.LoginHandler;
 import de.rennschnitzel.net.netty.PipelineUtils;
+import de.rennschnitzel.net.util.FutureUtils;
 import de.rennschnitzel.net.util.SimpleOwner;
 import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoopGroup;
+import io.netty.util.concurrent.Promise;
 
 public class LoginTest {
 
@@ -59,17 +62,20 @@ public class LoginTest {
     RouterLoginEngine routerEngine = new RouterLoginEngine(net_router, AuthenticationFactory.newPasswordForRouter(password));
     ClientLoginEngine clientEngine = new ClientLoginEngine(net_client, AuthenticationFactory.newPasswordForClient(password));
 
+    final Promise<Connection> con_router = FutureUtils.newPromise();
+    final Promise<Connection> con_client = FutureUtils.newPromise();
 
-    LocalCoupling con = new LocalCoupling(PipelineUtils.baseInitAnd(ch -> {
-      ch.pipeline().addLast(new LoginHandler(routerEngine));
+    LocalClientCouple con = new LocalClientCouple(PipelineUtils.baseInitAnd(ch -> {
+      ch.pipeline().addLast(new LoginHandler(routerEngine, con_router));
     }), PipelineUtils.baseInitAnd(ch -> {
-      ch.pipeline().addLast(new LoginHandler(clientEngine));
+      ch.pipeline().addLast(new LoginHandler(clientEngine, con_client));
     }), group);
 
     try (AutoCloseable l = con.open()) {
       con.awaitRunning();
 
-      routerEngine.getLoginFuture().await(1000);
+      con_client.await(1000);
+      con_router.await(1000);
 
       if (routerEngine.getFailureCause() != null) {
         throw routerEngine.getFailureCause();
@@ -102,25 +108,31 @@ public class LoginTest {
     RouterLoginEngine routerEngine = new RouterLoginEngine(net_router, AuthenticationFactory.newPasswordForRouter(password1));
     ClientLoginEngine clientEngine = new ClientLoginEngine(net_client, AuthenticationFactory.newPasswordForClient(password2));
 
+    final Promise<Connection> con_router = FutureUtils.newPromise();
+    final Promise<Connection> con_client = FutureUtils.newPromise();
 
-    LocalCoupling con = new LocalCoupling(PipelineUtils.baseInitAnd(ch -> {
-      ch.pipeline().addLast(new LoginHandler(routerEngine));
+    LocalClientCouple con = new LocalClientCouple(PipelineUtils.baseInitAnd(ch -> {
+      ch.pipeline().addLast(new LoginHandler(routerEngine,con_router ));
     }), PipelineUtils.baseInitAnd(ch -> {
-      ch.pipeline().addLast(new LoginHandler(clientEngine));
+      ch.pipeline().addLast(new LoginHandler(clientEngine, con_client));
     }));
 
     try (AutoCloseable l = con.open()) {
       con.awaitRunning();
 
-      routerEngine.getLoginFuture().await(1000);
+      con_router.await(1000);
 
       assertTrue(routerEngine.isDone());
       assertFalse(routerEngine.isSuccess());
+      assertTrue(con_router.isDone());
+      assertFalse(con_router.isSuccess());
 
-      clientEngine.getLoginFuture().await(1000);
+      con_client.await(1000);
 
       assertTrue(clientEngine.isDone());
       assertFalse(clientEngine.isSuccess());
+      assertTrue(con_client.isDone());
+      assertFalse(con_client.isSuccess());
 
 
       assertTrue(routerEngine.isDone());

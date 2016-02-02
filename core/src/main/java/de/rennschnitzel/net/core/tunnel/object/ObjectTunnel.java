@@ -14,10 +14,10 @@ import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.tunnel.AbstractSubTunnel;
 import de.rennschnitzel.net.core.tunnel.AbstractSubTunnelDescriptor;
-import de.rennschnitzel.net.core.tunnel.TunnelHandler;
-import de.rennschnitzel.net.core.tunnel.TunnelMessage;
 import de.rennschnitzel.net.core.tunnel.SubTunnel;
 import de.rennschnitzel.net.core.tunnel.SubTunnelDescriptor;
+import de.rennschnitzel.net.core.tunnel.TunnelHandler;
+import de.rennschnitzel.net.core.tunnel.TunnelMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import lombok.Getter;
 import lombok.NonNull;
@@ -28,10 +28,8 @@ public class ObjectTunnel<T> extends AbstractSubTunnel<ObjectTunnel<T>, ObjectTu
   public static class Descriptor<T> extends AbstractSubTunnelDescriptor<Descriptor<T>, ObjectTunnel<T>>
       implements SubTunnelDescriptor<ObjectTunnel<T>> {
 
-    @Getter
-    private final Class<T> dataClass;
-    @Getter
-    private final ObjectConverter<T> converter;
+    private @Getter final Class<T> dataClass;
+    private @Getter final ObjectConverter<T> converter;
 
     public Descriptor(String name, Class<T> dataClass) throws InvalidClassException {
       this(name, dataClass, ObjectConverters.of(dataClass));
@@ -81,40 +79,40 @@ public class ObjectTunnel<T> extends AbstractSubTunnel<ObjectTunnel<T>, ObjectTu
 
   private final CopyOnWriteArraySet<RegisteredMessageListener> listeners = new CopyOnWriteArraySet<>();
 
-  public ObjectTunnel(Tunnel parentChannel, Descriptor<T> descriptor) throws IllegalStateException {
-    super(parentChannel, descriptor);
+  public ObjectTunnel(Tunnel parentTunnel, Descriptor<T> descriptor) throws IllegalStateException {
+    super(parentTunnel, descriptor);
   }
 
   public final ObjectConverter<T> getConverter() {
     return this.descriptor.getConverter();
   }
 
-  public void broadcast(T obj) throws ConvertObjectChannelException, IOException {
-    this.send(Target.toAll(), obj);
+  public boolean broadcast(T obj) throws ConvertObjectTunnelException, IOException {
+    return this.send(Target.toAll(), obj);
   }
 
-  public void send(Target target, T obj) throws ConvertObjectChannelException, IOException {
-    send(new ObjectChannelMessage<T>(this, target, getNetwork().getHome().getId(), obj));
+  public boolean send(Target target, T obj) throws ConvertObjectTunnelException, IOException {
+    return send(new ObjectTunnelMessage<T>(this, target, getNetwork().getHome().getId(), obj));
   }
 
-  public void send(ObjectChannelMessage<T> ocmsg) throws IOException {
-    this.parentTunnel.send(ocmsg);
+  public boolean send(ObjectTunnelMessage<T> ocmsg) throws IOException {
+    return this.parentTunnel.send(ocmsg);
   }
 
   @Override
-  public void receive(final TunnelMessage cmsg) throws ConvertObjectChannelException {
+  public void receive(final TunnelMessage cmsg) throws ConvertObjectTunnelException {
     if (this.listeners.size() > 0) {
       this.getExectutor().orElseGet(this.getNetwork()::getExecutor).execute(() -> {
-        this.receive(new ObjectChannelMessage<T>(this, cmsg));
+        this.receive(new ObjectTunnelMessage<T>(this, cmsg));
       });
     }
   }
 
-  public void receive(ObjectChannelMessage<T> ocmsg) {
+  public void receive(ObjectTunnelMessage<T> ocmsg) {
     this.listeners.forEach(c -> c.accept(ocmsg));
   }
 
-  public final void registerMessageListener(final Owner owner, final Consumer<ObjectChannelMessage<T>> dataConsumer) {
+  public final void registerMessageListener(final Owner owner, final Consumer<ObjectTunnelMessage<T>> dataConsumer) {
     listeners.add(new RegisteredMessageListener(owner, dataConsumer));
   }
 
@@ -123,16 +121,16 @@ public class ObjectTunnel<T> extends AbstractSubTunnel<ObjectTunnel<T>, ObjectTu
   }
 
   @Getter
-  @RequiredArgsConstructor
-  private class RegisteredMessageListener implements Consumer<ObjectChannelMessage<T>> {
+  
+  private @RequiredArgsConstructor class RegisteredMessageListener implements Consumer<ObjectTunnelMessage<T>> {
 
     @NonNull
     private final Owner owner;
     @NonNull
-    private final Consumer<ObjectChannelMessage<T>> delegate;
+    private final Consumer<ObjectTunnelMessage<T>> delegate;
 
     @Override
-    public void accept(ObjectChannelMessage<T> cmsg) {
+    public void accept(ObjectTunnelMessage<T> cmsg) {
       try {
         delegate.accept(cmsg);
       } catch (Exception e) {

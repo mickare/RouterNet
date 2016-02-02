@@ -17,10 +17,8 @@ import lombok.Getter;
 
 public class SingleProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
 
-  @Getter
-  private final Node node;
-  @Getter
-  private final ProcedureCallResult<T, R> result;
+  private @Getter final Node node;
+  private @Getter final ProcedureCallResult<T, R> result;
 
   public SingleProcedureCall(Node node, CallableProcedure<T, R> procedure, T argument, long maxTimeout) {
     super(procedure, Target.to(node), argument, maxTimeout);

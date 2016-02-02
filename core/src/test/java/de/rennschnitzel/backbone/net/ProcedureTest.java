@@ -23,6 +23,7 @@ import org.junit.Test;
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.Owner;
+import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.Node;
 import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.core.login.AuthenticationFactory;
@@ -35,13 +36,15 @@ import de.rennschnitzel.net.core.procedure.CallableRegisteredProcedure;
 import de.rennschnitzel.net.core.procedure.Procedure;
 import de.rennschnitzel.net.core.procedure.ProcedureCallResult;
 import de.rennschnitzel.net.dummy.DummClientNetwork;
-import de.rennschnitzel.net.netty.LocalCoupling;
+import de.rennschnitzel.net.netty.LocalClientCouple;
 import de.rennschnitzel.net.netty.LoginHandler;
-import de.rennschnitzel.net.netty.MainHandler;
+import de.rennschnitzel.net.netty.ConnectionHandler;
 import de.rennschnitzel.net.netty.PipelineUtils;
+import de.rennschnitzel.net.util.FutureUtils;
 import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.Promise;
 
 public class ProcedureTest {
 
@@ -53,7 +56,7 @@ public class ProcedureTest {
   Target target_client;
   Target target_router;
 
-  private LocalCoupling con;
+  private LocalClientCouple con;
   EventLoopGroup group = new DefaultEventLoopGroup();
 
   @Before
@@ -82,25 +85,28 @@ public class ProcedureTest {
     target_client = Target.to(net_client.getHome().getId());
     target_router = Target.to(net_router.getHome().getId());
 
-    con = new LocalCoupling(PipelineUtils.baseInitAnd(ch -> {
-      ch.pipeline().addLast(new LoginHandler(routerEngine));
-      ch.pipeline().addLast(new MainHandler(net_router, new BasePacketHandler<>()));
+    final Promise<Connection> con_router = FutureUtils.newPromise();
+    final Promise<Connection> con_client = FutureUtils.newPromise();
+
+    con = new LocalClientCouple(PipelineUtils.baseInitAnd(ch -> {
+      ch.pipeline().addLast(new LoginHandler(routerEngine, con_router));
+      ch.pipeline().addLast(new ConnectionHandler(net_router, new BasePacketHandler<>()));
     }), PipelineUtils.baseInitAnd(ch -> {
-      ch.pipeline().addLast(new LoginHandler(clientEngine));
-      ch.pipeline().addLast(new MainHandler(net_client, new BasePacketHandler<>()));
+      ch.pipeline().addLast(new LoginHandler(clientEngine, con_client));
+      ch.pipeline().addLast(new ConnectionHandler(net_client, new BasePacketHandler<>()));
     }), group);
 
     con.open();
     con.awaitRunning();
-    Preconditions.checkState(con.getState() == LocalCoupling.State.ACTIVE);
+    Preconditions.checkState(con.getState() == LocalClientCouple.State.ACTIVE);
 
     Future<?> clientOnRouter = net_client.getNodeUnsafe(net_router.getHome().getId()).newUpdatePromise();
     Future<?> routerOnClient = net_router.getNodeUnsafe(net_client.getHome().getId()).newUpdatePromise();
 
     System.out.println("info");
     
-    routerEngine.getLoginFuture().awaitUninterruptibly();
-    clientEngine.getLoginFuture().awaitUninterruptibly();
+    routerEngine.getFuture().awaitUninterruptibly();
+    clientEngine.getFuture().awaitUninterruptibly();
 
     clientOnRouter.await(1000);
     routerOnClient.await(1000);

@@ -1,32 +1,32 @@
 package de.rennschnitzel.net.core.tunnel.object;
 
-public class ConvertObjectChannelException extends RuntimeException {
+public class ConvertObjectTunnelException extends RuntimeException {
 
   /**
    * 
    */
   private static final long serialVersionUID = -4519288671923739422L;
 
-  public ConvertObjectChannelException() {
+  public ConvertObjectTunnelException() {
     // TODO Auto-generated constructor stub
   }
 
-  public ConvertObjectChannelException(String message) {
+  public ConvertObjectTunnelException(String message) {
     super(message);
     // TODO Auto-generated constructor stub
   }
 
-  public ConvertObjectChannelException(Throwable cause) {
+  public ConvertObjectTunnelException(Throwable cause) {
     super(cause);
     // TODO Auto-generated constructor stub
   }
 
-  public ConvertObjectChannelException(String message, Throwable cause) {
+  public ConvertObjectTunnelException(String message, Throwable cause) {
     super(message, cause);
     // TODO Auto-generated constructor stub
   }
 
-  public ConvertObjectChannelException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+  public ConvertObjectTunnelException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
     super(message, cause, enableSuppression, writableStackTrace);
     // TODO Auto-generated constructor stub
   }

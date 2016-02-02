@@ -1,7 +1,9 @@
 package de.rennschnitzel.net.core;
 
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
+
+import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.ProtocolUtils;
 import de.rennschnitzel.net.core.Node.HomeNode;
@@ -9,17 +11,12 @@ import de.rennschnitzel.net.core.packet.Packer;
 import de.rennschnitzel.net.core.procedure.ProcedureCall;
 import de.rennschnitzel.net.core.tunnel.TunnelMessage;
 import de.rennschnitzel.net.exception.ProtocolException;
-import de.rennschnitzel.net.protocol.TransportProtocol;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
-import de.rennschnitzel.net.util.FutureUtils;
 import de.rennschnitzel.net.util.concurrent.CloseableLock;
 import de.rennschnitzel.net.util.concurrent.CloseableReadWriteLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.ImmediateEventExecutor;
-import io.netty.util.concurrent.Promise;
 
 public abstract class AbstractClientNetwork extends AbstractNetwork {
 
@@ -28,67 +25,50 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
   }
 
   private final CloseableReadWriteLock connectionLock = new ReentrantCloseableReadWriteLock();
-  private Promise<Connection> connectionPromise = ImmediateEventExecutor.INSTANCE.newPromise();
+  private Connection connection = null;
 
-  public Future<Connection> getConnectionFuture() {
+  public boolean isConnected() {
     try (CloseableLock l = connectionLock.readLock().open()) {
-      return this.connectionPromise;
+      return connection != null;
     }
   }
 
   @Override
-  protected boolean addConnection0(final Connection connection) throws Exception {
+  protected void addConnection(final Connection connection) {
+    Preconditions.checkNotNull(connection);
     try (CloseableLock l = connectionLock.writeLock().open()) {
-      final Promise<Connection> old = this.connectionPromise;
-      if (!old.isDone()) {
-        old.setSuccess(connection);
-        return true;
-      } else if (old.isSuccess()) {
-        Connection con = old.get();
-        if (con == connection) {
-          return false;
-        }
-      }
-      this.connectionPromise = ImmediateEventExecutor.INSTANCE.<Connection>newPromise().setSuccess(connection);
-      return false;
+      this.connection = connection;
     }
   }
 
-  @Override
-  protected boolean removeConnection0(final Connection connection) {
+  protected void removeConnection(final Connection connection) {
+    Preconditions.checkNotNull(connection);
     try (CloseableLock l = connectionLock.writeLock().open()) {
-      final Promise<Connection> old = this.connectionPromise;
-      if (old.isSuccess()) {
-        Connection con;
-        try {
-          con = old.get();
-          if (con == connection) {
-            this.connectionPromise = ImmediateEventExecutor.INSTANCE.newPromise();
-            return true;
-          }
-        } catch (InterruptedException | ExecutionException e) {
-          // will not happen
-        }
+      if (this.connection == connection) {
+        this.connection = null;
       }
-      return false;
+      if (connection.isActive()) {
+        connection.getChannel().close();
+      }
     }
   }
 
   @Override
-  public <T, R> void sendProcedureCall(ProcedureCall<T, R> call) {
+  public <T, R> boolean sendProcedureCall(ProcedureCall<T, R> call) {
+
+    boolean success = true;
 
     if (!call.getTarget().isOnly(this.getHome())) {
       ProcedureMessage.Builder b = ProcedureMessage.newBuilder();
       b.setTarget(call.getTarget().getProtocolMessage());
       b.setSender(ProtocolUtils.convert(getHome().getId()));
       b.setCall(call.toProtocol());
-      send(Packer.pack(b.build()));
-
+      success &= send(Packer.pack(b.build()));
     }
     if (call.getTarget().contains(this.getHome())) {
       this.getProcedureManager().handle(call);
     }
-
+    return success;
   }
 
   @Override
@@ -109,28 +89,39 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
   }
 
 
-  private void send(final Packet packet) {
-    FutureUtils.onSuccess(this.getConnectionFuture(), con -> {
-      con.writeAndFlushFast(packet);
-    });
+  private boolean send(final Packet packet) {
+    try (CloseableLock l = connectionLock.readLock().open()) {
+      if (connection != null) {
+        connection.writeAndFlushFast(packet);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean send(final Consumer<Connection> out) {
+    try (CloseableLock l = connectionLock.readLock().open()) {
+      if (connection != null) {
+        out.accept(connection);
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override
-  public void publishHomeNodeUpdate() {
-    FutureUtils.onSuccess(this.getConnectionFuture(), getHome()::sendUpdate);
+  public boolean publishHomeNodeUpdate() {
+    return send(getHome()::sendUpdate);
   }
 
   @Override
-  protected void sendTunnelMessage(final TunnelMessage cmsg) {
-    final TransportProtocol.TunnelMessage msg = cmsg.toProtocolMessage();
-    FutureUtils.onSuccess(this.getConnectionFuture(), con -> {
-      con.writeAndFlushFast(msg);
-    });
+  protected boolean sendTunnelMessage(final TunnelMessage cmsg) {
+    return send(Packer.pack(cmsg.toProtocolMessage()));
   }
 
   @Override
-  protected void registerTunnel(final Tunnel tunnel) {
-    FutureUtils.onSuccess(this.getConnectionFuture(), tunnel::register);
+  protected boolean registerTunnel(final Tunnel tunnel) {
+    return send(tunnel::register);
   }
 
 }

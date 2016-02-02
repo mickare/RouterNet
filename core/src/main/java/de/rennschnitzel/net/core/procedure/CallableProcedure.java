@@ -20,10 +20,8 @@ import lombok.Getter;
 public class CallableProcedure<T, R> extends Procedure {
 
 
-  @Getter
-  private final Class<T> argumentClass;
-  @Getter
-  private final Class<R> resultClass;
+  private @Getter final Class<T> argumentClass;
+  private @Getter final Class<R> resultClass;
 
   private final CheckedFunction<ProcedureCallMessage, T> callReader;
   private final BiConsumer<ProcedureCallMessage.Builder, T> callWriter;

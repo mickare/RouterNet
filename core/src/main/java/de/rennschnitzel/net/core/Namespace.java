@@ -6,10 +6,9 @@ import com.google.common.base.Preconditions;
 
 import lombok.Getter;
 
-public class Namespace {
+public @Getter class Namespace {
 
   private final AbstractNetwork network;
-  @Getter
   private final String name;
 
   public Namespace(AbstractNetwork network, String name) {

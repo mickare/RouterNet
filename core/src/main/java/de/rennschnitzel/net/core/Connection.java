@@ -9,26 +9,22 @@ import de.rennschnitzel.net.exception.ConnectionException;
 import de.rennschnitzel.net.netty.ChannelWrapper;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
+import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.util.concurrent.Future;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 
-public class Connection implements PacketWriter<ChannelFuture> {
+public @Getter class Connection implements PacketWriter<ChannelFuture> {
 
-  @Getter
+
   private final AbstractNetwork network;
-  @Getter
   private final UUID peerId;
-  @Getter
   private final ChannelWrapper channel;
-
-  @Getter
-  @Setter
-  @NonNull
-  private CloseMessage closeMessage = null;
+  private @Setter @NonNull CloseMessage closeMessage = null;
 
   public Connection(AbstractNetwork network, UUID peerId, ChannelWrapper channel) {
     Preconditions.checkNotNull(network);
@@ -48,9 +44,11 @@ public class Connection implements PacketWriter<ChannelFuture> {
   }
 
   public Future<?> disconnect(CloseMessage msg) {
-    return channel.writeAndFlush(msg);
+    if (channel.isOpen()) {
+      this.closeMessage = msg;
+    }
+    return channel.writeAndFlush(msg).addListener(ChannelFutureListener.CLOSE);
   }
-
 
   public Future<?> disconnect(CloseMessage.Builder builder) {
     return this.disconnect(builder.build());
@@ -58,6 +56,14 @@ public class Connection implements PacketWriter<ChannelFuture> {
 
   public Future<?> disconnect(String reason) {
     return this.disconnect(CloseMessage.newBuilder().setNormal(reason));
+  }
+
+  public Future<?> disconnect(ErrorMessage error) {
+    return this.disconnect(CloseMessage.newBuilder().setError(error));
+  }
+
+  public Future<?> disconnect(ErrorMessage.Builder builder) {
+    return this.disconnect(builder.build());
   }
 
 
@@ -93,8 +99,16 @@ public class Connection implements PacketWriter<ChannelFuture> {
     return "Connection[" + this.peerId + "]";
   }
 
-  public void receive(Connection con, TransportProtocol.TunnelRegister msg) throws ConnectionException {
+  public void receive(TransportProtocol.TunnelRegister msg) throws ConnectionException {
     this.network.receiveTunnelRegister(msg);
+  }
+
+  public void addToNetwork() {
+    this.network.addConnection(this);
+  }
+
+  public void removeFromNetwork() {
+    this.network.removeConnection(this);
   }
 
 }

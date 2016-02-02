@@ -13,8 +13,8 @@ import de.rennschnitzel.net.ProtocolUtils;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import lombok.Getter;
 
-@Getter
-public class Target {
+
+public @Getter class Target {
 
   private static Target TO_ALL = Builder.toAll().build();
 

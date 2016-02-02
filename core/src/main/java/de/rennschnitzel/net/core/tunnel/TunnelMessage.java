@@ -12,8 +12,8 @@ import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import lombok.Getter;
 
-@Getter
-public class TunnelMessage extends Message {
+
+public @Getter class TunnelMessage extends Message {
 
   private final Tunnel tunnel;
   private final ByteString data;

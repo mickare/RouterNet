@@ -27,8 +27,6 @@ import de.rennschnitzel.net.core.procedure.ProcedureCall;
 import de.rennschnitzel.net.core.tunnel.SubTunnel;
 import de.rennschnitzel.net.core.tunnel.SubTunnelDescriptor;
 import de.rennschnitzel.net.core.tunnel.TunnelMessage;
-import de.rennschnitzel.net.event.ConnectionAddedEvent;
-import de.rennschnitzel.net.event.ConnectionRemovedEvent;
 import de.rennschnitzel.net.event.NodeEvent;
 import de.rennschnitzel.net.exception.ConnectionException;
 import de.rennschnitzel.net.exception.ProtocolException;
@@ -48,30 +46,26 @@ public abstract class AbstractNetwork {
 
   public static FSTConfiguration SERIALIZATION = FSTConfiguration.createDefaultConfiguration();
 
-  @Getter
-  @NonNull
-  private static AbstractNetwork instance = null;
+  private static @Getter @NonNull AbstractNetwork instance = null;
 
   // static end
   // ******************************************************************************************
 
 
-  @Getter
-  private final HomeNode home;
+  
+  private final @Getter HomeNode home;
   private final LoadingCache<UUID, Node> nodesCache = CacheBuilder.newBuilder().weakValues().build(CacheLoader.from(Node::new));
   private final Map<UUID, Node> nodes = new HashMap<>();
   private final CloseableReadWriteLock nodeLock = new ReentrantCloseableReadWriteLock();
 
-  @Getter
-  private final ProcedureManager procedureManager = new ProcedureManager(this);
+  private final @Getter ProcedureManager procedureManager = new ProcedureManager(this);
 
   private final CloseableLock tunnelLock = new ReentrantCloseableLock();
   private final ConcurrentMap<String, Tunnel> tunnelsByName = new ConcurrentHashMap<>();
   private final ConcurrentMap<Integer, Tunnel> tunnelsById = new ConcurrentHashMap<>();
   private final ConcurrentMap<SubTunnelDescriptor<?>, SubTunnel> subTunnels = new ConcurrentHashMap<>();
 
-  @Getter
-  private final EventBus eventBus = new EventBus();
+  private final @Getter EventBus eventBus = new EventBus();
 
   protected AbstractNetwork(HomeNode home) {
     Preconditions.checkNotNull(home);
@@ -91,51 +85,10 @@ public abstract class AbstractNetwork {
 
   public abstract ScheduledExecutorService getExecutor();
 
-
-  // ***************************************************************************
-  // Connection
-
-  public final boolean addConnection(Connection connection) throws Exception {
-    Preconditions.checkArgument(connection.getNetwork() == this);
-    Preconditions.checkArgument(connection.isActive());
-    try {
-
-      if (addConnection0(connection)) {
-
-        for (Tunnel tunnel : getTunnels()) {
-          tunnel.register(connection);
-        }
-        connection.getChannel().flush();
-
-        this.eventBus.post(new ConnectionAddedEvent(connection));
-        this.home.sendUpdate(connection);
-
-        return true;
-
-      }
-    } catch (Exception e) {
-      removeConnection0(connection);
-      throw e;
-    }
-    return false;
-  }
-
-  protected abstract boolean addConnection0(Connection connection) throws Exception;
-
-  public boolean removeConnection(Connection connection) {
-    if (removeConnection0(connection)) {
-      this.eventBus.post(new ConnectionRemovedEvent(connection));
-      return true;
-    }
-    return false;
-  }
-
-  protected abstract boolean removeConnection0(Connection connection);
-
   // ***************************************************************************
   // Sending
 
-  protected abstract <T, R> void sendProcedureCall(ProcedureCall<T, R> call);
+  protected abstract <T, R> boolean sendProcedureCall(ProcedureCall<T, R> call);
 
   protected abstract void sendProcedureResponse(final UUID receiverId, final ProcedureResponseMessage msg) throws ProtocolException;
 
@@ -143,14 +96,22 @@ public abstract class AbstractNetwork {
       throws ProtocolException;
 
 
-  protected abstract void publishHomeNodeUpdate();
+  protected abstract boolean publishHomeNodeUpdate();
+
+
+  // ***************************************************************************
+  // CONNECTIONS
+
+  protected abstract void addConnection(Connection connection);
+
+  protected abstract void removeConnection(Connection connection);
 
   // ***************************************************************************
   // TUNNELS
 
-  protected abstract void sendTunnelMessage(TunnelMessage cmsg);
+  protected abstract boolean sendTunnelMessage(TunnelMessage cmsg);
 
-  protected abstract void registerTunnel(Tunnel tunnel);
+  protected abstract boolean registerTunnel(Tunnel tunnel);
 
   public Set<Tunnel> getTunnels() {
     try (CloseableLock l = tunnelLock.open()) {
@@ -234,9 +195,9 @@ public abstract class AbstractNetwork {
         old.setType(msg.getType());
 
       } else {
-        
+
         Tunnel tunnel = new Tunnel(this, msg.getName());
-        
+
         Preconditions.checkState(tunnel.getId() == msg.getTunnelId());
         tunnel.setType(msg.getType());
         this.tunnelsByName.put(tunnel.getName(), tunnel);

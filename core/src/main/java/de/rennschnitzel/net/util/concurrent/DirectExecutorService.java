@@ -20,9 +20,7 @@ import lombok.Getter;
 
 public class DirectExecutorService implements ExecutorService {
 
-  @Getter
-  private volatile boolean shutdown = false;
-
+  private @Getter volatile boolean shutdown = false;
   protected final CloseableReadWriteLock lock = new ReentrantCloseableReadWriteLock();
 
   @Override

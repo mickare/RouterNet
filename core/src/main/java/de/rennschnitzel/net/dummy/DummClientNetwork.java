@@ -15,11 +15,9 @@ public class DummClientNetwork extends AbstractClientNetwork {
 
   private static Logger LOGGER_DEFAULT = new DummyLogger("DummyNetwork", System.out);
 
-  @Getter
-  private final ScheduledExecutorService executor;
-
-  @Getter
-  private Logger logger = LOGGER_DEFAULT;
+  
+  private @Getter final ScheduledExecutorService executor;
+  private @Getter Logger logger = LOGGER_DEFAULT;
 
 
   public DummClientNetwork(ScheduledExecutorService executor) {

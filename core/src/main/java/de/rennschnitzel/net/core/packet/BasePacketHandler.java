@@ -92,7 +92,7 @@ public class BasePacketHandler<C extends Connection> implements PacketHandler<C>
 
   @Override
   public void handle(C con, TunnelRegister msg) throws Exception {
-    con.receive(con, msg);
+    con.receive(msg);
   }
 
   @Override

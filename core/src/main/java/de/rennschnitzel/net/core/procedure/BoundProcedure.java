@@ -62,9 +62,7 @@ public class BoundProcedure<T, R> extends CallableProcedure<T, R> {
   // STATIC - END
   // ***************************************************************************
 
-
-  @Getter
-  private final Function<T, R> function;
+  private @Getter final Function<T, R> function;
 
   public BoundProcedure(AbstractNetwork network, CallableProcedure<T, R> procedure, Function<T, R> function) {
     this(network, procedure.getName(), procedure.getArgumentClass(), procedure.getResultClass(), function);

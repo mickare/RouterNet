@@ -228,9 +228,8 @@ public class StreamTunnel extends AbstractSubTunnel<StreamTunnel, StreamTunnel.D
 
   private class ChannelOutputStream extends OutputStream {
 
-    private final BufferedOutputStream out;
-    @Getter
-    private final Throwable throwable;
+    private final BufferedOutputStream out;    
+    private @Getter final Throwable throwable;
 
     public ChannelOutputStream(Target target, int size) {
       Preconditions.checkNotNull(target);
@@ -265,13 +264,10 @@ public class StreamTunnel extends AbstractSubTunnel<StreamTunnel, StreamTunnel.D
     }
 
 
-    @RequiredArgsConstructor
-    private class SenderOutputStream extends OutputStream {
+    private @RequiredArgsConstructor class SenderOutputStream extends OutputStream {
 
-      @NonNull
-      private final Target target;
-
-      private boolean closed = false;
+      private @NonNull final Target target;
+      private @Getter boolean closed = false;
 
       @Override
       public synchronized void close() throws IOException {

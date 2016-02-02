@@ -14,27 +14,28 @@ import de.rennschnitzel.net.exception.HandshakeException;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
-import de.rennschnitzel.net.util.FutureUtils;
-import io.netty.util.concurrent.Promise;
-import lombok.Getter;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.util.concurrent.Promise;
+import lombok.Getter;
 
 public class LoginHandler extends SimpleChannelInboundHandler<Packet> {
 
-  private static int counter = 0;
+  private @Getter final LoginEngine engine;
+  private @Getter Promise<Connection> promise;
 
-  private final LoginEngine engine;
-  int id = ++counter;
-
-  @Getter
-  private Promise<Connection> connectionPromise = FutureUtils.newPromise();
-
-  public LoginHandler(LoginEngine engine) {
+  public LoginHandler(LoginEngine engine, Promise<Connection> promise) {
     super(Packet.class);
     Preconditions.checkNotNull(engine);
+    Preconditions.checkArgument(!promise.isDone());
     this.engine = engine;
+    this.promise = promise;
+    promise.addListener(f -> {
+      if (!f.isSuccess()) {
+        this.engine.fail(f.cause());
+      }
+    });
   }
 
   public Logger getLogger() {
@@ -43,20 +44,24 @@ public class LoginHandler extends SimpleChannelInboundHandler<Packet> {
 
   @Override
   public void handlerAdded(final ChannelHandlerContext ctx) throws Exception {
-    this.engine.setChannel(new ChannelWrapper(ctx.channel()));
     this.engine.checkState(State.NEW);
-    this.engine.getLoginFuture().addListener(f -> {
+    this.engine.setChannel(new ChannelWrapper(ctx.channel()));
+
+    this.engine.getFuture().addListener(f -> {
       if (f.isSuccess()) {
         Connection connection = new Connection(engine.getNetwork(), engine.getLoginId(), engine.getChannel());
         LoginSuccessEvent event = engine.newLoginSuccessEvent(connection);
         ctx.fireUserEventTriggered(event);
         ctx.pipeline().remove(LoginHandler.this);
-        connectionPromise.trySuccess(connection);
+        promise.trySuccess(connection);
       } else {
         Throwable cause = f.cause();
-        getLogger().log(Level.WARNING, "Failed login (" + engine.getFailureState() + "): " + cause.getMessage(), cause);
-        connectionPromise.tryFailure(cause);
-        ctx.writeAndFlush(Packet.newBuilder().setClose(createCloseMessage(cause)).build()).addListener(ChannelFutureListener.CLOSE);
+        if (promise.tryFailure(cause)) {
+          getLogger().log(Level.WARNING, "Failed login (" + engine.getFailureState() + "): " + cause.getMessage(), cause);
+          ctx.writeAndFlush(Packet.newBuilder().setClose(createCloseMessage(cause)).build()).addListener(ChannelFutureListener.CLOSE);
+        } else {
+          ctx.close();
+        }
       }
     });
   }

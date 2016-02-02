@@ -15,10 +15,8 @@ import lombok.Getter;
 public abstract class AbstractSubTunnel<SELF extends AbstractSubTunnel<SELF, D>, D extends AbstractSubTunnelDescriptor<D, SELF>>
     implements TunnelHandler, SubTunnel {
 
-  @Getter
-  protected final Tunnel parentTunnel;
-  @Getter
-  protected final D descriptor;
+  protected @Getter final Tunnel parentTunnel;
+  protected @Getter final D descriptor;
 
   public AbstractSubTunnel(Tunnel parentTunnel, D descriptor) {
     Preconditions.checkNotNull(parentTunnel);
@@ -61,8 +59,8 @@ public abstract class AbstractSubTunnel<SELF extends AbstractSubTunnel<SELF, D>,
     return parentTunnel.getNetwork();
   }
 
-  public void register(Connection connection) {
-    parentTunnel.register(connection);
+  public void register(Connection connection, boolean flush) {
+    parentTunnel.register(connection, flush);
   }
 
 

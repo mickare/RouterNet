@@ -11,8 +11,8 @@ import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeTopologyMessage;
 import lombok.Getter;
 
-@Getter
-public class LoginSuccessEvent extends NetworkEvent {
+
+public @Getter class LoginSuccessEvent extends NetworkEvent {
 
   private static Optional<String> name(String name) {
     return Optional.ofNullable(name != null ? (!name.isEmpty() ? name : null) : null);
@@ -37,8 +37,7 @@ public class LoginSuccessEvent extends NetworkEvent {
     this(network, id, name(name), connection);
   }
 
-  @Getter
-  public static class ClientLoginSuccessEvent extends LoginSuccessEvent {
+  public static @Getter class ClientLoginSuccessEvent extends LoginSuccessEvent {
 
     private final NodeMessage nodeMessage;
 
@@ -60,13 +59,11 @@ public class LoginSuccessEvent extends NetworkEvent {
 
   }
 
-  @Getter
-  public static class RouterLoginSuccessEvent extends LoginSuccessEvent {
+  public static @Getter class RouterLoginSuccessEvent extends LoginSuccessEvent {
 
     private final NodeTopologyMessage nodeTopology;
 
-    public RouterLoginSuccessEvent(AbstractNetwork network, UUID id, String name, Connection connection,
-        NodeTopologyMessage nodeTopology) {
+    public RouterLoginSuccessEvent(AbstractNetwork network, UUID id, String name, Connection connection, NodeTopologyMessage nodeTopology) {
       this(network, id, Optional.ofNullable(name), connection, nodeTopology);
     }
 

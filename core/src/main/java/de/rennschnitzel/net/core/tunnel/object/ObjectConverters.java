@@ -78,25 +78,25 @@ public class ObjectConverters {
     }
 
     @Override
-    public final ByteString asByteString(final T obj) throws ConvertObjectChannelException {
+    public final ByteString asByteString(final T obj) throws ConvertObjectTunnelException {
       try (final Output stream = ByteString.newOutput()) {
         final FSTObjectOutput out = AbstractNetwork.SERIALIZATION.getObjectOutput(stream);
         out.writeObject(obj, this.dataClass);
         out.flush();
         return stream.toByteString();
       } catch (final IOException e) {
-        throw new ConvertObjectChannelException(e);
+        throw new ConvertObjectTunnelException(e);
       }
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public final T asObject(final ByteString byteData) throws ConvertObjectChannelException {
+    public final T asObject(final ByteString byteData) throws ConvertObjectTunnelException {
       try (final InputStream stream = byteData.newInput()) {
         final FSTObjectInput in = AbstractNetwork.SERIALIZATION.getObjectInput(stream);
         return (T) in.readObject(this.dataClass);
       } catch (final Exception e) {
-        throw new ConvertObjectChannelException(e);
+        throw new ConvertObjectTunnelException(e);
       }
     }
   }
@@ -104,26 +104,26 @@ public class ObjectConverters {
 
   public static final ObjectConverter<byte[]> BYTE_ARRAY = new AbstractObjectConverter<byte[]>(byte[].class) {
     @Override
-    public final ByteString asByteString(final byte[] obj) throws ConvertObjectChannelException {
+    public final ByteString asByteString(final byte[] obj) throws ConvertObjectTunnelException {
       return ByteString.copyFrom(obj);
     }
 
     @Override
-    public final byte[] asObject(final ByteString byteData) throws ConvertObjectChannelException {
+    public final byte[] asObject(final ByteString byteData) throws ConvertObjectTunnelException {
       return byteData.toByteArray();
     }
   };
 
   public static final ObjectConverter<Void> VOID = new AbstractObjectConverter<Void>(Void.class) {
     @Override
-    public final ByteString asByteString(final Void obj) throws ConvertObjectChannelException {
+    public final ByteString asByteString(final Void obj) throws ConvertObjectTunnelException {
       return ByteString.copyFrom(new byte[0]);
     }
 
     @Override
-    public final Void asObject(final ByteString byteData) throws ConvertObjectChannelException {
+    public final Void asObject(final ByteString byteData) throws ConvertObjectTunnelException {
       if (byteData.size() > 0) {
-        throw new ConvertObjectChannelException("unexpected byte data");
+        throw new ConvertObjectTunnelException("unexpected byte data");
       }
       return null;
     }

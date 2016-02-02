@@ -28,12 +28,10 @@ import io.netty.util.concurrent.Promise;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-@Getter
+public @Getter abstract class LoginEngine implements PacketHandler<LoginEngine> {
 
-public abstract class LoginEngine implements PacketHandler<LoginEngine> {
-
-  @RequiredArgsConstructor
-  public static enum State {
+  
+  public static @RequiredArgsConstructor enum State {
     NEW(0), LOGIN(1), AUTH(1), SUCCESS(3), FAILED(3);
     @Getter
     private final int step;
@@ -47,7 +45,6 @@ public abstract class LoginEngine implements PacketHandler<LoginEngine> {
 
   private volatile State state = State.NEW;
   private final AbstractNetwork network;
-  @Getter
   private ChannelWrapper channel = null;
   private Promise<LoginEngine> promise;
   private State failureState = null;
@@ -64,7 +61,7 @@ public abstract class LoginEngine implements PacketHandler<LoginEngine> {
     this.promise = channel.getChannel().eventLoop().newPromise();
   }
 
-  public Future<LoginEngine> getLoginFuture() {
+  public Future<LoginEngine> getFuture() {
     return promise;
   }
 

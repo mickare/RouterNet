@@ -23,16 +23,10 @@ import lombok.Getter;
 public class RouterLoginEngine extends LoginEngine {
 
   private final RouterAuthentication authentication;
-
-  @Getter
-  private int protocolVersion = -1;
-  @Getter
-  private UUID loginId = null;
-  @Getter
-  private String loginName = null;
-
-  @Getter
-  private LoginUpgradeMessage finalMessage = null;
+  private @Getter int protocolVersion = -1;
+  private @Getter UUID loginId = null;
+  private @Getter String loginName = null;
+  private @Getter LoginUpgradeMessage finalMessage = null;
 
   public RouterLoginEngine(AbstractNetwork network, RouterAuthentication authentication) {
     super(network);

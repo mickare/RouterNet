@@ -5,10 +5,8 @@ import com.google.common.base.Preconditions;
 import de.rennschnitzel.net.core.Connection;
 import lombok.Getter;
 
-public class ConnectionEvent extends NetworkEvent {
+public @Getter class ConnectionEvent extends NetworkEvent {
 
-
-  @Getter
   private final Connection connection;
 
   public ConnectionEvent(Connection connection) {
@@ -16,7 +14,7 @@ public class ConnectionEvent extends NetworkEvent {
     Preconditions.checkNotNull(connection);
     this.connection = connection;
   }
-  
+
 
 
 }

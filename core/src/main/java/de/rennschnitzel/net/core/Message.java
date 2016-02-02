@@ -9,8 +9,7 @@ import de.rennschnitzel.net.protocol.ComponentsProtocol.UUIDMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.TargetMessage;
 import lombok.Getter;
 
-@Getter
-public class Message {
+public @Getter class Message {
 
   protected final Target target;
   protected final UUID senderId;

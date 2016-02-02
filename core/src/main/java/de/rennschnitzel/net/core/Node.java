@@ -37,29 +37,16 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
-@RequiredArgsConstructor
-public class Node {
+public @RequiredArgsConstructor class Node {
 
-  @Getter
-  private volatile boolean connected = false;
-
-  @NonNull
-  @Getter
-  private final UUID id;
-  @Getter
-  protected NodeMessage.Type type = NodeMessage.Type.UNRECOGNIZED;
-  @Getter
-  protected Optional<String> name = Optional.empty();
+  private final @Getter @NonNull UUID id;
+  protected @Getter NodeMessage.Type type = NodeMessage.Type.UNRECOGNIZED;
+  protected @Getter Optional<String> name = Optional.empty();
   protected final Set<String> namespaces = Collections.synchronizedSet(new HashSet<>());
-  @Getter
-  protected long startTimestamp = -1;
-  // protected final Set<ProcedureInformation> procedures = Collections.synchronizedSet(new
-  // HashSet<>());
+  protected @Getter long startTimestamp = -1;
   protected final Set<Procedure> procedures = Collections.synchronizedSet(Sets.newTreeSet());
-
-  @Getter
-  private Data data = new Data();
-
+  private volatile @Getter boolean connected = false;
+  private @Getter Data data = new Data();
   private final Stack<Consumer<Node>> updateListeners = new Stack<>();
 
   public void addUpdateListener(Consumer<Node> listener) {
@@ -171,8 +158,7 @@ public class Node {
 
   // Data
 
-  @Getter
-  public class Data {
+  public @Getter class Data {
     private DataBukkitMessage bukkit = null;
     private DataBungeecordMessage bungeecord = null;
     private DataRouterMessage router = null;
@@ -219,13 +205,8 @@ public class Node {
 
   public static class HomeNode extends Node {
 
-    @Getter
-    private volatile boolean dirty = false;
-
-    @Getter
-    @Setter(AccessLevel.PACKAGE)
-    @NonNull
-    private AbstractNetwork network = null;
+    private volatile @Getter boolean dirty = false;
+    private @Getter @Setter(AccessLevel.PACKAGE) @NonNull AbstractNetwork network = null;
 
     public HomeNode(UUID id) {
       super(id);

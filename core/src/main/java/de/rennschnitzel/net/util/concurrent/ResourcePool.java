@@ -18,10 +18,9 @@ import lombok.RequiredArgsConstructor;
 
 public class ResourcePool<R> {
 
-  @Getter
-  private boolean closed = false;
-  @Getter
-  private final int capacity;
+
+  private @Getter boolean closed = false;
+  private final @Getter int capacity;
   private final Supplier<R> defaultSupplier;
   private final ArrayBlockingQueue<R> queue;
   private final Set<R> elements;
