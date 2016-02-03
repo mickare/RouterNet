@@ -35,6 +35,7 @@ public class TestFramework {
     } while (client.getHome().getId().equals(temp));
 
     this.routerNetwork = new DummClientNetwork(client.getExecutor(), new HomeNode(temp));
+    this.routerNetwork.setName("TestNetwork");
 
   }
 

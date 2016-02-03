@@ -19,7 +19,7 @@ import de.rennschnitzel.net.core.login.LoginEngine.State;
 import de.rennschnitzel.net.core.login.RouterLoginEngine;
 import de.rennschnitzel.net.dummy.DummClientNetwork;
 import de.rennschnitzel.net.exception.HandshakeException;
-import de.rennschnitzel.net.netty.LocalClientCouple;
+import de.rennschnitzel.net.netty.LocalConnectClient;
 import de.rennschnitzel.net.netty.LoginHandler;
 import de.rennschnitzel.net.netty.PipelineUtils;
 import de.rennschnitzel.net.util.FutureUtils;
@@ -65,13 +65,13 @@ public class LoginTest {
     final Promise<Connection> con_router = FutureUtils.newPromise();
     final Promise<Connection> con_client = FutureUtils.newPromise();
 
-    LocalClientCouple con = new LocalClientCouple(PipelineUtils.baseInitAnd(ch -> {
+    LocalConnectClient con = new LocalConnectClient(PipelineUtils.baseInitAnd(ch -> {
       ch.pipeline().addLast(new LoginHandler(routerEngine, con_router));
     }), PipelineUtils.baseInitAnd(ch -> {
       ch.pipeline().addLast(new LoginHandler(clientEngine, con_client));
     }), group);
 
-    try (AutoCloseable l = con.open()) {
+    try (AutoCloseable l = con.connect()) {
       con.awaitRunning();
 
       con_client.await(1000);
@@ -111,13 +111,13 @@ public class LoginTest {
     final Promise<Connection> con_router = FutureUtils.newPromise();
     final Promise<Connection> con_client = FutureUtils.newPromise();
 
-    LocalClientCouple con = new LocalClientCouple(PipelineUtils.baseInitAnd(ch -> {
+    LocalConnectClient con = new LocalConnectClient(PipelineUtils.baseInitAnd(ch -> {
       ch.pipeline().addLast(new LoginHandler(routerEngine,con_router ));
     }), PipelineUtils.baseInitAnd(ch -> {
       ch.pipeline().addLast(new LoginHandler(clientEngine, con_client));
     }));
 
-    try (AutoCloseable l = con.open()) {
+    try (AutoCloseable l = con.connect()) {
       con.awaitRunning();
 
       con_router.await(1000);

@@ -1,41 +1,42 @@
 package de.rennschnitzel.net.client.connection;
 
-import java.util.UUID;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AbstractScheduledService;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import de.rennschnitzel.net.NetClient;
 import de.rennschnitzel.net.core.Connection;
-import de.rennschnitzel.net.core.login.ClientLoginEngine;
-import de.rennschnitzel.net.core.login.LoginEngine;
-import de.rennschnitzel.net.core.packet.BasePacketHandler;
-import de.rennschnitzel.net.core.packet.PacketHandler;
-import de.rennschnitzel.net.exception.ConnectionException;
-import de.rennschnitzel.net.netty.LoginHandler;
-import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
+import de.rennschnitzel.net.core.NotConnectedException;
+import de.rennschnitzel.net.netty.PipelineUtils;
+import de.rennschnitzel.net.service.ConnectClient;
 import de.rennschnitzel.net.util.FutureUtils;
 import de.rennschnitzel.net.util.concurrent.CloseableLock;
 import de.rennschnitzel.net.util.concurrent.CloseableReadWriteLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
-import io.netty.util.concurrent.Future;
+import io.netty.channel.EventLoopGroup;
+import io.netty.util.concurrent.Promise;
+import lombok.AccessLevel;
 import lombok.Getter;
 
-public abstract class AbstractConnectService
-    extends AbstractScheduledService implements ConnectService {
+public abstract class AbstractConnectService extends AbstractScheduledService
+    implements ConnectService {
 
-  @Getter
-  private final NetClient client;
-
-  @Getter
-  private final long delay_time;
-  @Getter
-  private final TimeUnit delay_unit;
+  private @Getter final NetClient client;
+  private @Getter final long delay_time;
+  private @Getter final TimeUnit delay_unit;
 
   private final CloseableReadWriteLock lock = new ReentrantCloseableReadWriteLock();
-  private LoginHandler loginHandler = null;
+  private @Getter Promise<Connection> currentFuture = null;
+  private ConnectClient connect = null;
+  private @Getter(AccessLevel.PROTECTED) EventLoopGroup group;
+
+  private final Set<Consumer<Connection>> listeners = Sets.newIdentityHashSet();
 
   public AbstractConnectService(NetClient client) {
     this(client, 10, TimeUnit.SECONDS);
@@ -50,100 +51,66 @@ public abstract class AbstractConnectService
     this.delay_unit = delay_unit;
   }
 
+  public boolean addListener(Consumer<Connection> listener) {
+    return listeners.add(listener);
+  }
+
+  @Override
   public Logger getLogger() {
     return client.getLogger();
   }
 
   protected void startUp() throws Exception {
-    connectSoft().await(100);
+    group = PipelineUtils.newEventLoopGroup(0,
+        new ThreadFactoryBuilder().setNameFormat("Net-Netty IO Thread #%1$d").build());
     getLogger().info("Connect service started");
+    
+    runOneIteration();    
   }
 
   protected void shutDown() throws Exception {
     disconnect();
-  }
-
-  private void disconnect() {
-    try (CloseableLock l = lock.writeLock().open()) {
-      if (loginHandler != null) {
-        if (!loginHandler.isDone()) {
-          loginHandler.fail(new ConnectionException(ErrorMessage.Type.UNAVAILABLE, "disconnect"));
-        }
-        loginHandler.getChannel().close();
-      }
-      this.loginHandler = null;
-    }
+    group.shutdownGracefully().awaitUninterruptibly();
   }
 
   @Override
   protected void runOneIteration() throws Exception {
-    connectSoft().await(100);
-  }
-
-  private Future<?> connectSoft() {
-    try (CloseableLock l = lock.writeLock().open()) {
-      if (loginHandler != null) {
-        if (loginHandler.getChannel().isActive()) {
-          return FutureUtils.SUCCESS;
-        }
-        disconnect();
+    ConnectClient con = connectSoft();
+    if (con != null) {
+      if (this.isRunning()) {
+        con.awaitRunning(1000);
+      } else {
+        con.close();
       }
-      return connect();
     }
   }
 
-  private Future<?> connect() {
+  private void disconnect() {
     try (CloseableLock l = lock.writeLock().open()) {
-      Preconditions.checkState(this.loginHandler == null);
-      this.loginHandler = createLoginHandler();
-      Preconditions.checkState(this.loginHandler.getState() == LoginEngine.State.NEW);
-
-      FutureUtils.on(this.loginHandler.getConnectionPromise(), f -> {
-        if (f.isSuccess()) {
-          getLogger().info("Connected with " + f.get().getId());
-        }
-      });
-
-
-
-      connectFuture = doConnect(this.loginHandler);
-      return connectFuture;
+      if (connect != null) {
+        connect.close();
+      }
     }
   }
 
-  protected abstract Future<?> doConnect(L loginHandler);
-
-  protected abstract L createLoginHandler();
-
-  protected PacketHandler<C> createPacketHandler() {
-    return new BasePacketHandler<C>();
+  private ConnectClient connectSoft() {
+    if (connect == null || connect.isClosed() && this.isRunning()) {
+      if (currentFuture != null && !currentFuture.isDone()) {
+        currentFuture.tryFailure(new NotConnectedException("timed out"));
+      }
+      try (CloseableLock l = lock.writeLock().open()) {
+        currentFuture = FutureUtils.newPromise();
+        connect = newConnectClient(currentFuture).connect();
+      }
+    }
+    return connect;
   }
+
+  protected abstract ConnectClient newConnectClient(Promise<Connection> future);
 
   @Override
   protected Scheduler scheduler() {
     return Scheduler.newFixedDelaySchedule(delay_time, delay_time, delay_unit);
-  }
-
-  @Override
-  public Future<Connection> getConnectionPromise() {
-    return getLoginHandler().getLoginFuture();
-  }
-
-  @Override
-  public L getLoginHandler() {
-    try (CloseableLock l = lock.readLock().open()) {
-      return loginHandler;
-    }
-  }
-
-  @Override
-  public String getConnectedName() {
-    return getLoginHandler().getName();
-  }
-
-  @Override
-  public UUID getConnectedId() {
-    return getLoginHandler().getId();
   }
 
 }

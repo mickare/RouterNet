@@ -23,6 +23,8 @@ import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister;
 
 public class BasePacketHandler<C extends Connection> implements PacketHandler<C> {
 
+  public static final BasePacketHandler<Connection> DEFAULT = new BasePacketHandler<>();
+  
   public boolean isReceiver(C con, TransportProtocol.TargetMessage target) {
     return con.getNetwork().getHome().isPart(target);
   }

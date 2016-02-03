@@ -1,9 +1,9 @@
 package de.rennschnitzel.net;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
@@ -13,7 +13,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.dummy.DummClientNetwork;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
@@ -38,6 +37,8 @@ public class TestClientTestFramework {
         new DirectScheduledExecutorService());
 
     client.enable();
+    client.getConnectService().getCurrentFuture().await(1000);
+    assertTrue(client.getConnectService().getCurrentFuture().isSuccess());
   }
 
   @After
@@ -46,6 +47,22 @@ public class TestClientTestFramework {
     folder.delete();
   }
 
+
+  private boolean busyWaiting(final int tries, final Callable<Boolean> condition, final long millis)
+      throws Exception {
+    int _try = 0;
+    boolean result = condition.call();
+    while (_try++ < tries && !result) {
+      Thread.sleep(millis);
+      result = condition.call();
+    }
+    return result;
+  }
+
+  private void assertWaiting(final int tries, final Callable<Boolean> condition, final long millis)
+      throws Exception {
+    assertTrue(busyWaiting(tries, condition, millis));
+  }
 
   @Test
   public void testTunnel() throws Exception {
@@ -58,23 +75,20 @@ public class TestClientTestFramework {
     DummClientNetwork net_router = client.getTestFramework().getRouterNetwork();
     Network net_client = client.getNetwork();
 
-    Connection con_router = net_router.getConnectionFuture().get(1, TimeUnit.SECONDS);
-    Connection con_client = net_client.getConnectionFuture().get(1, TimeUnit.SECONDS);
-
     Tunnel tunnel = net_router.getTunnel("testTunnel");
-    tunnel.register().await(100);
-
     tunnel.registerMessageListener(owner, msg -> {
       received.addAndGet(msg.getData().byteAt(0));
     });
 
-    assertNotNull(con_client.getTunnelIdIfPresent("testTunnel"));
+    assertWaiting(5, () -> net_client.getTunnel("testTunnel") != null, 100);
 
-    Net.getTunnel("testTunnel").broadcast(new byte[] {1});
-    assertEquals(1, received.get());
+    Thread.sleep(100);
 
-    Net.getTunnel("testTunnel").broadcast(new byte[] {2});
-    assertEquals(3, received.get());
+    assertTrue(Net.getTunnel("testTunnel").broadcast(new byte[] {1}));
+    assertWaiting(5, () -> received.get() == 1, 100);
+
+    assertTrue(Net.getTunnel("testTunnel").broadcast(new byte[] {2}));
+    assertWaiting(5, () -> received.get() == 3, 100);
 
   }
 

@@ -34,21 +34,9 @@ public class ConnectionHandler extends SimpleChannelInboundHandler<Packet> {
     this.handler = handler;
   }
 
-
-  private void log(Object msg) {
-    log(msg != null ? msg.toString() : "null");
-  }
-
-  private void log(String msg) {
-    getLogger().info(msg);
-  }
-
   @Override
   protected void channelRead0(ChannelHandlerContext ctx, Packet msg) throws Exception {
-    log(msg);
-    long start = System.currentTimeMillis();
     this.handler.handle(connection, msg);
-    log("channelRead0: " + (System.currentTimeMillis() - start));
   }
 
   @Override
@@ -88,8 +76,6 @@ public class ConnectionHandler extends SimpleChannelInboundHandler<Packet> {
 
   @Override
   public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-
-    log(evt);
 
     if (evt instanceof LoginSuccessEvent) {
 

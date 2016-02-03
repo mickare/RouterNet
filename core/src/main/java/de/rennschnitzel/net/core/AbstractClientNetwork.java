@@ -38,6 +38,7 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
     Preconditions.checkNotNull(connection);
     try (CloseableLock l = connectionLock.writeLock().open()) {
       this.connection = connection;
+      getLogger().info(connection.getPeerId() + " connected.");
     }
   }
 
@@ -50,6 +51,7 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
       if (connection.isActive()) {
         connection.getChannel().close();
       }
+      getLogger().info(connection.getPeerId() + " disconnected.");
     }
   }
 

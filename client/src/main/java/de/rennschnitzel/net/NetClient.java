@@ -2,6 +2,7 @@ package de.rennschnitzel.net;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.Thread.State;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -9,13 +10,14 @@ import java.util.logging.Logger;
 
 import com.google.common.base.Preconditions;
 import com.google.common.net.HostAndPort;
+import com.google.common.util.concurrent.Service;
 
 import de.rennschnitzel.net.client.ClientSettings;
 import de.rennschnitzel.net.client.ConfigFile;
 import de.rennschnitzel.net.client.TestFramework;
 import de.rennschnitzel.net.client.connection.ConnectService;
-import de.rennschnitzel.net.client.connection.DummyConnectService;
-import de.rennschnitzel.net.client.connection.NettyConnectService;
+import de.rennschnitzel.net.client.connection.LocalConnectService;
+import de.rennschnitzel.net.client.connection.OnlineConnectService;
 import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.login.AuthenticationFactory;
 import de.rennschnitzel.net.core.login.ClientAuthentication;
@@ -24,9 +26,8 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-@Getter
-@RequiredArgsConstructor
-public class NetClient {
+
+public @Getter @RequiredArgsConstructor class NetClient {
 
   @NonNull
   private final NodeMessage.Type type;
@@ -40,7 +41,7 @@ public class NetClient {
 
   private HomeNode home;
   private Network network;
-  private ConnectService<?> connectionService;
+  private ConnectService connectService;
   private ScheduledExecutorService executor;
 
   private TestFramework testFramework = null;
@@ -109,13 +110,22 @@ public class NetClient {
 
     if (this.getConfig().getConnection().isTestingMode()) {
       this.testFramework = new TestFramework(this);
-      this.connectionService = new DummyConnectService(this, this.testFramework);
+      this.connectService = new LocalConnectService(this, this.testFramework);
     } else {
       this.testFramework = null;
-      this.connectionService = new NettyConnectService(this);
+      this.connectService = new OnlineConnectService(this);
     }
-    this.connectionService.startAsync();
-    this.connectionService.awaitRunning(1, TimeUnit.SECONDS);
+    this.connectService.startAsync();
+    this.connectService.awaitRunning(1, TimeUnit.SECONDS);
+
+    if (this.connectService.state() != Service.State.RUNNING) {
+      if (this.connectService.state() == Service.State.FAILED) {
+        throw new IllegalStateException("connectService failed",
+            this.connectService.failureCause());
+      } else {
+        throw new IllegalStateException("connectService is not running!");
+      }
+    }
 
     this.network.resetInstance();
 
@@ -126,7 +136,7 @@ public class NetClient {
 
   public synchronized void disable() throws Exception {
     Preconditions.checkState(enabled == true, "NetClient is not enabled");
-    this.connectionService.stopAsync();
+    this.connectService.stopAsync();
     this.testFramework = null;
     enabled = false;
 

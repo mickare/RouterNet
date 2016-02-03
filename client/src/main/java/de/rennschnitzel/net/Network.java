@@ -8,8 +8,7 @@ import lombok.Getter;
 
 public class Network extends AbstractClientNetwork {
 
-  @Getter
-  private final NetClient client;
+  private final @Getter NetClient client;
 
   public Network(NetClient client) {
     super(client.getHome());
