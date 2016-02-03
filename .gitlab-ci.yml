@@ -7,4 +7,4 @@ jobTest:
   stage: test
   script:
     - echo "Testing..."
-    - mvn test
+    - mvn test -q
