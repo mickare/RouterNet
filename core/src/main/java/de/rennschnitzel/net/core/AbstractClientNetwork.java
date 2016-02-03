@@ -1,11 +1,16 @@
 package de.rennschnitzel.net.core;
 
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.function.Consumer;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.MoreExecutors;
 
 import de.rennschnitzel.net.ProtocolUtils;
 import de.rennschnitzel.net.core.Node.HomeNode;
@@ -19,6 +24,7 @@ import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
 import de.rennschnitzel.net.util.concurrent.CloseableLock;
 import de.rennschnitzel.net.util.concurrent.CloseableReadWriteLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
+import de.rennschnitzel.net.util.function.Callback;
 
 public abstract class AbstractClientNetwork extends AbstractNetwork {
 
@@ -29,6 +35,7 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
   private final CloseableReadWriteLock connectionLock = new ReentrantCloseableReadWriteLock();
   private final Condition connectedCondition = connectionLock.readLock().newCondition();
   private Connection connection = null;
+  private final Map<Callback<AbstractClientNetwork>, ExecutorService> connectCallbacks = Maps.newConcurrentMap();
 
   /**
    * When the client is connected and ready to send messages this method returns true.
@@ -37,31 +44,97 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
    */
   public boolean isConnected() {
     try (CloseableLock l = connectionLock.readLock().open()) {
-      return _isConnected();
+      return connection != null ? connection.isActive() : false;
     }
   }
 
-  private boolean _isConnected() {
-    return connection != null ? connection.isActive() : false;
-  }
-
-  public boolean awaitConnected() throws InterruptedException {
+  /**
+   * Await that the client is connected to the network.
+   * 
+   * @throws InterruptedException
+   */
+  public void awaitConnected() throws InterruptedException {
     try (CloseableLock l = connectionLock.readLock().open()) {
-      if (_isConnected()) {
-        return true;
+      if (isConnected()) {
+        return;
       }
       connectedCondition.await();
-      return _isConnected();
     }
   }
 
+  /**
+   * Causes the current thread to wait until it is signalled or interrupted, or the specified
+   * waiting time elapses.
+   * 
+   * @param time the maximum time to wait
+   * @param unit the time unit of the time argument
+   * @return false if the waiting time detectably elapsed before return from the method, else true
+   * @throws InterruptedException - if the current thread is interrupted (and interruption of thread
+   *         suspension is supported)
+   */
   public boolean awaitConnected(long time, TimeUnit unit) throws InterruptedException {
     try (CloseableLock l = connectionLock.readLock().open()) {
-      if (_isConnected()) {
+      if (isConnected()) {
         return true;
       }
-      connectedCondition.await(time, unit);
-      return _isConnected();
+      return connectedCondition.await(time, unit);
+    }
+  }
+
+  private static final ExecutorService DIRECT_EXECUTOR = MoreExecutors.newDirectExecutorService();
+
+  private void runConnectListener(final Callback<AbstractClientNetwork> callback, final ExecutorService executor) {
+    executor.execute(() -> {
+      if (AbstractClientNetwork.this.isConnected()) {
+        callback.call(AbstractClientNetwork.this);
+      }
+    });
+  }
+
+  /**
+   * Add a callback that is directly executed when the server is connected.
+   * 
+   * @param callback that is called
+   */
+  public void addConnectCallback(final Callback<AbstractClientNetwork> callback) {
+    this.addConnectCallback(callback, DIRECT_EXECUTOR);
+  }
+
+  /**
+   * Adds a callback that is executed with the executor when the server is connected.
+   * 
+   * @param callback that is called with executor
+   * @param executor that is used to run the callback
+   */
+  public void addConnectCallback(final Callback<AbstractClientNetwork> callback, final ExecutorService executor) {
+    Preconditions.checkNotNull(callback);
+    Preconditions.checkNotNull(executor);
+    try (CloseableLock l = connectionLock.readLock().open()) {
+
+      if (this.isConnected()) {
+        runConnectListener(callback, executor);
+
+      } else {
+        synchronized (connectCallbacks) {
+
+          if (this.isConnected()) {
+            runConnectListener(callback, executor);
+          } else {
+            connectCallbacks.put(callback, executor);
+          }
+
+        }
+      }
+
+    }
+  }
+
+  private void runConnectCallbacks() {
+    synchronized (connectCallbacks) {
+      for (Entry<Callback<AbstractClientNetwork>, ExecutorService> e : this.connectCallbacks.entrySet()) {
+        runConnectListener(e.getKey(), e.getValue());
+      }
+      this.connectCallbacks.clear();
     }
   }
 
@@ -73,6 +146,7 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
       getLogger().info(connection.getPeerId() + " connected.");
       connectedCondition.signalAll();
     }
+    runConnectCallbacks();
   }
 
   protected void removeConnection(final Connection connection) {
