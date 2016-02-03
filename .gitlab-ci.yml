@@ -1,12 +1,20 @@
 image: mvn_runner
 
 stages:
-  - build
+  - test
 
-jobd:
-  stage: build
+jobTestCore:
+  stage: test
   script:
-    - echo "Cleaning"
+    - cd core/
     - mvn clean
-    - echo "Building"
-    - mvn install
+    - echo "Testing Core"
+    - mvn test
+
+jobTestClient:
+  stage: test
+  script:
+    - cd client/
+    - mvn clean
+    - echo "Testing Client"
+    - mvn test
