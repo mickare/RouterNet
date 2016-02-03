@@ -3,6 +3,9 @@ package de.rennschnitzel.net.core;
 import java.util.UUID;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import com.google.common.collect.Maps;
 
 import de.rennschnitzel.net.core.packet.PacketWriter;
 import de.rennschnitzel.net.exception.ConnectionException;
@@ -25,6 +28,9 @@ public @Getter class Connection implements PacketWriter<ChannelFuture> {
   private final UUID peerId;
   private final ChannelWrapper channel;
   private @Setter @NonNull CloseMessage closeMessage = null;
+
+  private final BiMap<Integer, String> remoteTunnels = Maps.synchronizedBiMap(HashBiMap.create());
+  private final BiMap<Integer, String> remoteTunnelsUnmodif = Maps.unmodifiableBiMap(this.remoteTunnels);
 
   public Connection(AbstractNetwork network, UUID peerId, ChannelWrapper channel) {
     Preconditions.checkNotNull(network);
@@ -101,6 +107,15 @@ public @Getter class Connection implements PacketWriter<ChannelFuture> {
 
   public void receive(TransportProtocol.TunnelRegister msg) throws ConnectionException {
     this.network.receiveTunnelRegister(msg);
+    this.registerRemoteTunnel(msg.getTunnelId(), msg.getName());
+  }
+
+  public void registerRemoteTunnel(int id, String name) {
+    remoteTunnels.forcePut(id, name.toLowerCase());
+  }
+
+  public BiMap<Integer, String> getRemoteTunnels() {
+    return remoteTunnelsUnmodif;
   }
 
   public void addToNetwork() {

@@ -1,11 +1,13 @@
 package de.rennschnitzel.net.core.procedure;
 
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Sets;
 
 import de.rennschnitzel.net.ProtocolUtils;
 import de.rennschnitzel.net.core.Node;
@@ -100,6 +102,19 @@ public class SingleProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
   @Override
   public boolean setException(Throwable throwable) {
     return this.result.setException(throwable);
+  }
+
+  @Override
+  public boolean setException(UUID receiver, Throwable throwable) {
+    if (this.node.getId().equals(receiver)) {
+      return this.setException(throwable);
+    }
+    return false;
+  }
+
+  @Override
+  public Set<UUID> getNodeUUIDs() {
+    return Sets.newHashSet(this.node.getId());
   }
 
 }

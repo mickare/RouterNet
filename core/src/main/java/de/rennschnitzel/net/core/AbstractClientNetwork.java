@@ -1,6 +1,8 @@
 package de.rennschnitzel.net.core;
 
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
 import java.util.function.Consumer;
 
 import com.google.common.base.Preconditions;
@@ -25,11 +27,41 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
   }
 
   private final CloseableReadWriteLock connectionLock = new ReentrantCloseableReadWriteLock();
+  private final Condition connectedCondition = connectionLock.readLock().newCondition();
   private Connection connection = null;
 
+  /**
+   * When the client is connected and ready to send messages this method returns true.
+   * 
+   * @return true if it is possible to send messages.
+   */
   public boolean isConnected() {
     try (CloseableLock l = connectionLock.readLock().open()) {
-      return connection != null;
+      return _isConnected();
+    }
+  }
+
+  private boolean _isConnected() {
+    return connection != null ? connection.isActive() : false;
+  }
+
+  public boolean awaitConnected() throws InterruptedException {
+    try (CloseableLock l = connectionLock.readLock().open()) {
+      if (_isConnected()) {
+        return true;
+      }
+      connectedCondition.await();
+      return _isConnected();
+    }
+  }
+
+  public boolean awaitConnected(long time, TimeUnit unit) throws InterruptedException {
+    try (CloseableLock l = connectionLock.readLock().open()) {
+      if (_isConnected()) {
+        return true;
+      }
+      connectedCondition.await(time, unit);
+      return _isConnected();
     }
   }
 
@@ -39,6 +71,7 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
     try (CloseableLock l = connectionLock.writeLock().open()) {
       this.connection = connection;
       getLogger().info(connection.getPeerId() + " connected.");
+      connectedCondition.signalAll();
     }
   }
 
@@ -56,21 +89,21 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
   }
 
   @Override
-  public <T, R> boolean sendProcedureCall(ProcedureCall<T, R> call) {
+  public <T, R> void sendProcedureCall(ProcedureCall<T, R> call) {
 
-    boolean success = true;
 
     if (!call.getTarget().isOnly(this.getHome())) {
       ProcedureMessage.Builder b = ProcedureMessage.newBuilder();
       b.setTarget(call.getTarget().getProtocolMessage());
       b.setSender(ProtocolUtils.convert(getHome().getId()));
       b.setCall(call.toProtocol());
-      success &= send(Packer.pack(b.build()));
+      if (!send(Packer.pack(b.build()))) {
+        call.setException(new NotConnectedException());
+      }
     }
     if (call.getTarget().contains(this.getHome())) {
       this.getProcedureManager().handle(call);
     }
-    return success;
   }
 
   @Override

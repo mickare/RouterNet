@@ -2,8 +2,6 @@ package de.rennschnitzel.net.util.logging;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
@@ -44,7 +42,7 @@ public class DummyConciseFormatter extends Formatter {
 
   private static int maxLength = 4;
 
-  private final DateFormat date = new SimpleDateFormat("HH:mm:ss");
+  //private final DateFormat date = new SimpleDateFormat("HH:mm:ss");
 
   @Override
   public String format(LogRecord record) {

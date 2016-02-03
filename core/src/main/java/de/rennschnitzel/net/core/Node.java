@@ -282,7 +282,7 @@ public @RequiredArgsConstructor class Node {
       } , 1, TimeUnit.MILLISECONDS);
     }
 
-    public void sendUpdate(final Set<? extends PacketWriter<?>> connections) {
+    public void sendUpdate(final Collection<? extends PacketWriter<?>> connections) {
       final NodeUpdateMessage msg = NodeUpdateMessage.newBuilder().setNode(this.toProtocol()).build();
       final Packet packet = Packet.newBuilder().setNodeUpdate(msg).build();
       connections.forEach(con -> con.writeAndFlushFast(packet));

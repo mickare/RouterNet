@@ -2,7 +2,6 @@ package de.rennschnitzel.net;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.Thread.State;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;

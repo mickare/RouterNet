@@ -1,5 +1,7 @@
 package de.rennschnitzel.net.core.procedure;
 
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -20,6 +22,8 @@ public interface ProcedureCall<T, R> {
 
   Target getTarget();
 
+  Set<UUID> getNodeUUIDs();
+  
   T getArgument();
 
   void receive(ProcedureMessage message, ProcedureResponseMessage response) throws IllegalArgumentException;
@@ -35,7 +39,10 @@ public interface ProcedureCall<T, R> {
   void await(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException;
 
   boolean setException(Throwable throwable);
+  
+  boolean setException(UUID receiver, Throwable throwable);
 
   void execute(CallableRegisteredProcedure<T, R> procedure) throws IllegalArgumentException;
 
+  
 }

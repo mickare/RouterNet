@@ -1,7 +1,9 @@
 package de.rennschnitzel.net.core.procedure;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -118,6 +120,22 @@ public class MultiProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
       changed |= r.setException(throwable);
     }
     return changed;
+  }
+
+  @Override
+  public boolean setException(UUID receiver, Throwable throwable) {
+    Preconditions.checkNotNull(receiver);
+    boolean changed = false;
+    ProcedureCallResult<T, R> r = this.results.get(receiver);
+    if (r != null) {
+      changed |= r.setException(throwable);
+    }
+    return changed;
+  }
+
+  @Override
+  public Set<UUID> getNodeUUIDs() {
+    return Collections.unmodifiableSet(this.results.keySet());
   }
 
 }

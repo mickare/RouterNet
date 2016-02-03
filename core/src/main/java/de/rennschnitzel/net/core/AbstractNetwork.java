@@ -52,7 +52,7 @@ public abstract class AbstractNetwork {
   // ******************************************************************************************
 
 
-  
+
   private final @Getter HomeNode home;
   private final LoadingCache<UUID, Node> nodesCache = CacheBuilder.newBuilder().weakValues().build(CacheLoader.from(Node::new));
   private final Map<UUID, Node> nodes = new HashMap<>();
@@ -88,7 +88,7 @@ public abstract class AbstractNetwork {
   // ***************************************************************************
   // Sending
 
-  protected abstract <T, R> boolean sendProcedureCall(ProcedureCall<T, R> call);
+  protected abstract <T, R> void sendProcedureCall(ProcedureCall<T, R> call);
 
   protected abstract void sendProcedureResponse(final UUID receiverId, final ProcedureResponseMessage msg) throws ProtocolException;
 
@@ -113,31 +113,58 @@ public abstract class AbstractNetwork {
 
   protected abstract boolean registerTunnel(Tunnel tunnel);
 
+  /**
+   * Gets a set of all registered tunnels.
+   * 
+   * @return set of tunnels
+   */
   public Set<Tunnel> getTunnels() {
     try (CloseableLock l = tunnelLock.open()) {
       return ImmutableSet.copyOf(this.tunnelsByName.values());
     }
   }
 
+  /**
+   * Gets a set of all registered sub-tunnels. A sub-tunnel is a higher advanced layer.
+   * 
+   * @return set of sub-tunnels
+   */
   public Set<SubTunnel> getSubTunnels() {
     try (CloseableLock l = tunnelLock.open()) {
       return ImmutableSet.copyOf(this.subTunnels.values());
     }
   }
 
+  /**
+   * Gets the tunnel with the given name if present
+   * 
+   * @param name of tunnel
+   * @return null if not present
+   */
   public Tunnel getTunnelIfPresent(String name) {
     return this.tunnelsByName.get(name.toLowerCase());
   }
 
+  /**
+   * Gets the tunnel with the given name. If the tunnel does not already exist a new Tunnel is
+   * created and registered.
+   * 
+   * @param name of tunnel
+   * @return tunnel
+   */
   public Tunnel getTunnel(String name) {
     return getTunnel(name, true);
   }
 
-
+  /**
+   * Gets the tunnel with the given id.
+   * 
+   * @param tunnelId of tunnel
+   * @return null if the tunnel does not exists
+   */
   public Tunnel getTunnelById(int tunnelId) {
     return this.tunnelsById.get(tunnelId);
   }
-
 
   private Tunnel getTunnel(String name, boolean register) {
     final String key = name.toLowerCase();
@@ -159,11 +186,24 @@ public abstract class AbstractNetwork {
     return tunnel;
   }
 
+  /**
+   * Gets the sub-tunnel that is described by the descriptor if already present.
+   * 
+   * @param descriptor that describes the sub-tunnel
+   * @return sub-tunnel
+   */
   public <S extends SubTunnel> S getTunnelIfPresent(SubTunnelDescriptor<S> descriptor) {
     Preconditions.checkNotNull(descriptor);
     return descriptor.cast(this.subTunnels.get(descriptor));
   }
 
+  /**
+   * Gets the sub-tunnel that is described by the descriptor. If none exists a new sub-tunnel is
+   * created and registered.
+   * 
+   * @param descriptor that describes the sub-tunnel
+   * @return sub-tunnel
+   */
   public <S extends SubTunnel> S getTunnel(SubTunnelDescriptor<S> descriptor) {
     Preconditions.checkNotNull(descriptor);
     S subTunnel = getTunnelIfPresent(descriptor);
@@ -210,12 +250,23 @@ public abstract class AbstractNetwork {
   // ***************************************************************************
   // Nodes
 
+  /**
+   * Get the nodes in the network.
+   * 
+   * @return set of nodes
+   */
   public Set<Node> getNodes() {
     try (CloseableLock l = nodeLock.readLock().open()) {
       return ImmutableSet.copyOf(nodes.values());
     }
   }
 
+  /**
+   * Get the nodes that are described in the target object.
+   * 
+   * @param target describes a group of nodes
+   * @return set of nodes
+   */
   public Set<Node> getNodes(Target target) {
     try (CloseableLock l = nodeLock.readLock().open()) {
       ImmutableSet.Builder<Node> b = ImmutableSet.builder();
@@ -224,14 +275,33 @@ public abstract class AbstractNetwork {
     }
   }
 
+  /**
+   * Gets the node with the given id.
+   * 
+   * @param id of node
+   * @return node
+   */
   public Node getNode(UUID id) {
     return this.nodes.get(id);
   }
 
+  /**
+   * Gets the cached node with the given id. Be aware that this node does not need to be existing in
+   * the network!!! It automatically creates a new node if not present.
+   * 
+   * @param id of node
+   * @return node
+   */
   public Node getNodeUnsafe(UUID id) {
     return this.nodesCache.getUnchecked(id);
   }
 
+  /**
+   * Gets the node with the given name.
+   * 
+   * @param name of node
+   * @return node, or null if not found
+   */
   public Node getNode(String name) {
     try (CloseableLock l = nodeLock.readLock().open()) {
       return this.nodes.values().stream().filter(n -> n.getName().isPresent() && n.getName().get().equalsIgnoreCase(name)).findAny()
@@ -239,14 +309,33 @@ public abstract class AbstractNetwork {
     }
   }
 
+  /**
+   * Gets the nodes with the namespace
+   * 
+   * @param namespace of nodes
+   * @return set of nodes
+   */
   public Set<Node> getNodes(Namespace namespace) {
     return getNodesOfNamespace(namespace.getName());
   }
 
+  /**
+   * Gets the accumulation of nodes that belongs to the given namespaces.
+   * 
+   * @param namespace first
+   * @param namespaces other
+   * @return set of nodes
+   */
   public Set<Node> getNodes(Namespace namespace, Namespace... namespaces) {
     return getNodesOfNamespace(namespace.getName(), Arrays.stream(namespaces).map(Namespace::getName).toArray(len -> new String[len]));
   }
 
+  /**
+   * Gets the accumulation nodes of the given namespaces.
+   * 
+   * @param namespaces
+   * @return set of nodes
+   */
   public Set<Node> getNodes(Collection<Namespace> namespaces) {
     try (CloseableLock l = nodeLock.readLock().open()) {
       ImmutableSet.Builder<Node> b = ImmutableSet.builder();
@@ -257,6 +346,13 @@ public abstract class AbstractNetwork {
     }
   }
 
+  /**
+   * Gets the accumulation of nodes that belongs to the given namespaces.
+   * 
+   * @param namespace - name of first namespace
+   * @param namespaces - names of other namespaces
+   * @return set of nodes
+   */
   public Set<Node> getNodesOfNamespace(String namespace, String... namespaces) {
     try (CloseableLock l = nodeLock.readLock().open()) {
       ImmutableSet.Builder<Node> b = ImmutableSet.builder();
@@ -269,10 +365,22 @@ public abstract class AbstractNetwork {
     }
   }
 
+  /**
+   * Gets the namespace object of a namespace name.
+   * 
+   * @param namespace name
+   * @return namespace object
+   */
   public Namespace getNamespace(String namespace) {
     return new Namespace(this, namespace);
   }
 
+  /**
+   * Updates a node from a received protocol message. DONT USE THIS!
+   * 
+   * @param msg - update message
+   * @return node that is updated
+   */
   public Node updateNode(NodeMessage msg) {
     UUID id = ProtocolUtils.convert(msg.getId());
     if (id.equals(this.getHome().getId())) {
@@ -297,6 +405,11 @@ public abstract class AbstractNetwork {
     return node;
   }
 
+  /**
+   * Updates all nodes from a received protocol message. DONT USE THIS!
+   * 
+   * @param msg - topology message
+   */
   public void updateNodes(NodeTopologyMessage msg) {
     try (CloseableLock l = nodeLock.readLock().open()) {
       Set<Node> retain = Sets.newHashSet();

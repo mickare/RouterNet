@@ -146,7 +146,8 @@ public @RequiredArgsConstructor class ProcedureManager {
     if (!call.isDone()) {
       openCalls.put(call.getId(), call);
       try {
-        if(!network.sendProcedureCall(call)) {
+        network.sendProcedureCall(call);
+        if (call.isDone()) {
           call.setException(new NotConnectedException());
           openCalls.invalidate(call.getId());
         }
@@ -172,8 +173,8 @@ public @RequiredArgsConstructor class ProcedureManager {
     if (!call.isDone()) {
       openCalls.put(call.getId(), call);
       try {
-        if(!network.sendProcedureCall(call)) {
-          call.setException(new NotConnectedException());
+        network.sendProcedureCall(call);
+        if (call.isDone()) {
           openCalls.invalidate(call.getId());
         }
       } catch (Exception e) {
