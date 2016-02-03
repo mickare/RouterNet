@@ -6,6 +6,5 @@ stages:
 jobTest:
   stage: test
   script:
-    - mvn clean
     - echo "Testing..."
     - mvn test
