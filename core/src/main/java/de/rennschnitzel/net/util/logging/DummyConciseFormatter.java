@@ -60,16 +60,15 @@ public class DummyConciseFormatter extends Formatter {
     }
     StringBuilder formatted = new StringBuilder();
 
-    formatted.append(date.format(record.getMillis()));
-    formatted.append(" [");
-    formatted.append(record.getLevel().getName());
-    formatted.append("]");
+    //formatted.append(date.format(record.getMillis()));
+    //formatted.append(" [");
+    //formatted.append(record.getLevel().getName());
+    //formatted.append("]");
     formatted.append("[");
     formatted.append(record.getLoggerName());
     formatted.append("]");
     formatted.append(Strings.repeat(" ", spaces));
     formatted.append(formatMessage(record));
-    formatted.append('\n');
     if (record.getThrown() != null) {
       StringWriter writer = new StringWriter();
       record.getThrown().printStackTrace(new PrintWriter(writer));

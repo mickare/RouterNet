@@ -106,8 +106,6 @@ public class ProcedureTest {
 
     Future<?> clientOnRouter = net_client.getNodeUnsafe(net_router.getHome().getId()).newUpdatePromise();
     Future<?> routerOnClient = net_router.getNodeUnsafe(net_client.getHome().getId()).newUpdatePromise();
-
-    System.out.println("info");
     
     routerEngine.getFuture().awaitUninterruptibly();
     clientEngine.getFuture().awaitUninterruptibly();
@@ -338,7 +336,6 @@ public class ProcedureTest {
       return helloWorld;
     };
 
-    long start = System.currentTimeMillis();
     net_client.getProcedureManager().registerProcedure("testSupplier", func).getRegisterFuture().await(1000);
 
 
@@ -369,7 +366,6 @@ public class ProcedureTest {
     assertEquals(helloWorld, call.get(1, TimeUnit.MILLISECONDS));
     assertEquals(1, runCount.get());
 
-    System.out.println("publish: " + (System.currentTimeMillis() - start));
   }
 
 }

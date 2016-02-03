@@ -24,7 +24,7 @@ public class DummyLogger extends Logger {
 
   @Override
   public void log(LogRecord record) {
-    out.print(formatter.format(record));
+    out.println(formatter.format(record));
   }
 
   void doLog(LogRecord record) {

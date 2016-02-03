@@ -33,13 +33,13 @@ public abstract class AbstractConnectService extends AbstractScheduledService
 
   private final CloseableReadWriteLock lock = new ReentrantCloseableReadWriteLock();
   private @Getter Promise<Connection> currentFuture = null;
-  private ConnectClient connect = null;
+  private ConnectClient connector = null;
   private @Getter(AccessLevel.PROTECTED) EventLoopGroup group;
 
   private final Set<Consumer<Connection>> listeners = Sets.newIdentityHashSet();
 
   public AbstractConnectService(NetClient client) {
-    this(client, 10, TimeUnit.SECONDS);
+    this(client, 1, TimeUnit.SECONDS);
   }
 
   public AbstractConnectService(NetClient client, long delay_time, TimeUnit delay_unit) {
@@ -64,8 +64,8 @@ public abstract class AbstractConnectService extends AbstractScheduledService
     group = PipelineUtils.newEventLoopGroup(0,
         new ThreadFactoryBuilder().setNameFormat("Net-Netty IO Thread #%1$d").build());
     getLogger().info("Connect service started");
-    
-    runOneIteration();    
+
+    connectSoft();
   }
 
   protected void shutDown() throws Exception {
@@ -79,6 +79,9 @@ public abstract class AbstractConnectService extends AbstractScheduledService
     if (con != null) {
       if (this.isRunning()) {
         con.awaitRunning(1000);
+        if (con.getState() != ConnectClient.State.ACTIVE) {
+          con.close();
+        }
       } else {
         con.close();
       }
@@ -87,23 +90,25 @@ public abstract class AbstractConnectService extends AbstractScheduledService
 
   private void disconnect() {
     try (CloseableLock l = lock.writeLock().open()) {
-      if (connect != null) {
-        connect.close();
+      if (connector != null) {
+        connector.close();
       }
     }
   }
 
   private ConnectClient connectSoft() {
-    if (connect == null || connect.isClosed() && this.isRunning()) {
+    if (connector == null || connector.isClosed()) {
       if (currentFuture != null && !currentFuture.isDone()) {
         currentFuture.tryFailure(new NotConnectedException("timed out"));
       }
       try (CloseableLock l = lock.writeLock().open()) {
         currentFuture = FutureUtils.newPromise();
-        connect = newConnectClient(currentFuture).connect();
+        connector = newConnectClient(currentFuture);
+        getLogger().info("Connecting to network...");
+        connector.connect();
       }
     }
-    return connect;
+    return connector;
   }
 
   protected abstract ConnectClient newConnectClient(Promise<Connection> future);

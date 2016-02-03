@@ -15,6 +15,7 @@ import org.junit.rules.TemporaryFolder;
 
 import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.dummy.DummClientNetwork;
+import de.rennschnitzel.net.dummy.DummyLogger;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
 import de.rennschnitzel.net.util.SimpleOwner;
 import de.rennschnitzel.net.util.concurrent.DirectScheduledExecutorService;
@@ -33,7 +34,7 @@ public class TestClientTestFramework {
     client = new NetClient(NodeMessage.Type.BUKKIT);
 
     folder.create();
-    client.init(Logger.getLogger("TestNetClient"), folder.newFolder("net"),
+    client.init(new DummyLogger("Client", System.out), folder.newFolder("net"),
         new DirectScheduledExecutorService());
 
     client.enable();
