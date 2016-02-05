@@ -21,11 +21,11 @@ import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.TunnelMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister;
 
-public class BasePacketHandler<C extends Connection> implements PacketHandler<C> {
+public class BasePacketHandler implements PacketHandler<Connection> {
 
-  public static final BasePacketHandler<Connection> DEFAULT = new BasePacketHandler<>();
+  public static final BasePacketHandler DEFAULT = new BasePacketHandler();
   
-  public boolean isReceiver(C con, TransportProtocol.TargetMessage target) {
+  public boolean isReceiver(Connection con, TransportProtocol.TargetMessage target) {
     return con.getNetwork().getHome().isPart(target);
   }
 
@@ -33,12 +33,12 @@ public class BasePacketHandler<C extends Connection> implements PacketHandler<C>
   // TRANSPORT
 
   @Override
-  public void handle(C con, CloseMessage msg) throws Exception {
+  public void handle(Connection con, CloseMessage msg) throws Exception {
     con.setCloseMessage(msg);
   }
 
   @Override
-  public void handle(C ctx, HeartbeatMessage heartbeat) throws Exception {
+  public void handle(Connection con, HeartbeatMessage heartbeat) throws Exception {
 
   }
 
@@ -46,27 +46,27 @@ public class BasePacketHandler<C extends Connection> implements PacketHandler<C>
   // LOGIN
 
   @Override
-  public void handle(C con, LoginHandshakeMessage msg) throws Exception {
+  public void handle(Connection con, LoginHandshakeMessage msg) throws Exception {
     throw new ProtocolException("Invalid packet!");
   }
 
   @Override
-  public void handle(C con, LoginResponseMessage msg) throws Exception {
+  public void handle(Connection con, LoginResponseMessage msg) throws Exception {
     throw new ProtocolException("Invalid packet!");
   }
 
   @Override
-  public void handle(C con, LoginChallengeMessage msg) throws Exception {
+  public void handle(Connection con, LoginChallengeMessage msg) throws Exception {
     throw new ProtocolException("Invalid packet!");
   }
 
   @Override
-  public void handle(C con, LoginSuccessMessage msg) throws Exception {
+  public void handle(Connection con, LoginSuccessMessage msg) throws Exception {
     throw new ProtocolException("Invalid packet!");
   }
 
   @Override
-  public void handle(C con, LoginUpgradeMessage msg) throws Exception {
+  public void handle(Connection con, LoginUpgradeMessage msg) throws Exception {
     throw new ProtocolException("Invalid packet!");
   }
 
@@ -74,17 +74,17 @@ public class BasePacketHandler<C extends Connection> implements PacketHandler<C>
   // NETWORK
 
   @Override
-  public void handle(C con, NodeTopologyMessage msg) throws Exception {
+  public void handle(Connection con, NodeTopologyMessage msg) throws Exception {
     con.getNetwork().updateNodes(msg);
   }
 
   @Override
-  public void handle(C con, NodeUpdateMessage msg) throws Exception {
+  public void handle(Connection con, NodeUpdateMessage msg) throws Exception {
     con.getNetwork().updateNode(msg.getNode());
   }
 
   @Override
-  public void handle(C con, NodeRemoveMessage msg) throws Exception {
+  public void handle(Connection con, NodeRemoveMessage msg) throws Exception {
     UUID id = ProtocolUtils.convert(msg.getId());
     con.getNetwork().removeNode(id);
   }
@@ -93,12 +93,12 @@ public class BasePacketHandler<C extends Connection> implements PacketHandler<C>
   // TUNNEL
 
   @Override
-  public void handle(C con, TunnelRegister msg) throws Exception {
+  public void handle(Connection con, TunnelRegister msg) throws Exception {
     con.receive(msg);
   }
 
   @Override
-  public void handle(C con, TunnelMessage msg) throws Exception {
+  public void handle(Connection con, TunnelMessage msg) throws Exception {
     if (!isReceiver(con, msg.getTarget())) {
       return; // drop packet
     }
@@ -112,7 +112,7 @@ public class BasePacketHandler<C extends Connection> implements PacketHandler<C>
   // PROCEDURE
 
   @Override
-  public void handle(C con, ProcedureMessage msg) throws Exception {
+  public void handle(Connection con, ProcedureMessage msg) throws Exception {
     con.getNetwork().getProcedureManager().handle(msg);
   }
 

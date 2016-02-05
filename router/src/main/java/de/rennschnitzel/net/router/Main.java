@@ -5,14 +5,13 @@ import java.io.PrintStream;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-import jline.console.ConsoleReader;
-
 import org.fusesource.jansi.AnsiConsole;
 
 import com.google.common.util.concurrent.Service;
 
 import de.rennschnitzel.net.router.logging.LoggingOutputStream;
 import de.rennschnitzel.net.router.logging.SimpleLogger;
+import jline.console.ConsoleReader;
 
 public class Main {
 

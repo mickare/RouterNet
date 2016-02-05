@@ -1,13 +1,15 @@
 package de.rennschnitzel.net.router.config;
 
+import java.util.Set;
+import java.util.UUID;
+
+import com.google.common.collect.Sets;
+import com.zaxxer.hikari.HikariDataSource;
+
 import jline.internal.Preconditions;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-
-import java.util.UUID;
-
-import com.zaxxer.hikari.HikariDataSource;
 
 @NoArgsConstructor
 @Data
@@ -59,11 +61,18 @@ public class Settings {
     }
   }
 
-  @NoArgsConstructor
-  @Data
-  public static class RouterConfig {
-    private UUID uuid = UUID.randomUUID();
+
+
+  public static @Data @NoArgsConstructor class RouterConfig {
+    private NodeSettings home = new NodeSettings();
     private String address = "localhost:1010";
+    private String password = "pw55123";
+  }
+
+  public static @Data @NoArgsConstructor class NodeSettings {
+    private UUID id = UUID.randomUUID();
+    private Set<String> namespaces = Sets.newHashSet();
+    private String name = null;
   }
 
   private RouterConfig routerSettings = new RouterConfig();

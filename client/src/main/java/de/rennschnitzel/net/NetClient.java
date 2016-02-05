@@ -102,10 +102,11 @@ public @Getter @RequiredArgsConstructor class NetClient {
     this.routerAddress = HostAndPort.fromString(this.getConfig().getConnection().getAddress())
         .withDefaultPort(NetConstants.DEFAULT_PORT);
 
-    this.home = new HomeNode(getConfig().getNode().getId());
+    this.home = new HomeNode(getConfig().getHome().getId(), getConfig().getHome().getNamespaces());
     this.home.setType(this.type);
     network = new Network(this);
     Net.setNetwork(network);
+    this.home.setName(getConfig().getHome().getName());
 
     if (this.getConfig().getConnection().isTestingMode()) {
       this.testFramework = new TestFramework(this);

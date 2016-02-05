@@ -9,14 +9,14 @@ import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import jline.console.completer.ArgumentCompleter;
-import jline.console.completer.Completer;
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 
+import de.rennschnitzel.net.router.Commands;
 import de.rennschnitzel.net.router.Router;
+import jline.console.completer.ArgumentCompleter;
+import jline.console.completer.Completer;
 
 public class CommandManager {
 
@@ -30,10 +30,8 @@ public class CommandManager {
   public CommandManager(Router main) {
     this.main = main;
 
-    registerCommand(new HelpCommand(this));
-    registerCommand(new ExitCommand());
-    registerCommand(new RamCommand());
-
+    Commands.registerCommands(this);
+    
     main.getConsole().addCompleter(commandCompleter);
 
   }

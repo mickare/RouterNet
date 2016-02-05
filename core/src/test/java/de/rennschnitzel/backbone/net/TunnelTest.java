@@ -42,7 +42,6 @@ import de.rennschnitzel.net.service.ConnectClient;
 import de.rennschnitzel.net.util.FutureUtils;
 import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoopGroup;
-import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
 
 public class TunnelTest {
@@ -91,24 +90,18 @@ public class TunnelTest {
     
     con = new LocalConnectClient(PipelineUtils.baseInitAnd(ch -> {
       ch.pipeline().addLast(new LoginHandler(routerEngine, con_router));
-      ch.pipeline().addLast(new ConnectionHandler(net_router, new BasePacketHandler<>()));
+      ch.pipeline().addLast(new ConnectionHandler(net_router, new BasePacketHandler()));
     }), PipelineUtils.baseInitAnd(ch -> {
       ch.pipeline().addLast(new LoginHandler(clientEngine, con_client));
-      ch.pipeline().addLast(new ConnectionHandler(net_client, new BasePacketHandler<>()));
+      ch.pipeline().addLast(new ConnectionHandler(net_client, new BasePacketHandler()));
     }), group);
 
     con.connect();
     con.awaitRunning();
     Preconditions.checkState(con.getState() == ConnectClient.State.ACTIVE);
 
-    Future<?> clientOnRouter = net_client.getNodeUnsafe(net_router.getHome().getId()).newUpdatePromise();
-    Future<?> routerOnClient = net_router.getNodeUnsafe(net_client.getHome().getId()).newUpdatePromise();
-
-    routerEngine.getFuture().awaitUninterruptibly();
-    clientEngine.getFuture().awaitUninterruptibly();
-
-    clientOnRouter.await(1000);
-    routerOnClient.await(1000);
+    net_client.awaitConnected(1, TimeUnit.SECONDS);
+    net_router.awaitConnected(1, TimeUnit.SECONDS);
 
     Preconditions.checkNotNull(net_client.getNode(net_router.getHome().getId()));
     Preconditions.checkNotNull(net_router.getNode(net_client.getHome().getId()));

@@ -2,12 +2,10 @@ package de.rennschnitzel.net.router.command;
 
 import java.util.logging.Logger;
 
-import jline.console.completer.Completer;
-
 import com.google.common.base.Preconditions;
 
-import de.rennschnitzel.net.router.Main;
 import de.rennschnitzel.net.router.Router;
+import jline.console.completer.Completer;
 
 public abstract class AbstractCommand implements Command {
 

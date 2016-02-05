@@ -3,11 +3,7 @@ package de.rennschnitzel.net.router;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -15,7 +11,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
 import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.AbstractIdleService;
@@ -23,60 +18,49 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import de.rennschnitzel.net.Owner;
-import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.Node.HomeNode;
-import de.rennschnitzel.net.netty.BaseChannelInitializer;
+import de.rennschnitzel.net.core.login.AuthenticationFactory;
+import de.rennschnitzel.net.core.login.RouterAuthentication;
+import de.rennschnitzel.net.core.login.RouterLoginEngine;
+import de.rennschnitzel.net.netty.ConnectionHandler;
+import de.rennschnitzel.net.netty.LoginHandler;
+import de.rennschnitzel.net.netty.PipelineUtils;
+import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
 import de.rennschnitzel.net.router.command.CommandManager;
 import de.rennschnitzel.net.router.config.ConfigFile;
 import de.rennschnitzel.net.router.config.Settings;
-import de.rennschnitzel.net.router.netty.NettyConnection;
-import de.rennschnitzel.net.router.netty.PipelineUtils;
-import de.rennschnitzel.net.router.netty.RouterHandshakeHandler;
+import de.rennschnitzel.net.router.netty.RouterPacketHandler;
 import de.rennschnitzel.net.router.plugin.PluginManager;
-import de.rennschnitzel.net.util.concurrent.CloseableLock;
-import de.rennschnitzel.net.util.concurrent.CloseableReadWriteLock;
-import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
+import de.rennschnitzel.net.util.FutureUtils;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelException;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import jline.console.ConsoleReader;
 import lombok.Getter;
 
 public class Router extends AbstractIdleService implements Owner {
 
-  private static Router instance = null;
-  @Getter
-  private final Logger logger;
-  @Getter
-  private final Properties properties;
-  @Getter
-  private final String name, version, builddate;
-  @Getter
-  private final ConsoleReader console;
-  @Getter
-  private final CommandManager commandManager;
-  @Getter
-  private final ConfigFile<Settings> configFile;
-  @Getter
-  private final ScheduledExecutorService scheduler;
-  @Getter
-  private final EventBus eventBus = new EventBus();
-  @Getter
-  private final PluginManager pluginManager = new PluginManager(this);
-  @Getter
-  private HostAndPort address;
-  @Getter
-  private final RouterNetwork network;
+  private static @Getter Router instance = null;
 
-  private final Map<UUID, NettyConnection> connections = new HashMap<>();
-  private final CloseableReadWriteLock connectionLock = new ReentrantCloseableReadWriteLock();
+  private final @Getter Logger logger;
+  private final @Getter Properties properties;
+  private final @Getter String name, version, builddate;
+  private final @Getter ConsoleReader console;
+  private final @Getter CommandManager commandManager;
+  private final @Getter ConfigFile<Settings> configFile;
+  private final @Getter ScheduledExecutorService scheduler;
+  private final @Getter PluginManager pluginManager = new PluginManager(this);
+  private @Getter HostAndPort address;
+  private final @Getter RouterNetwork network;
 
   private EventLoopGroup eventLoops = null;
   private Channel listener = null;
+  private @Getter RouterAuthentication authentication = null;
 
   protected Router(ConsoleReader console, Logger logger) throws IOException {
     Preconditions.checkNotNull(console);
@@ -108,8 +92,19 @@ public class Router extends AbstractIdleService implements Owner {
             new ThreadFactoryBuilder().setNameFormat("Router Pool Thread #%1$d").build()),
         10, TimeUnit.SECONDS);
 
-    HomeNode home = new HomeNode(this.configFile.getConfig().getRouterSettings().getUuid());
+    HomeNode home = new HomeNode(this.configFile.getConfig().getRouterSettings().getHome().getId(),
+        this.getConfig().getRouterSettings().getHome().getNamespaces());
+    home.setType(NodeMessage.Type.ROUTER);
     this.network = new RouterNetwork(this, home);
+    home.setName(this.getConfig().getRouterSettings().getHome().getName());
+  }
+
+  public Settings getConfig() {
+    return this.getConfigFile().getConfig();
+  }
+
+  public EventBus getEventBus() {
+    return this.network.getEventBus();
   }
 
   @Override
@@ -127,9 +122,13 @@ public class Router extends AbstractIdleService implements Owner {
     this.pluginManager.loadPlugins();
 
     // Start Socket Server
-    address = HostAndPort//
+    this.address = HostAndPort//
         .fromString(this.configFile.getConfig().getRouterSettings().getAddress())
         .withDefaultPort(791);
+
+
+    this.authentication = AuthenticationFactory
+        .newPasswordForRouter(this.getConfigFile().getConfig().getRouterSettings().getPassword());
 
     // Enable plugins
     this.pluginManager.enablePlugins();
@@ -142,10 +141,19 @@ public class Router extends AbstractIdleService implements Owner {
   }
 
   private void startNetty() {
+
     ServerBootstrap b = new ServerBootstrap();
     b.group(eventLoops);
     b.option(ChannelOption.SO_REUSEADDR, true);
-    b.childHandler(new BaseChannelInitializer(getLogger(), new RouterHandshakeHandler(this)));
+
+    b.childHandler(PipelineUtils.baseInitAnd(ch -> {
+      final ChannelPipeline p = ch.pipeline();
+      p.addLast(
+          new LoginHandler(new RouterLoginEngine(Router.this.getNetwork(), this.authentication),
+              FutureUtils.newPromise()));
+      p.addLast(new ConnectionHandler(Router.this.getNetwork(), new RouterPacketHandler()));
+    }));
+
     b.localAddress(new InetSocketAddress(this.address.getHostText(), this.address.getPort()));
     b.bind().addListener(new ChannelFutureListener() {
       @Override
@@ -158,7 +166,6 @@ public class Router extends AbstractIdleService implements Owner {
         }
       }
     });
-    logger.info("Server started");
   }
 
   private void stopNetty() {
@@ -168,7 +175,7 @@ public class Router extends AbstractIdleService implements Owner {
     try {
       listener.close().syncUninterruptibly();
     } catch (ChannelException ex) {
-      getLogger().severe("Could not close listen thread");
+      getLogger().severe("Could not close listener thread");
     }
 
     getLogger().info("Closing IO threads");
@@ -200,35 +207,6 @@ public class Router extends AbstractIdleService implements Owner {
     sb.append("\nStop");
     sb.append("\n****************************************************");
     logger.info(sb.toString());
-  }
-
-  public Set<Connection> getConnections() {
-    try (CloseableLock l = connectionLock.readLock().open()) {
-      return ImmutableSet.copyOf(connections.values());
-    }
-  }
-
-  public Connection getConnection(UUID id) {
-    try (CloseableLock l = connectionLock.readLock().open()) {
-      return connections.get(id);
-    }
-  }
-
-  public boolean isConnected(UUID id) {
-    Connection con = getConnection(id);
-    return con.isValid();
-  }
-
-  public void addConnection(NettyConnection connection) {
-    try (CloseableLock l = connectionLock.writeLock().open()) {
-      connections.put(connection.getId(), connection);
-    }
-  }
-
-  public void removeConnection(NettyConnection connection) {
-    try (CloseableLock l = connectionLock.writeLock().open()) {
-      connections.remove(connection.getId(), connection);
-    }
   }
 
 }

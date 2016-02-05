@@ -225,7 +225,7 @@ public @RequiredArgsConstructor class ProcedureManager {
     }
   }
 
-  private ProcedureResponseMessage.Builder newResponse(final ProcedureCallMessage call) {
+  public static ProcedureResponseMessage.Builder newResponse(final ProcedureCallMessage call) {
     ProcedureResponseMessage.Builder b = ProcedureResponseMessage.newBuilder();
     b.setProcedure(call.getProcedure());
     b.setId(call.getId());

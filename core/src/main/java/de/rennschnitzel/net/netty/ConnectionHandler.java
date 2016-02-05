@@ -81,13 +81,13 @@ public class ConnectionHandler extends SimpleChannelInboundHandler<Packet> {
 
       LoginSuccessEvent login = (LoginSuccessEvent) evt;
       this.connection = login.getConnection();
-      this.connection.addToNetwork();
-
       if (login instanceof ClientLoginSuccessEvent) {
         network.updateNode(((ClientLoginSuccessEvent) login).getNodeMessage());
       } else if (login instanceof RouterLoginSuccessEvent) {
         network.updateNodes(((RouterLoginSuccessEvent) login).getNodeTopology());
       }
+      this.connection.addToNetwork();
+
     }
 
   }

@@ -9,6 +9,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Service.State;
 
+import de.rennschnitzel.net.router.Plugins;
 import de.rennschnitzel.net.router.Router;
 import lombok.Getter;
 
@@ -29,8 +30,7 @@ public class PluginManager {
     Preconditions.checkState(this.loaded == false, "already loaded");
     Preconditions.checkState(router.state() == State.STARTING);
 
-    // Define all plugins here in correct order...
-    // add(...);
+    Plugins.loadPlugins(this);
 
 
   }

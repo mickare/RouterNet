@@ -76,7 +76,7 @@ public class RouterNetwork extends AbstractNetwork {
     }
   }
 
-  protected Connection getConnection(UUID peerId) {
+  public Connection getConnection(UUID peerId) {
     try (CloseableLock l = connectionLock.readLock().open()) {
       return this.connections.get(peerId);
     }

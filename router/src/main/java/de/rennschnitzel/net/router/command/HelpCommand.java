@@ -36,13 +36,13 @@ public class HelpCommand extends AbstractCommand {
     });
 
     StringBuilder sb = new StringBuilder();
-    sb.append("Available commands:\n\n");
+    sb.append("Available commands:");
 
     for (Command cmd : commands) {
+      sb.append('\n');
       sb.append(' ');
       sb.append(Strings.padEnd(cmd.getUsage(), 15, ' '));
       sb.append(" - ").append(cmd.getDescription());
-      sb.append('\n');
     }
 
     getLogger().info(sb.toString());

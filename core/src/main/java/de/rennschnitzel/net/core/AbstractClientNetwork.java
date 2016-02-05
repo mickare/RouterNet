@@ -33,7 +33,7 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
   }
 
   private final CloseableReadWriteLock connectionLock = new ReentrantCloseableReadWriteLock();
-  private final Condition connectedCondition = connectionLock.readLock().newCondition();
+  private final Condition connectedCondition = connectionLock.writeLock().newCondition();
   private Connection connection = null;
   private final Map<Callback<AbstractClientNetwork>, ExecutorService> connectCallbacks = Maps.newConcurrentMap();
 
@@ -54,7 +54,7 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
    * @throws InterruptedException
    */
   public void awaitConnected() throws InterruptedException {
-    try (CloseableLock l = connectionLock.readLock().open()) {
+    try (CloseableLock l = connectionLock.writeLock().open()) {
       if (isConnected()) {
         return;
       }
@@ -73,7 +73,7 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
    *         suspension is supported)
    */
   public boolean awaitConnected(long time, TimeUnit unit) throws InterruptedException {
-    try (CloseableLock l = connectionLock.readLock().open()) {
+    try (CloseableLock l = connectionLock.writeLock().open()) {
       if (isConnected()) {
         return true;
       }

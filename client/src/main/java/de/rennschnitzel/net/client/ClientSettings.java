@@ -14,13 +14,14 @@ import lombok.NonNull;
 public class ClientSettings {
 
   @NonNull
-  private NodeSettings node = new NodeSettings();
+  private NodeSettings home = new NodeSettings();
 
   @Data
   @NoArgsConstructor
   public static class NodeSettings {
     private UUID id = UUID.randomUUID();
     private Set<String> namespaces = Sets.newHashSet();
+    private String name = null;
   }
 
   @NonNull
@@ -33,6 +34,5 @@ public class ClientSettings {
     private String address = "localhost:1010";
     private String password = "Wkn2Z[uBYT]x1T/hY1Ac";
   }
-
 
 }

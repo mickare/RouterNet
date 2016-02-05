@@ -11,6 +11,7 @@ import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.HeartbeatMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
+import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.TunnelMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister;
 import io.netty.util.concurrent.Future;
@@ -253,6 +254,26 @@ public interface PacketWriterDefault<F extends Future<?>> {
   }
 
   default F writeAndFlush(TunnelRegister value) {
+    return writeAndFlush(Packer.pack(value));
+  }
+
+
+  // ******************************************************************************
+  // Procedure
+
+  default F write(ProcedureMessage.Builder builder) {
+    return write(builder.build());
+  }
+
+  default F write(ProcedureMessage value) {
+    return write(Packer.pack(value));
+  }
+
+  default F writeAndFlush(ProcedureMessage.Builder builder) {
+    return writeAndFlush(builder.build());
+  }
+
+  default F writeAndFlush(ProcedureMessage value) {
     return writeAndFlush(Packer.pack(value));
   }
 
