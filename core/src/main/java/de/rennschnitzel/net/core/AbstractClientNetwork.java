@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.function.Consumer;
@@ -28,8 +29,8 @@ import de.rennschnitzel.net.util.function.Callback;
 
 public abstract class AbstractClientNetwork extends AbstractNetwork {
 
-  public AbstractClientNetwork(HomeNode home) {
-    super(home);
+  public AbstractClientNetwork(ScheduledExecutorService executor, HomeNode home) {
+    super(executor, home);
   }
 
   private final CloseableReadWriteLock connectionLock = new ReentrantCloseableReadWriteLock();

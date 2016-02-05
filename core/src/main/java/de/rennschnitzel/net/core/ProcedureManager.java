@@ -36,12 +36,10 @@ import de.rennschnitzel.net.util.concurrent.CloseableLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
 import io.netty.util.concurrent.Future;
 import lombok.Getter;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import net.jodah.typetools.TypeResolver;
 
 
-public @RequiredArgsConstructor class ProcedureManager {
+public class ProcedureManager {
 
 
   /**
@@ -52,7 +50,7 @@ public @RequiredArgsConstructor class ProcedureManager {
 
   private final ReentrantCloseableReadWriteLock lock = new ReentrantCloseableReadWriteLock();
   private final Map<Procedure, CallableRegisteredProcedure<?, ?>> registeredProcedures = Maps.newHashMap();
-  private final @NonNull @Getter AbstractNetwork network;
+  private final @Getter AbstractNetwork network;
 
   private final Cache<Integer, ProcedureCall<?, ?>> openCalls = CacheBuilder.newBuilder()//
       .expireAfterWrite(MAX_TIMEOUT, TimeUnit.MILLISECONDS)//
@@ -64,6 +62,22 @@ public @RequiredArgsConstructor class ProcedureManager {
       })//
       .build();
 
+  public ProcedureManager(AbstractNetwork network) {
+    Preconditions.checkNotNull(network);
+    this.network = network;
+    this.network.getExecutor().scheduleWithFixedDelay(new TimeoutChecker(), 1, 1, TimeUnit.SECONDS);
+  }
+
+  private class TimeoutChecker implements Runnable {
+    @Override
+    public void run() {
+      openCalls.asMap().values().forEach(call -> {
+        if (call.checkTimeout()) {
+          openCalls.invalidate(call.getId());
+        }
+      });
+    }
+  }
 
 
   @SuppressWarnings("unchecked")
@@ -148,7 +162,6 @@ public @RequiredArgsConstructor class ProcedureManager {
       try {
         network.sendProcedureCall(call);
         if (call.isDone()) {
-          call.setException(new NotConnectedException());
           openCalls.invalidate(call.getId());
         }
       } catch (Exception e) {

@@ -23,14 +23,19 @@ public interface ProcedureCall<T, R> {
   Target getTarget();
 
   Set<UUID> getNodeUUIDs();
-  
+
   T getArgument();
 
   void receive(ProcedureMessage message, ProcedureResponseMessage response) throws IllegalArgumentException;
 
   TransportProtocol.ProcedureCallMessage toProtocol();
 
-  void checkTimeout();
+  /**
+   * Checks the call for timeout
+   * 
+   * @return true if timeout
+   */
+  boolean checkTimeout();
 
   boolean isDone();
 
@@ -39,10 +44,10 @@ public interface ProcedureCall<T, R> {
   void await(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException;
 
   boolean setException(Throwable throwable);
-  
+
   boolean setException(UUID receiver, Throwable throwable);
 
   void execute(CallableRegisteredProcedure<T, R> procedure) throws IllegalArgumentException;
 
-  
+
 }

@@ -18,6 +18,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import de.rennschnitzel.net.Owner;
+import de.rennschnitzel.net.RouterNetwork;
 import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.login.AuthenticationFactory;
 import de.rennschnitzel.net.core.login.RouterAuthentication;
@@ -144,6 +145,7 @@ public class Router extends AbstractIdleService implements Owner {
 
     ServerBootstrap b = new ServerBootstrap();
     b.group(eventLoops);
+    b.channel(PipelineUtils.getServerChannelClass());
     b.option(ChannelOption.SO_REUSEADDR, true);
 
     b.childHandler(PipelineUtils.baseInitAnd(ch -> {

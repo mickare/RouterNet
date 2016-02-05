@@ -58,7 +58,7 @@ public abstract class AbstractNetwork {
   private final Map<UUID, Node> nodes = new HashMap<>();
   private final CloseableReadWriteLock nodeLock = new ReentrantCloseableReadWriteLock();
 
-  private final @Getter ProcedureManager procedureManager = new ProcedureManager(this);
+  private final @Getter ProcedureManager procedureManager;
 
   private final CloseableLock tunnelLock = new ReentrantCloseableLock();
   private final ConcurrentMap<String, Tunnel> tunnelsByName = new ConcurrentHashMap<>();
@@ -66,13 +66,18 @@ public abstract class AbstractNetwork {
   private final ConcurrentMap<SubTunnelDescriptor<?>, SubTunnel> subTunnels = new ConcurrentHashMap<>();
 
   private final @Getter EventBus eventBus = new EventBus();
+  private @Getter final ScheduledExecutorService executor;
 
-  protected AbstractNetwork(HomeNode home) {
+  protected AbstractNetwork(ScheduledExecutorService executor, HomeNode home) {
     Preconditions.checkNotNull(home);
+    Preconditions.checkNotNull(executor);
     home.setNetwork(this);
     this.home = home;
     this.nodes.put(home.getId(), home);
-    // this.nodesCache.put(home.getId(), home);
+    this.executor = executor;
+
+    this.procedureManager = new ProcedureManager(this);
+
     AbstractNetwork.instance = this;
   }
 
@@ -82,8 +87,6 @@ public abstract class AbstractNetwork {
   }
 
   public abstract Logger getLogger();
-
-  public abstract ScheduledExecutorService getExecutor();
 
   // ***************************************************************************
   // Sending

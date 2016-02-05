@@ -4,8 +4,6 @@ import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Logger;
 
-import com.google.common.base.Preconditions;
-
 import de.rennschnitzel.net.core.AbstractClientNetwork;
 import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage.Type;
@@ -15,8 +13,7 @@ public class DummClientNetwork extends AbstractClientNetwork {
 
   private static Logger LOGGER_DEFAULT = new DummyLogger("DummyNetwork", System.out);
 
-  
-  private @Getter final ScheduledExecutorService executor;
+
   private @Getter Logger logger = LOGGER_DEFAULT;
 
 
@@ -29,9 +26,7 @@ public class DummClientNetwork extends AbstractClientNetwork {
   }
 
   public DummClientNetwork(ScheduledExecutorService executor, HomeNode home) {
-    super(home);
-    Preconditions.checkNotNull(executor);
-    this.executor = executor;
+    super(executor, home);
     home.setType(Type.BUKKIT);
   }
 

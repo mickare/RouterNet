@@ -4,6 +4,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import de.rennschnitzel.net.ProtocolUtils;
+import de.rennschnitzel.net.RouterNetwork;
 import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.Node;
 import de.rennschnitzel.net.core.Node.HomeNode;
@@ -15,7 +16,6 @@ import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.TunnelMessage;
-import de.rennschnitzel.net.router.RouterNetwork;
 import io.netty.channel.ChannelFuture;
 
 public class RouterPacketHandler extends BasePacketHandler {

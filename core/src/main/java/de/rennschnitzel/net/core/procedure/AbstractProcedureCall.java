@@ -47,10 +47,12 @@ public abstract class AbstractProcedureCall<T, R> implements ProcedureCall<T, R>
   }
 
   @Override
-  public void checkTimeout() {
+  public boolean checkTimeout() {
     if (this.getMaxTimeout() <= System.currentTimeMillis() - this.getTimestamp() && !isDone()) {
       setException(new TimeoutException());
+      return true;
     }
+    return false;
   }
 
 

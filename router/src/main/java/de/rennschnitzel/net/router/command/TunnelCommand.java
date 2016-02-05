@@ -35,7 +35,7 @@ public class TunnelCommand extends AbstractCommand {
       maxNameLength = maxNameLength < 5 ? 5 : maxNameLength;
 
       StringBuilder sb = new StringBuilder();
-      sb.append("Tunnels:");
+      sb.append("Tunnels:\n");
       sb.append(Strings.padEnd("ID", maxIdLength, ' '));
       sb.append(Strings.padEnd("NAME", maxNameLength, ' '));
       sb.append("TYPE");

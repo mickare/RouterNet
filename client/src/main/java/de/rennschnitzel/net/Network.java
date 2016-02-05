@@ -1,6 +1,5 @@
 package de.rennschnitzel.net;
 
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Logger;
 
 import de.rennschnitzel.net.core.AbstractClientNetwork;
@@ -11,18 +10,13 @@ public class Network extends AbstractClientNetwork {
   private final @Getter NetClient client;
 
   public Network(NetClient client) {
-    super(client.getHome());
+    super(client.getExecutor(), client.getHome());
     this.client = client;
   }
 
   @Override
   public Logger getLogger() {
     return client.getLogger();
-  }
-
-  @Override
-  public ScheduledExecutorService getExecutor() {
-    return client.getExecutor();
   }
 
   public void resetInstance() {

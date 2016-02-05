@@ -1,9 +1,8 @@
-package de.rennschnitzel.net.router;
+package de.rennschnitzel.net;
 
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Logger;
 
 import com.google.common.base.Preconditions;
@@ -23,6 +22,7 @@ import de.rennschnitzel.net.exception.ProtocolException;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
+import de.rennschnitzel.net.router.Router;
 import de.rennschnitzel.net.util.concurrent.CloseableLock;
 import de.rennschnitzel.net.util.concurrent.CloseableReadWriteLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
@@ -34,20 +34,16 @@ public class RouterNetwork extends AbstractNetwork {
   private final CloseableReadWriteLock connectionLock = new ReentrantCloseableReadWriteLock(true);
   private final Map<UUID, Connection> connections = new ConcurrentHashMap<>();
 
-  protected RouterNetwork(Router router, HomeNode home) {
-    super(home);
+  public RouterNetwork(Router router, HomeNode home) {
+    super(router.getScheduler(), home);
     Preconditions.checkNotNull(router);
     this.router = router;
+    Net.setNetwork(this);
   }
 
   @Override
   public Logger getLogger() {
     return router.getLogger();
-  }
-
-  @Override
-  public ScheduledExecutorService getExecutor() {
-    return router.getScheduler();
   }
 
   // ********************************************************************
