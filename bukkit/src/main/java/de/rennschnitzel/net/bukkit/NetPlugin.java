@@ -2,6 +2,7 @@ package de.rennschnitzel.net.bukkit;
 
 import java.util.concurrent.Executors;
 
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -17,6 +18,9 @@ public class NetPlugin extends JavaPlugin {
   public void onLoad() {
     client.init(getLogger(), this.getDataFolder(), Executors.newScheduledThreadPool(1,
         new ThreadFactoryBuilder().setNameFormat("net-pool-%d").build()));
+
+    client.setRestartFunction(Bukkit.spigot()::restart);
+    client.setShutdownFunction(Bukkit::shutdown);
   }
 
   @Override

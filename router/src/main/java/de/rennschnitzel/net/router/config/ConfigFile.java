@@ -20,6 +20,7 @@ public class ConfigFile<T> {
   static {
     GsonBuilder b = new GsonBuilder();
     b.serializeNulls();
+    b.setPrettyPrinting();
     GSON = b.create();
   }
 

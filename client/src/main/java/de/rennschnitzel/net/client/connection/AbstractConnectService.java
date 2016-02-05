@@ -3,6 +3,7 @@ package de.rennschnitzel.net.client.connection;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.google.common.base.Preconditions;
@@ -98,17 +99,42 @@ public abstract class AbstractConnectService extends AbstractScheduledService
 
   private ConnectClient connectSoft() {
     if (connector == null || connector.isClosed()) {
-      if (currentFuture != null && !currentFuture.isDone()) {
-        currentFuture.tryFailure(new NotConnectedException("timed out"));
+
+      if (currentFuture != null) {
+
+        if (!currentFuture.isDone()) {
+          if (connector.getState() == ConnectClient.State.FAILED) {
+            currentFuture.tryFailure(connector.getFailureCause());
+          } else {
+            currentFuture.tryFailure(new NotConnectedException("timed out"));
+          }
+        }
+
       }
+
       try (CloseableLock l = lock.writeLock().open()) {
         currentFuture = FutureUtils.newPromise();
+        currentFuture.addListener(f -> {
+          if (!f.isSuccess()) {
+            if (f.cause() != null) {
+              getLogger().log(Level.INFO, "Failed to connect: " + f.cause().getMessage(),
+                  f.cause());
+            } else {
+              getLogger().log(Level.INFO, "Failed to connect: unknown cause");
+            }
+            handleFailConnect();
+          }
+        });
         connector = newConnectClient(currentFuture);
         getLogger().info("Connecting to network...");
         connector.connect();
       }
     }
     return connector;
+  }
+
+  public void handleFailConnect() {
+    this.client.handleFailConnect(this);
   }
 
   protected abstract ConnectClient newConnectClient(Promise<Connection> future);

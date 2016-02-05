@@ -2,6 +2,7 @@ package de.rennschnitzel.net;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -24,6 +25,7 @@ import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
 
 public @Getter @RequiredArgsConstructor class NetClient {
@@ -49,6 +51,11 @@ public @Getter @RequiredArgsConstructor class NetClient {
 
   private HostAndPort routerAddress = null;
 
+  private @Setter @NonNull Runnable shutdownFunction = () -> {
+  };
+  private @Setter @NonNull Runnable restartFunction = () -> {
+  };
+
   public synchronized void init(Logger logger, File directory, ScheduledExecutorService executor) {
     Preconditions.checkState(initialized == false, "NetClient already initialized");
     Preconditions.checkNotNull(logger);
@@ -59,6 +66,7 @@ public @Getter @RequiredArgsConstructor class NetClient {
     this.directory = directory;
     this.executor = executor;
     this.configFile = ConfigFile.create(new File(directory, "settings.json"), ClientSettings.class);
+    saveConfigDefault();
     initialized = true;
   }
 
@@ -102,7 +110,14 @@ public @Getter @RequiredArgsConstructor class NetClient {
     this.routerAddress = HostAndPort.fromString(this.getConfig().getConnection().getAddress())
         .withDefaultPort(NetConstants.DEFAULT_PORT);
 
-    this.home = new HomeNode(getConfig().getHome().getId(), getConfig().getHome().getNamespaces());
+    UUID id = getConfig().getHome().getId();
+    if (id == null) {
+      id = UUID.randomUUID();
+      this.getConfig().getHome().setId(id);
+      this.saveConfig();
+    }
+
+    this.home = new HomeNode(id, getConfig().getHome().getNamespaces());
     this.home.setType(this.type);
     network = new Network(this);
     Net.setNetwork(network);
@@ -145,6 +160,21 @@ public @Getter @RequiredArgsConstructor class NetClient {
 
   public boolean isTestMode() {
     return this.testFramework != null;
+  }
+
+  public void handleFailConnect(ConnectService service) {
+    switch (this.getConfig().getConnection().getFailHandler()) {
+      case RETRY:
+        break;
+      case RESTART:
+        service.stopAsync();
+        restartFunction.run();
+        break;
+      case SHUTDOWN:
+      default:
+        service.stopAsync();
+        shutdownFunction.run();
+    }
   }
 
 }

@@ -3,6 +3,7 @@ package de.rennschnitzel.net.client;
 import com.google.common.base.Preconditions;
 import com.google.common.net.HostAndPort;
 
+import de.rennschnitzel.net.netty.PipelineUtils;
 import de.rennschnitzel.net.service.AbstractConnectClient;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -40,7 +41,7 @@ public @RequiredArgsConstructor class OnlineConnectClient extends AbstractConnec
     }
 
     Bootstrap cb = new Bootstrap();
-    cb.group(group).channel(LocalChannel.class).handler(clientInit);
+    cb.group(group).channel(PipelineUtils.getChannelClass()).handler(clientInit);
     cb.connect(addr.getHostText(), addr.getPort()) //
         .addListener((ChannelFutureListener) f -> {
 
