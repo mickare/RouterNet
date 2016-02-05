@@ -56,7 +56,9 @@ public class RouterNetwork extends AbstractNetwork {
       if (old != null && old != connection) {
         old.disconnect("replaced");
       }
-      getLogger().info(connection.getPeerId() + " connected.");
+      String name = connection.getName();
+      getLogger()
+          .info(connection.getPeerId() + (name != null ? "(" + name + ")" : "") + " connected.");
     }
   }
 
@@ -64,7 +66,9 @@ public class RouterNetwork extends AbstractNetwork {
   protected void removeConnection(Connection connection) {
     try (CloseableLock l = connectionLock.writeLock().open()) {
       if (this.connections.remove(connection.getPeerId(), connection)) {
-        getLogger().info(connection.getPeerId() + " disconnected.");
+        String name = connection.getName();
+        getLogger().info(
+            connection.getPeerId() + (name != null ? "(" + name + ")" : "") + " disconnected.");
       }
       if (connection.isActive()) {
         connection.getChannel().close();

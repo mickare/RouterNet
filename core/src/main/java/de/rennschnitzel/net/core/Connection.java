@@ -41,6 +41,10 @@ public @Getter class Connection implements PacketWriter<ChannelFuture> {
     this.channel = channel;
   }
 
+  public String getName() {
+    return network.getNodeUnsafe(peerId).getName().orElse(null);
+  }
+
   public boolean isOpen() {
     return channel.isOpen();
   }
