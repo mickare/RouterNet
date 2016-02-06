@@ -66,7 +66,7 @@ public class Settings {
   public static @Data @NoArgsConstructor class RouterConfig {
     private NodeSettings home = new NodeSettings();
     private String address = "localhost:1010";
-    private String password = "pw55123";
+    private String password = "Wkn2Z[uBYT]x1T/hY1Ac";
   }
 
   public static @Data @NoArgsConstructor class NodeSettings {
