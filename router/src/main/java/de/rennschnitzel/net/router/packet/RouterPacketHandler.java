@@ -133,8 +133,6 @@ public class RouterPacketHandler extends BasePacketHandler {
     final Set<Node> nodes = net.getNodes(target);
     final HomeNode home = net.getHome();
 
-    net.getLogger().info(in.getNode().toString() + " -> " + msg.toString());
-
     if (home.isPart(target)) {
       Tunnel tunnel = net.getTunnelById(msg.getTunnelId());
       if (tunnel != null && !tunnel.isClosed()) {

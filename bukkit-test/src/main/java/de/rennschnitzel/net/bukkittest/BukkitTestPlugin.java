@@ -100,6 +100,7 @@ public class BukkitTestPlugin extends JavaPlugin implements Owner, Listener {
             try {
               sb.append(String.join(", ", result.get().stream().map(DataPlayer::getDisplayName)
                   .collect(Collectors.toList())));
+              sb.append("\n");
             } catch (Exception e) {
             }
           } else {
@@ -126,7 +127,7 @@ public class BukkitTestPlugin extends JavaPlugin implements Owner, Listener {
       MultiProcedureCall<DataPrivateMessage, Boolean> call =
           private_message.call(Target.to("bukkittest"), msg, 1000);
       call.addListenerEach(res -> {
-        if (res.isSuccess()) {
+        if (res.isSuccess() && res.getUnchecked()) {
           sender.sendMessage("[me]->[" + target + "]: " + message);
         }
       });
