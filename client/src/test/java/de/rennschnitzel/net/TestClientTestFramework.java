@@ -13,6 +13,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import com.google.common.util.concurrent.MoreExecutors;
+
 import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.dummy.DummClientNetwork;
 import de.rennschnitzel.net.dummy.DummyLogger;
@@ -35,7 +37,7 @@ public class TestClientTestFramework {
 
     folder.create();
     client.init(new DummyLogger("Client", System.out), folder.newFolder("net"),
-        new DirectScheduledExecutorService());
+        MoreExecutors.listeningDecorator(new DirectScheduledExecutorService()));
 
     client.enable();
     client.getConnectService().getCurrentFuture().await(1000);

@@ -30,7 +30,7 @@ import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
 import de.rennschnitzel.net.router.command.CommandManager;
 import de.rennschnitzel.net.router.config.ConfigFile;
 import de.rennschnitzel.net.router.config.Settings;
-import de.rennschnitzel.net.router.netty.RouterPacketHandler;
+import de.rennschnitzel.net.router.packet.RouterPacketHandler;
 import de.rennschnitzel.net.router.plugin.PluginManager;
 import de.rennschnitzel.net.util.FutureUtils;
 import io.netty.bootstrap.ServerBootstrap;

@@ -3,17 +3,12 @@ package de.rennschnitzel.net.core;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 
 import com.google.common.base.Preconditions;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.RemovalListener;
-import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -22,6 +17,7 @@ import de.rennschnitzel.net.core.procedure.BoundProcedure;
 import de.rennschnitzel.net.core.procedure.CallableProcedure;
 import de.rennschnitzel.net.core.procedure.CallableRegisteredProcedure;
 import de.rennschnitzel.net.core.procedure.MultiProcedureCall;
+import de.rennschnitzel.net.core.procedure.OpenCallsCache;
 import de.rennschnitzel.net.core.procedure.Procedure;
 import de.rennschnitzel.net.core.procedure.ProcedureCall;
 import de.rennschnitzel.net.core.procedure.ProcedureCallResult;
@@ -52,31 +48,13 @@ public class ProcedureManager {
   private final Map<Procedure, CallableRegisteredProcedure<?, ?>> registeredProcedures = Maps.newHashMap();
   private final @Getter AbstractNetwork network;
 
-  private final Cache<Integer, ProcedureCall<?, ?>> openCalls = CacheBuilder.newBuilder()//
-      .expireAfterWrite(MAX_TIMEOUT, TimeUnit.MILLISECONDS)//
-      .removalListener(new RemovalListener<Integer, ProcedureCall<?, ?>>() {
-        @Override
-        public void onRemoval(RemovalNotification<Integer, ProcedureCall<?, ?>> notify) {
-          notify.getValue().checkTimeout();
-        }
-      })//
-      .build();
+
+  private final OpenCallsCache openCalls;
 
   public ProcedureManager(AbstractNetwork network) {
     Preconditions.checkNotNull(network);
     this.network = network;
-    this.network.getExecutor().scheduleWithFixedDelay(new TimeoutChecker(), 1, 1, TimeUnit.SECONDS);
-  }
-
-  private class TimeoutChecker implements Runnable {
-    @Override
-    public void run() {
-      openCalls.asMap().values().forEach(call -> {
-        if (call.checkTimeout()) {
-          openCalls.invalidate(call.getId());
-        }
-      });
-    }
+    this.openCalls = new OpenCallsCache(network, MAX_TIMEOUT);
   }
 
 
@@ -158,7 +136,7 @@ public class ProcedureManager {
     Preconditions.checkArgument(timeout > 0);
     final SingleProcedureCall<T, R> call = new SingleProcedureCall<>(node, procedure, argument, timeout);
     if (!call.isDone()) {
-      openCalls.put(call.getId(), call);
+      openCalls.put(call);
       try {
         network.sendProcedureCall(call);
         if (call.isDone()) {
@@ -184,7 +162,7 @@ public class ProcedureManager {
     Preconditions.checkArgument(timeout > 0);
     final MultiProcedureCall<T, R> call = new MultiProcedureCall<>(nodes, procedure, argument, timeout);
     if (!call.isDone()) {
-      openCalls.put(call.getId(), call);
+      openCalls.put(call);
       try {
         network.sendProcedureCall(call);
         if (call.isDone()) {
@@ -230,7 +208,7 @@ public class ProcedureManager {
 
 
   private void handle(final ProcedureMessage msg, final ProcedureResponseMessage response) {
-    ProcedureCall<?, ?> call = this.openCalls.getIfPresent(response.getId());
+    ProcedureCall<?, ?> call = this.openCalls.get(response.getId());
     if (call != null) {
       this.getNetwork().getExecutor().execute(() -> {
         call.receive(msg, response);

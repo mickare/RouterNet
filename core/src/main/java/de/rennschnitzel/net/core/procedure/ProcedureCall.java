@@ -5,6 +5,8 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
@@ -17,6 +19,15 @@ public interface ProcedureCall<T, R> {
   long getTimestamp();
 
   long getMaxTimeout();
+
+  /**
+   * Gets the milliseconds until the timeout of this call is reached.
+   * 
+   * @return negative timeout if the timeout has been reached.
+   */
+  default long getRemainingTimeout() {
+    return getTimestamp() + getMaxTimeout() - System.currentTimeMillis();
+  }
 
   CallableProcedure<T, R> getProcedure();
 
@@ -39,6 +50,8 @@ public interface ProcedureCall<T, R> {
 
   boolean isDone();
 
+  ListenableFuture<?> getFuture();
+  
   void await() throws InterruptedException;
 
   void await(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException;

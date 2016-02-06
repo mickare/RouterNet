@@ -8,6 +8,7 @@ import java.util.concurrent.TimeoutException;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.ListenableFuture;
 
 import de.rennschnitzel.net.ProtocolUtils;
 import de.rennschnitzel.net.core.Node;
@@ -73,6 +74,10 @@ public class SingleProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
         result.setException(ConnectionException.of(response.getError()));
       }
     }
+  }
+
+  public ListenableFuture<R> getFuture() {
+    return this.result;
   }
 
   @Override

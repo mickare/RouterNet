@@ -1,6 +1,7 @@
 package de.rennschnitzel.net.bukkit;
 
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -16,8 +17,11 @@ public class NetPlugin extends JavaPlugin {
 
   @Override
   public void onLoad() {
-    client.init(getLogger(), this.getDataFolder(), Executors.newScheduledThreadPool(1,
-        new ThreadFactoryBuilder().setNameFormat("net-pool-%d").build()));
+
+    ScheduledExecutorService executor = Executors.newScheduledThreadPool(1,
+        new ThreadFactoryBuilder().setNameFormat("net-pool-%d").build());
+
+    client.init(getLogger(), this.getDataFolder(), executor);
 
     client.setRestartFunction(Bukkit.spigot()::restart);
     client.setShutdownFunction(Bukkit::shutdown);

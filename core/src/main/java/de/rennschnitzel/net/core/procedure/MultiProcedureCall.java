@@ -2,6 +2,7 @@ package de.rennschnitzel.net.core.procedure;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -20,10 +21,12 @@ import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.exception.ConnectionException;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
+import lombok.Getter;
 
 public class MultiProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
 
-  private final Map<UUID, ProcedureCallResult<T, R>> results;
+  private final ImmutableMap<UUID, ProcedureCallResult<T, R>> results;
+  private final @Getter ListenableFuture<List<R>> future;
 
   public MultiProcedureCall(Collection<Node> nodes, CallableProcedure<T, R> procedure, T argument, long maxTimeout) {
     super(procedure, Target.to(nodes), argument, maxTimeout);
@@ -40,6 +43,7 @@ public class MultiProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
       b.put(node.getId(), res);
     }
     this.results = b.build();
+    this.future = Futures.successfulAsList(this.results.values());
 
   }
 
@@ -95,7 +99,7 @@ public class MultiProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
   @Override
   public void await() throws InterruptedException {
     try {
-      Futures.successfulAsList(this.results.values()).get();
+      future.get();
     } catch (ExecutionException e) {
       // should not happen;
       throw new RuntimeException(e);
@@ -105,7 +109,7 @@ public class MultiProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
   @Override
   public void await(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
     try {
-      Futures.successfulAsList(this.results.values()).get(timeout, unit);
+      future.get(timeout, unit);
     } catch (ExecutionException e) {
       // should not happen;
       throw new RuntimeException(e);
