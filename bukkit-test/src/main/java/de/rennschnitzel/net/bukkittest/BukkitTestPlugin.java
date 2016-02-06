@@ -125,7 +125,7 @@ public class BukkitTestPlugin extends JavaPlugin implements Owner, Listener {
       });
       call.addListener(results -> {
         boolean succeeded =
-            results.stream().filter(r -> r.isSuccess()).findAny().orElse(null) != null;
+            results.stream().filter(r -> r.isSuccess()).map(r -> r.getUnchecked()).findAny().orElse(false);
         if (!succeeded) {
           sender.sendMessage(target + " is not online!");
         }

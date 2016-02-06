@@ -34,11 +34,15 @@ public class TunnelCommand extends AbstractCommand {
       maxIdLength = maxIdLength < 3 ? 3 : maxIdLength;
       maxNameLength = maxNameLength < 5 ? 5 : maxNameLength;
 
+      maxIdLength += 2;
+      maxNameLength += 2;
+      
       StringBuilder sb = new StringBuilder();
       sb.append("Tunnels:\n");
       sb.append(Strings.padEnd("ID", maxIdLength, ' '));
       sb.append(Strings.padEnd("NAME", maxNameLength, ' '));
       sb.append("TYPE");
+      sb.append("\n");
       sb.append(Strings.repeat("-", maxIdLength + maxNameLength + 4));
 
       for (Tunnel tunnel : Router.getInstance().getNetwork().getTunnels()) {

@@ -4,7 +4,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 
-import de.rennschnitzel.net.router.Main;
 import de.rennschnitzel.net.router.Router;
 
 /**

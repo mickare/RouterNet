@@ -14,6 +14,10 @@ import de.rennschnitzel.net.core.ProcedureManager;
 import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.core.packet.BasePacketHandler;
 import de.rennschnitzel.net.core.procedure.Procedure;
+import de.rennschnitzel.net.exception.ProtocolException;
+import de.rennschnitzel.net.protocol.NetworkProtocol.NodeRemoveMessage;
+import de.rennschnitzel.net.protocol.NetworkProtocol.NodeTopologyMessage;
+import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
@@ -21,6 +25,23 @@ import de.rennschnitzel.net.protocol.TransportProtocol.TunnelMessage;
 import io.netty.channel.ChannelFuture;
 
 public class RouterPacketHandler extends BasePacketHandler {
+
+  @Override
+  public void handle(Connection con, NodeTopologyMessage msg) throws Exception {
+    throw new ProtocolException("invalid packet");
+  }
+
+  @Override
+  public void handle(Connection con, NodeRemoveMessage msg) throws Exception {
+    throw new ProtocolException("invalid packet");
+  }
+
+  @Override
+  public void handle(Connection in, NodeUpdateMessage msg) throws Exception {
+    final RouterNetwork net = (RouterNetwork) in.getNetwork();
+    net.updateNode(msg.getNode());
+    net.forwardNodeUpdate(in, msg);
+  }
 
   @Override
   public void handle(final Connection in, final ProcedureMessage msg) throws Exception {

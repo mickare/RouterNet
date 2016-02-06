@@ -1,24 +1,27 @@
 package de.rennschnitzel.net;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 
-import de.rennschnitzel.net.ProtocolUtils;
 import de.rennschnitzel.net.core.AbstractNetwork;
-import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.Node;
 import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.NotConnectedException;
 import de.rennschnitzel.net.core.Target;
+import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.packet.Packer;
 import de.rennschnitzel.net.core.procedure.ProcedureCall;
 import de.rennschnitzel.net.core.tunnel.TunnelMessage;
 import de.rennschnitzel.net.exception.ProtocolException;
+import de.rennschnitzel.net.protocol.NetworkProtocol.NodeRemoveMessage;
+import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
@@ -69,6 +72,8 @@ public class RouterNetwork extends AbstractNetwork {
         String name = connection.getName();
         getLogger().info(
             connection.getPeerId() + (name != null ? "(" + name + ")" : "") + " disconnected.");
+        this.removeNode(connection.getPeerId());
+        publishNodeRemove(connection.getPeerId());
       }
       if (connection.isActive()) {
         connection.getChannel().close();
@@ -79,6 +84,12 @@ public class RouterNetwork extends AbstractNetwork {
   public Connection getConnection(UUID peerId) {
     try (CloseableLock l = connectionLock.readLock().open()) {
       return this.connections.get(peerId);
+    }
+  }
+
+  public List<Connection> getConnections() {
+    try (CloseableLock l = connectionLock.readLock().open()) {
+      return Lists.newArrayList(this.connections.values());
     }
   }
 
@@ -151,6 +162,31 @@ public class RouterNetwork extends AbstractNetwork {
     return true;
   }
 
+  // ********************************************************************
+  // NODE
+  public void forwardNodeUpdate(Connection in, NodeUpdateMessage msg) {
+    final Packet packet = Packer.pack(msg);
+    final UUID inId = in.getPeerId();
+    try (CloseableLock l = connectionLock.readLock().open()) {
+      this.connections.values().stream().filter(con -> !con.getPeerId().equals(inId))
+          .forEach(out -> {
+            out.writeAndFlushFast(packet);
+          });
+    }
+  }
+
+  private void publishNodeRemove(UUID id) {
+    Preconditions.checkNotNull(id);
+    final Packet packet =
+        Packer.pack(NodeRemoveMessage.newBuilder().setId(ProtocolUtils.convert(id)));
+    try (CloseableLock l = connectionLock.readLock().open()) {
+      if (!this.connections.containsKey(id)) {
+        this.connections.values().forEach(con -> {
+          con.writeAndFlushFast(packet);
+        });
+      }
+    }
+  }
 
   // ********************************************************************
   // TUNNEL

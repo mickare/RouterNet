@@ -7,6 +7,7 @@ import java.util.function.Consumer;
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 
 import de.rennschnitzel.net.core.Node;
 import lombok.Getter;
@@ -40,6 +41,14 @@ public class ProcedureCallResult<T, R> extends AbstractFuture<R> {
       }
     }
     return false;
+  }
+
+  public R getUnchecked() throws UncheckedExecutionException {
+    try {
+      return this.get();
+    } catch (InterruptedException | ExecutionException e) {
+      throw new UncheckedExecutionException(e);
+    }
   }
 
   @Override
