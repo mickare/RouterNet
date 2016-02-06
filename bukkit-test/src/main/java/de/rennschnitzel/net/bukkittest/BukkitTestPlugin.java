@@ -1,6 +1,7 @@
 package de.rennschnitzel.net.bukkittest;
 
 import java.util.Arrays;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
@@ -63,6 +64,7 @@ public class BukkitTestPlugin extends JavaPlugin implements Owner, Listener {
   }
 
   public DataPlayerList getOnlinePlayers() {
+    Bukkit.getLogger().info("getOnlinePlayers");
     DataPlayerList result = new DataPlayerList();
     Bukkit.getOnlinePlayers().stream().map(DataPlayer::new).forEach(result::add);
     return result;
@@ -77,6 +79,7 @@ public class BukkitTestPlugin extends JavaPlugin implements Owner, Listener {
   }
 
   public Boolean receivePrivateMessage(DataPrivateMessage msg) {
+    Bukkit.getLogger().info("receivePrivateMessage");
     Player player = Bukkit.getPlayer(msg.getReceiverName());
     if (player != null) {
       player.sendMessage("[" + msg.getSenderName() + "]->[me]: " + msg.getMessage());
@@ -89,7 +92,7 @@ public class BukkitTestPlugin extends JavaPlugin implements Owner, Listener {
       String[] args) {
     if (cmd.getName().equalsIgnoreCase("players")) {
 
-      online_players.call(Target.to("bukkittest"), null, 500).addListener(results -> {
+      online_players.call(Target.to("bukkittest"), null, 1000).addListener(results -> {
         StringBuilder sb = new StringBuilder();
         for (ProcedureCallResult<Void, DataPlayerList> result : results) {
           if (result.isSuccess()) {
@@ -99,6 +102,10 @@ public class BukkitTestPlugin extends JavaPlugin implements Owner, Listener {
                   .collect(Collectors.toList())));
             } catch (Exception e) {
             }
+          } else {
+            getLogger().log(Level.WARNING,
+                "Failed to receive playerlist from: " + result.getNode().toString(),
+                result.cause());
           }
         }
         sender.sendMessage(sb.toString());
@@ -117,15 +124,15 @@ public class BukkitTestPlugin extends JavaPlugin implements Owner, Listener {
       final DataPrivateMessage msg = new DataPrivateMessage(sender.getName(), target, message);
 
       MultiProcedureCall<DataPrivateMessage, Boolean> call =
-          private_message.call(Target.to("bukkittest"), msg, 500);
+          private_message.call(Target.to("bukkittest"), msg, 1000);
       call.addListenerEach(res -> {
         if (res.isSuccess()) {
           sender.sendMessage("[me]->[" + target + "]: " + message);
         }
       });
       call.addListener(results -> {
-        boolean succeeded =
-            results.stream().filter(r -> r.isSuccess()).map(r -> r.getUnchecked()).findAny().orElse(false);
+        boolean succeeded = results.stream().filter(r -> r.isSuccess()).map(r -> r.getUnchecked())
+            .findAny().orElse(false);
         if (!succeeded) {
           sender.sendMessage(target + " is not online!");
         }

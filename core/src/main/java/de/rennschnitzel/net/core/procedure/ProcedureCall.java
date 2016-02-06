@@ -3,7 +3,6 @@ package de.rennschnitzel.net.core.procedure;
 import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
@@ -65,10 +64,6 @@ public interface ProcedureCall<T, R> {
 
   ProcedureCall<T, R> addListener(Consumer<Collection<ProcedureCallResult<T, R>>> listener);
 
-  ProcedureCall<T, R> addListener(Consumer<Collection<ProcedureCallResult<T, R>>> listener, Executor executor);
-
   ProcedureCall<T, R> addListenerEach(Consumer<ProcedureCallResult<T, R>> listener);
-
-  ProcedureCall<T, R> addListenerEach(Consumer<ProcedureCallResult<T, R>> listener, Executor executor);
 
 }

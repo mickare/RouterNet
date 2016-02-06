@@ -146,6 +146,10 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
       this.connection = connection;
       String name = connection.getName();
       getLogger().info(connection.getPeerId() + (name != null ? "(" + name + ")" : "") + " connected.");
+      
+      this.getTunnels().forEach(t -> t.register(connection, false));
+      connection.getChannel().flush();
+            
       connectedCondition.signalAll();
     }
     runConnectCallbacks();
@@ -181,11 +185,6 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
     if (call.getTarget().contains(this.getHome())) {
       this.getProcedureManager().handle(call);
     }
-  }
-
-  @Override
-  protected void sendProcedureResponse(final UUID receiverId, final ProcedureResponseMessage msg) throws ProtocolException {
-    sendProcedureResponse(this.getHome().getId(), receiverId, msg);
   }
 
   @Override

@@ -6,19 +6,20 @@ import java.util.stream.Collectors;
 
 import de.rennschnitzel.net.ProtocolUtils;
 import de.rennschnitzel.net.RouterNetwork;
-import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.Node;
 import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.ProcedureManager;
 import de.rennschnitzel.net.core.Target;
+import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.packet.BasePacketHandler;
+import de.rennschnitzel.net.core.packet.Packer;
 import de.rennschnitzel.net.core.procedure.Procedure;
 import de.rennschnitzel.net.exception.ProtocolException;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeRemoveMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeTopologyMessage;
-import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
+import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.TunnelMessage;
@@ -37,13 +38,6 @@ public class RouterPacketHandler extends BasePacketHandler {
   }
 
   @Override
-  public void handle(Connection in, NodeUpdateMessage msg) throws Exception {
-    final RouterNetwork net = (RouterNetwork) in.getNetwork();
-    net.updateNode(msg.getNode());
-    net.forwardNodeUpdate(in, msg);
-  }
-
-  @Override
   public void handle(final Connection in, final ProcedureMessage msg) throws Exception {
 
     final RouterNetwork net = (RouterNetwork) in.getNetwork();
@@ -52,7 +46,7 @@ public class RouterPacketHandler extends BasePacketHandler {
     final Set<Node> nodes = net.getNodes(target);
     final HomeNode home = net.getHome();
 
-    if (nodes.contains(home)) {
+    if (home.isPart(target)) {
       net.getProcedureManager().handle(msg);
     }
 
@@ -65,25 +59,28 @@ public class RouterPacketHandler extends BasePacketHandler {
     });
 
 
+
+    Procedure proc = null;
+    if (msg.getContentCase() == ProcedureMessage.ContentCase.CALL) {
+      proc = new Procedure(msg.getCall().getProcedure());
+    }
+
+    final Packet packet = Packer.pack(msg);
+
     for (final Node node : nodes) {
 
-      if (node != home && sender.equals(node.getId())) {
+      if (node != home && !sender.equals(node.getId())) {
         Connection out = net.getConnection(node.getId());
 
-        if (out != null) {
+        if (out != null && out.isActive()) {
 
-          if (msg.getContentCase() == ProcedureMessage.ContentCase.CALL) {
-            Procedure proc = new Procedure(msg.getCall().getProcedure());
-            if (!node.hasProcedure(proc)) {
-              sendProcedureFail(in, msg, sender, node.getId(), ErrorMessage.newBuilder()
-                  .setType(ErrorMessage.Type.UNDEFINED).setMessage("unregistered procedure"));
-              continue;
-            }
+          if (proc != null && !node.hasProcedure(proc)) {
+            sendProcedureFail(in, msg, sender, node.getId(), ErrorMessage.newBuilder()
+                .setType(ErrorMessage.Type.UNDEFINED).setMessage("unregistered procedure"));
+            continue;
           }
 
-
-          ChannelFuture cf = out.write(msg);
-
+          ChannelFuture cf = out.writeAndFlush(packet);
           if (msg.getContentCase() == ProcedureMessage.ContentCase.CALL) {
             cf.addListener(f -> {
               if (!f.isSuccess()) {
@@ -92,7 +89,7 @@ public class RouterPacketHandler extends BasePacketHandler {
             });
           }
 
-        } else {
+        } else {    
 
           if (msg.getContentCase() == ProcedureMessage.ContentCase.CALL) {
             sendProcedureFailNotConnected(in, msg, sender, node.getId());
@@ -132,10 +129,13 @@ public class RouterPacketHandler extends BasePacketHandler {
 
     final RouterNetwork net = (RouterNetwork) in.getNetwork();
     final UUID sender = ProtocolUtils.convert(msg.getSender());
-    final Set<Node> nodes = net.getNodes(new Target(msg.getTarget()));
+    final Target target = new Target(msg.getTarget());
+    final Set<Node> nodes = net.getNodes(target);
     final HomeNode home = net.getHome();
 
-    if (nodes.contains(home)) {
+    net.getLogger().info(in.getNode().toString() + " -> " + msg.toString());
+
+    if (home.isPart(target)) {
       Tunnel tunnel = net.getTunnelById(msg.getTunnelId());
       if (tunnel != null && !tunnel.isClosed()) {
         tunnel.receiveProto(msg);
@@ -147,7 +147,7 @@ public class RouterPacketHandler extends BasePacketHandler {
       if (node != home && !sender.equals(node.getId())) {
         Connection out = net.getConnection(node.getId());
         if (out != null && out.getRemoteTunnels().containsKey(msg.getTunnelId())) {
-          out.writeFast(msg);
+          out.writeAndFlush(msg);
         }
       }
 

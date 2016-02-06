@@ -16,7 +16,7 @@ import de.rennschnitzel.net.router.Router;
 public class ExitCommand extends AbstractCommand {
 
   public ExitCommand() {
-    super("exit", new String[] {"quit"}, "exit", "stops the application");
+    super("exit", new String[] {"quit", "stop"}, "exit", "stops the application");
   }
 
   @Override

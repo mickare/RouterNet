@@ -20,6 +20,7 @@ import de.rennschnitzel.net.core.packet.Packer;
 import de.rennschnitzel.net.core.procedure.ProcedureCall;
 import de.rennschnitzel.net.core.tunnel.TunnelMessage;
 import de.rennschnitzel.net.exception.ProtocolException;
+import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeRemoveMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
@@ -73,7 +74,6 @@ public class RouterNetwork extends AbstractNetwork {
         getLogger().info(
             connection.getPeerId() + (name != null ? "(" + name + ")" : "") + " disconnected.");
         this.removeNode(connection.getPeerId());
-        publishNodeRemove(connection.getPeerId());
       }
       if (connection.isActive()) {
         connection.getChannel().close();
@@ -130,12 +130,6 @@ public class RouterNetwork extends AbstractNetwork {
   }
 
   @Override
-  protected void sendProcedureResponse(UUID receiverId, ProcedureResponseMessage msg)
-      throws ProtocolException {
-    sendProcedureResponse(this.getHome().getId(), receiverId, msg);
-  }
-
-  @Override
   protected void sendProcedureResponse(UUID senderId, UUID receiverId, ProcedureResponseMessage msg)
       throws ProtocolException {
     final ProcedureMessage pmsg =
@@ -164,7 +158,17 @@ public class RouterNetwork extends AbstractNetwork {
 
   // ********************************************************************
   // NODE
-  public void forwardNodeUpdate(Connection in, NodeUpdateMessage msg) {
+
+  @Override
+  public Node updateNode(Connection con, NodeMessage msg) {
+    UUID nodeId = ProtocolUtils.convert(msg.getId());
+    Preconditions.checkArgument(con.getPeerId().equals(nodeId));
+    Node node = super.updateNode(con, msg);
+    forwardNodeUpdate(con, NodeUpdateMessage.newBuilder().setNode(msg));
+    return node;
+  }
+
+  private void forwardNodeUpdate(Connection in, NodeUpdateMessage.Builder msg) {
     final Packet packet = Packer.pack(msg);
     final UUID inId = in.getPeerId();
     try (CloseableLock l = connectionLock.readLock().open()) {
@@ -175,12 +179,14 @@ public class RouterNetwork extends AbstractNetwork {
     }
   }
 
-  private void publishNodeRemove(UUID id) {
+  @Override
+  public void removeNode(UUID id) {
     Preconditions.checkNotNull(id);
     final Packet packet =
         Packer.pack(NodeRemoveMessage.newBuilder().setId(ProtocolUtils.convert(id)));
     try (CloseableLock l = connectionLock.readLock().open()) {
       if (!this.connections.containsKey(id)) {
+        super.removeNode(id);
         this.connections.values().forEach(con -> {
           con.writeAndFlushFast(packet);
         });

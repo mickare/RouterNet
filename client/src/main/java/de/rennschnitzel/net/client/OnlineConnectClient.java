@@ -11,7 +11,6 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.local.LocalChannel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +46,9 @@ public @RequiredArgsConstructor class OnlineConnectClient extends AbstractConnec
 
           if (f.isSuccess()) {
             clientChannel = f.channel();
+            clientChannel.closeFuture().addListener(cf -> {
+              close();
+            });
             notfiyConnected();
           } else {
             notifyFailed(f.cause());

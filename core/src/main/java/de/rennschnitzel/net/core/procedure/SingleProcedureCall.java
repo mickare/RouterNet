@@ -5,15 +5,12 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
 
 import de.rennschnitzel.net.ProtocolUtils;
 import de.rennschnitzel.net.core.Node;
@@ -81,10 +78,6 @@ public class SingleProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
     }
   }
 
-  public ListenableFuture<?> getFuture() {
-    return this.result;
-  }
-
   @Override
   public boolean isDone() {
     return this.result.isDone();
@@ -132,25 +125,13 @@ public class SingleProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
 
   @Override
   public SingleProcedureCall<T, R> addListener(final Consumer<Collection<ProcedureCallResult<T, R>>> listener) {
-    return addListener(listener, MoreExecutors.directExecutor());
-  }
-
-  @Override
-  public SingleProcedureCall<T, R> addListener(final Consumer<Collection<ProcedureCallResult<T, R>>> listener, final Executor executor) {
-    this.result.addListener(() -> {
-      listener.accept(Arrays.asList(this.result));
-    } , executor);
+    this.result.addListener(f -> listener.accept(Arrays.asList(this.result)));
     return this;
   }
 
   @Override
   public SingleProcedureCall<T, R> addListenerEach(final Consumer<ProcedureCallResult<T, R>> listener) {
-    return addListenerEach(listener, MoreExecutors.directExecutor());
-  }
-
-  @Override
-  public SingleProcedureCall<T, R> addListenerEach(final Consumer<ProcedureCallResult<T, R>> listener, final Executor executor) {
-    this.result.addListener(listener, executor);
+    this.result.addResultListener(listener);
     return this;
   }
 

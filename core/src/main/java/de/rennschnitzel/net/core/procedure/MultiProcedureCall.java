@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
@@ -13,21 +12,20 @@ import java.util.function.Consumer;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
 
 import de.rennschnitzel.net.core.Node;
 import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.exception.ConnectionException;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
+import de.rennschnitzel.net.util.FutureUtils;
+import io.netty.util.concurrent.Promise;
 import lombok.Getter;
 
 public class MultiProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
 
   private final @Getter ImmutableMap<UUID, ProcedureCallResult<T, R>> results;
-  private final ListenableFuture<?> future;
+  private final Promise<MultiProcedureCall<T, R>> future = FutureUtils.newPromise();
 
   public MultiProcedureCall(Collection<Node> nodes, CallableProcedure<T, R> procedure, T argument, long maxTimeout) {
     super(procedure, Target.to(nodes), argument, maxTimeout);
@@ -41,13 +39,18 @@ public class MultiProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
         res.setException(new UndefinedServerProcedure());
       }
 
+      res.addListener(f -> {
+        if (MultiProcedureCall.this.isDone()) {
+          future.setSuccess(MultiProcedureCall.this);
+        }
+      });
+
       b.put(node.getId(), res);
     }
     this.results = b.build();
-    this.future = Futures.successfulAsList(this.results.values());
 
   }
-  
+
   @Override
   public void execute(CallableRegisteredProcedure<T, R> procedure) throws IllegalArgumentException {
     if (!getProcedure().isApplicable(procedure)) {
@@ -143,25 +146,13 @@ public class MultiProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
 
   @Override
   public MultiProcedureCall<T, R> addListener(final Consumer<Collection<ProcedureCallResult<T, R>>> listener) {
-    return addListener(listener, MoreExecutors.directExecutor());
-  }
-
-  @Override
-  public MultiProcedureCall<T, R> addListener(final Consumer<Collection<ProcedureCallResult<T, R>>> listener, final Executor executor) {
-    this.future.addListener(() -> {
-      listener.accept(this.results.values());
-    } , executor);
+    this.future.addListener(c -> listener.accept(this.results.values()));
     return this;
   }
 
   @Override
   public ProcedureCall<T, R> addListenerEach(final Consumer<ProcedureCallResult<T, R>> listener) {
-    return addListenerEach(listener, MoreExecutors.directExecutor());
-  }
-
-  @Override
-  public ProcedureCall<T, R> addListenerEach(final Consumer<ProcedureCallResult<T, R>> listener, final Executor executor) {
-    this.results.values().forEach(r -> r.addListener(listener, executor));
+    this.results.values().forEach(r -> r.addResultListener(listener));
     return this;
   }
 

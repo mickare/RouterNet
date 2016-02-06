@@ -34,6 +34,7 @@ import net.jodah.typetools.TypeResolver;
 
 public class ProcedureManager {
 
+  public static final boolean DEFAULT_SYNCHRONIZATION = true;
 
   /**
    * Default timeout of procedures. (in milliseconds)
@@ -55,33 +56,58 @@ public class ProcedureManager {
   }
 
 
-  @SuppressWarnings("unchecked")
+
   public <T, R> CallableRegisteredProcedure<T, R> register(String name, Function<T, R> function) {
+    return register(name, function, DEFAULT_SYNCHRONIZATION);
+  }
+
+  @SuppressWarnings("unchecked")
+  public <T, R> CallableRegisteredProcedure<T, R> register(String name, Function<T, R> function, boolean synchronization) {
     final Class<?>[] args = TypeUtils.resolveArgumentClass(function);
-    return register(name, function, (Class<T>) args[0], (Class<R>) args[1]);
+    return register(name, function, (Class<T>) args[0], (Class<R>) args[1], synchronization);
   }
 
 
   public <T> CallableRegisteredProcedure<T, Void> register(final String name, final Consumer<T> consumer) {
+    return register(name, consumer, DEFAULT_SYNCHRONIZATION);
+  }
+
+  public <T> CallableRegisteredProcedure<T, Void> register(final String name, final Consumer<T> consumer, boolean synchronization) {
     return register(name, (t) -> {
       consumer.accept(t);
       return null;
-    } , (Class<T>) TypeUtils.resolveArgumentClass(consumer), Void.class);
+    } , (Class<T>) TypeUtils.resolveArgumentClass(consumer), Void.class, synchronization);
   }
+
 
   public <R> CallableRegisteredProcedure<Void, R> register(final String name, final Supplier<R> supplier) {
-    return register(name, (t) -> supplier.get(), Void.class, (Class<R>) TypeUtils.resolveArgumentClass(supplier));
+    return register(name, supplier, DEFAULT_SYNCHRONIZATION);
   }
 
+  public <R> CallableRegisteredProcedure<Void, R> register(final String name, final Supplier<R> supplier, boolean synchronization) {
+    return register(name, (t) -> supplier.get(), Void.class, (Class<R>) TypeUtils.resolveArgumentClass(supplier), synchronization);
+  }
+
+
   public CallableRegisteredProcedure<Void, Void> register(final String name, final Runnable run) {
+    return register(name, run, DEFAULT_SYNCHRONIZATION);
+  }
+
+  public CallableRegisteredProcedure<Void, Void> register(final String name, final Runnable run, boolean synchronization) {
     return register(name, (t) -> {
       run.run();
       return null;
-    } , Void.class, Void.class);
+    } , Void.class, Void.class, synchronization);
   }
 
-  public <T, R> CallableRegisteredProcedure<T, R> register(final String name, final Function<T, R> function,
-      final Class<T> argClass, final Class<R> resultClass) {
+
+  public <T, R> CallableRegisteredProcedure<T, R> register(final String name, final Function<T, R> function, final Class<T> argClass,
+      final Class<R> resultClass) {
+    return register(name, function, argClass, resultClass, DEFAULT_SYNCHRONIZATION);
+  }
+
+  public <T, R> CallableRegisteredProcedure<T, R> register(final String name, final Function<T, R> function, final Class<T> argClass,
+      final Class<R> resultClass, boolean synchronization) {
     Preconditions.checkNotNull(name);
     Preconditions.checkNotNull(function);
     Preconditions.checkArgument(!name.isEmpty());
@@ -89,20 +115,32 @@ public class ProcedureManager {
     Preconditions.checkNotNull(resultClass);
     Preconditions.checkArgument(argClass != TypeResolver.Unknown.class);
     Preconditions.checkArgument(resultClass != TypeResolver.Unknown.class);
-    final CallableRegisteredProcedure<T, R> proc = new CallableRegisteredProcedure<T, R>(network, name, argClass, resultClass, function);
+    final CallableRegisteredProcedure<T, R> proc =
+        new CallableRegisteredProcedure<T, R>(network, name, argClass, resultClass, function, synchronization);
     proc.setRegisterFuture(_registerProcedure(proc));
     return proc;
   }
 
 
   public <T, R> CallableRegisteredProcedure<T, R> register(CallableProcedure<T, R> procedure, Function<T, R> function) {
-    final CallableRegisteredProcedure<T, R> proc = new CallableRegisteredProcedure<>(network, procedure, function);
+    return register(procedure, function, DEFAULT_SYNCHRONIZATION);
+  }
+
+  public <T, R> CallableRegisteredProcedure<T, R> register(CallableProcedure<T, R> procedure, Function<T, R> function,
+      boolean synchronization) {
+    final CallableRegisteredProcedure<T, R> proc = new CallableRegisteredProcedure<>(network, procedure, function, synchronization);
     proc.setRegisterFuture(_registerProcedure(proc));
     return proc;
   }
 
+
   public <T, R> CallableRegisteredProcedure<T, R> register(BoundProcedure<T, R> procedure) {
-    final CallableRegisteredProcedure<T, R> proc = new CallableRegisteredProcedure<>(network, procedure, procedure.getFunction());
+    return register(procedure, DEFAULT_SYNCHRONIZATION);
+  }
+
+  public <T, R> CallableRegisteredProcedure<T, R> register(BoundProcedure<T, R> procedure, boolean synchronization) {
+    final CallableRegisteredProcedure<T, R> proc =
+        new CallableRegisteredProcedure<>(network, procedure, procedure.getFunction(), synchronization);
     proc.setRegisterFuture(_registerProcedure(proc));
     return proc;
   }
@@ -186,8 +224,7 @@ public class ProcedureManager {
     return this.call(nodes, procedure, argument, PROCEDURE_DEFAULT_TIMEOUT);
   }
 
-  public <T, R> MultiProcedureCall<T, R> call(Collection<Node> nodes, CallableProcedure<T, R> procedure, T argument,
-      long timeout) {
+  public <T, R> MultiProcedureCall<T, R> call(Collection<Node> nodes, CallableProcedure<T, R> procedure, T argument, long timeout) {
     Preconditions.checkNotNull(nodes);
     Preconditions.checkArgument(!nodes.isEmpty());
     Preconditions.checkNotNull(procedure);
@@ -242,9 +279,7 @@ public class ProcedureManager {
   private void handle(final ProcedureMessage msg, final ProcedureResponseMessage response) {
     ProcedureCall<?, ?> call = this.openCalls.get(response.getId());
     if (call != null) {
-      this.getNetwork().getExecutor().execute(() -> {
-        call.receive(msg, response);
-      });
+      call.receive(msg, response);
     }
   }
 
@@ -273,8 +308,9 @@ public class ProcedureManager {
       sendFail(msg, call, ErrorMessage.newBuilder().setType(ErrorMessage.Type.UNDEFINED).setMessage("unregistered procedure"));
     }
 
-    this.getNetwork().getExecutor().execute(() -> {
+    final Runnable run = () -> {
       try {
+
         ProcedureResponseMessage.Builder b = newResponse(call);
         proc.remoteCalled(call, b);
         b.setSuccess(true);
@@ -289,7 +325,15 @@ public class ProcedureManager {
           network.getLogger().log(Level.SEVERE, e1.getMessage(), e1);
         }
       }
-    });
+    };
+
+    if (proc.isSynchronization()) {
+      this.getNetwork().syncExecute(run);
+    } else {
+      this.getNetwork().getExecutor().execute(run);
+    }
+
+
 
   }
 

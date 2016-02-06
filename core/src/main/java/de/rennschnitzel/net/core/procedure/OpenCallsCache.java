@@ -1,6 +1,7 @@
 package de.rennschnitzel.net.core.procedure;
 
-import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Preconditions;
@@ -39,10 +40,15 @@ public class OpenCallsCache {
 
   private static @Data class Entry {
     private final @NonNull ProcedureCall<?, ?> call;
-    private final @NonNull ScheduledFuture<?> timeoutTask;
+    private final @NonNull Future<?> timeoutTask;
   }
 
-  private ScheduledFuture<?> schedule(final ProcedureCall<?, ?> call) {
+  private Future<?> schedule(final ProcedureCall<?, ?> call) {
+    long timeout = call.getRemainingTimeout();
+    if (timeout <= 0) {
+      call.checkTimeout();
+      return CompletableFuture.completedFuture(call);
+    }
     return this.network.getExecutor().schedule(() -> call.checkTimeout(), call.getRemainingTimeout() + 1, TimeUnit.MILLISECONDS);
   }
 

@@ -9,8 +9,9 @@ import de.rennschnitzel.net.router.Router;
 
 public class TunnelCommand extends AbstractCommand {
 
+
   public TunnelCommand() {
-    super("tunnel", "tunnel <subcmd>", "Shows info about tunnels.");
+    super("tunnel", new String[] {"tunnels"}, "tunnel <subcmd>", "Shows info about tunnels.");
   }
 
   @Override
@@ -36,7 +37,7 @@ public class TunnelCommand extends AbstractCommand {
 
       maxIdLength += 2;
       maxNameLength += 2;
-      
+
       StringBuilder sb = new StringBuilder();
       sb.append("Tunnels:\n");
       sb.append(Strings.padEnd("ID", maxIdLength, ' '));
@@ -45,7 +46,7 @@ public class TunnelCommand extends AbstractCommand {
       sb.append("\n");
       sb.append(Strings.repeat("-", maxIdLength + maxNameLength + 4));
 
-      for (Tunnel tunnel : Router.getInstance().getNetwork().getTunnels()) {
+      for (Tunnel tunnel : tunnels) {
         sb.append("\n");
         sb.append(Strings.padEnd(Integer.toHexString(tunnel.getId()), maxIdLength, ' '));
         sb.append(Strings.padEnd(tunnel.getName(), maxNameLength, ' '));

@@ -36,6 +36,7 @@ import de.rennschnitzel.net.core.procedure.CallableProcedure;
 import de.rennschnitzel.net.core.procedure.CallableRegisteredProcedure;
 import de.rennschnitzel.net.core.procedure.MultiProcedureCall;
 import de.rennschnitzel.net.core.procedure.Procedure;
+import de.rennschnitzel.net.core.procedure.ProcedureCallResult;
 import de.rennschnitzel.net.core.procedure.SingleProcedureCall;
 import de.rennschnitzel.net.dummy.DummClientNetwork;
 import de.rennschnitzel.net.netty.ConnectionHandler;
@@ -382,8 +383,8 @@ public class ProcedureTest {
 
     MultiProcedureCall<String, String> call = p.call(Target.toAll(), helloWorld);
     call.await(1, TimeUnit.SECONDS);
-    ListenableFuture<String> rf = call.getResults().get(net_router.getHome().getId());
-    ListenableFuture<String> cf = call.getResults().get(net_client.getHome().getId());
+    ProcedureCallResult<String, String> rf = call.getResults().get(net_router.getHome().getId());
+    ProcedureCallResult<String, String> cf = call.getResults().get(net_client.getHome().getId());
     assertNotNull(rf);
     assertNotNull(cf);
     assertTrue(rf.isDone());

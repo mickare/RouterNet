@@ -96,7 +96,9 @@ public abstract class AbstractNetwork {
 
   protected abstract <T, R> void sendProcedureCall(ProcedureCall<T, R> call);
 
-  protected abstract void sendProcedureResponse(final UUID receiverId, final ProcedureResponseMessage msg) throws ProtocolException;
+  protected void sendProcedureResponse(final UUID receiverId, final ProcedureResponseMessage msg) throws ProtocolException {
+    sendProcedureResponse(this.getHome().getId(), receiverId, msg);
+  }
 
   protected abstract void sendProcedureResponse(final UUID senderId, final UUID receiverId, final ProcedureResponseMessage msg)
       throws ProtocolException;
@@ -391,7 +393,7 @@ public abstract class AbstractNetwork {
    * @param msg - update message
    * @return node that is updated
    */
-  public Node updateNode(NodeMessage msg) {
+  public Node updateNode(Connection con, NodeMessage msg) {
     UUID id = ProtocolUtils.convert(msg.getId());
     if (id.equals(this.getHome().getId())) {
       throw new IllegalArgumentException("Forbidden to update home node!");
@@ -420,7 +422,7 @@ public abstract class AbstractNetwork {
    * 
    * @param msg - topology message
    */
-  public void updateNodes(NodeTopologyMessage msg) {
+  public void updateNodes(Connection con, NodeTopologyMessage msg) {
     try (CloseableLock l = nodeLock.readLock().open()) {
       Set<Node> retain = Sets.newHashSet();
       for (NodeMessage node : msg.getNodesList()) {
@@ -450,6 +452,10 @@ public abstract class AbstractNetwork {
       }
     }
     return b.build();
+  }
+
+  public void syncExecute(Runnable command) {
+    this.executor.execute(command);
   }
 
 }

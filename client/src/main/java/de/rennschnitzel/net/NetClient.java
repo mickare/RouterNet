@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -56,6 +57,7 @@ public @Getter @RequiredArgsConstructor class NetClient {
   };
   private @Setter @NonNull Runnable restartFunction = () -> {
   };
+  private @Setter @NonNull Consumer<Runnable> syncExecutor = (command) -> this.executor.execute(command);
 
   public synchronized void init(Logger logger, File directory, ScheduledExecutorService executor) {
     Preconditions.checkState(initialized == false, "NetClient already initialized");
@@ -127,7 +129,7 @@ public @Getter @RequiredArgsConstructor class NetClient {
     this.home = new HomeNode(id, home.getNamespaces());
     this.home.setType(this.type);
     this.home.setName(home.getName());
-    
+
     network = new Network(this);
     Net.setNetwork(network);
 
@@ -183,6 +185,10 @@ public @Getter @RequiredArgsConstructor class NetClient {
         service.stopAsync();
         shutdownFunction.run();
     }
+  }
+
+  protected void syncExecute(Runnable command) {
+    this.syncExecutor.accept(command);
   }
 
 }

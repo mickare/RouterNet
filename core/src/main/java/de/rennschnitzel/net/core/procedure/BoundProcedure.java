@@ -92,4 +92,7 @@ public class BoundProcedure<T, R> extends CallableProcedure<T, R> {
     return this.getNetwork().getProcedureManager().register(this);
   }
 
+  public CallableRegisteredProcedure<T, R> register(boolean synchronization) {
+    return this.getNetwork().getProcedureManager().register(this, synchronization);
+  }
 }

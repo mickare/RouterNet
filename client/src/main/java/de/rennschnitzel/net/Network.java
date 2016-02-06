@@ -23,4 +23,9 @@ public class Network extends AbstractClientNetwork {
     super.setInstance(this);
   }
 
+  @Override
+  public void syncExecute(Runnable command) {
+    client.syncExecute(command);
+  }
+  
 }

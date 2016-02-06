@@ -24,7 +24,7 @@ import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister;
 public class BasePacketHandler implements PacketHandler<Connection> {
 
   public static final BasePacketHandler DEFAULT = new BasePacketHandler();
-  
+
   public boolean isReceiver(Connection con, TransportProtocol.TargetMessage target) {
     return con.getNetwork().getHome().isPart(target);
   }
@@ -75,12 +75,12 @@ public class BasePacketHandler implements PacketHandler<Connection> {
 
   @Override
   public void handle(Connection con, NodeTopologyMessage msg) throws Exception {
-    con.getNetwork().updateNodes(msg);
+    con.getNetwork().updateNodes(con, msg);
   }
 
   @Override
   public void handle(Connection con, NodeUpdateMessage msg) throws Exception {
-    con.getNetwork().updateNode(msg.getNode());
+    con.getNetwork().updateNode(con, msg.getNode());
   }
 
   @Override
@@ -99,6 +99,7 @@ public class BasePacketHandler implements PacketHandler<Connection> {
 
   @Override
   public void handle(Connection con, TunnelMessage msg) throws Exception {
+        
     if (!isReceiver(con, msg.getTarget())) {
       return; // drop packet
     }
@@ -113,6 +114,7 @@ public class BasePacketHandler implements PacketHandler<Connection> {
 
   @Override
   public void handle(Connection con, ProcedureMessage msg) throws Exception {
+
     con.getNetwork().getProcedureManager().handle(msg);
   }
 
