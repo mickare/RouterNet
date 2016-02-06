@@ -21,6 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.base.Preconditions;
+import com.google.common.util.concurrent.ListenableFuture;
 
 import de.rennschnitzel.net.Owner;
 import de.rennschnitzel.net.core.Connection;
@@ -33,8 +34,9 @@ import de.rennschnitzel.net.core.packet.BasePacketHandler;
 import de.rennschnitzel.net.core.procedure.BoundProcedure;
 import de.rennschnitzel.net.core.procedure.CallableProcedure;
 import de.rennschnitzel.net.core.procedure.CallableRegisteredProcedure;
+import de.rennschnitzel.net.core.procedure.MultiProcedureCall;
 import de.rennschnitzel.net.core.procedure.Procedure;
-import de.rennschnitzel.net.core.procedure.ProcedureCallResult;
+import de.rennschnitzel.net.core.procedure.SingleProcedureCall;
 import de.rennschnitzel.net.dummy.DummClientNetwork;
 import de.rennschnitzel.net.netty.ConnectionHandler;
 import de.rennschnitzel.net.netty.LocalConnectClient;
@@ -61,7 +63,7 @@ public class ProcedureTest {
 
   @Before
   public void setup() throws Throwable {
-    
+
     testingOwner = new Owner() {
       @Override
       public Logger getLogger() {
@@ -98,7 +100,7 @@ public class ProcedureTest {
 
     con.connect();
     con.awaitRunning();
-    if(con.getState() == ConnectClient.State.FAILED) {
+    if (con.getState() == ConnectClient.State.FAILED) {
       throw con.getFailureCause();
     }
     Preconditions.checkState(con.getState() == ConnectClient.State.ACTIVE);
@@ -119,18 +121,18 @@ public class ProcedureTest {
 
   @Test
   public void testUsability() throws InterruptedException, TimeoutException, ExecutionException {
-    
+
     Node node = net_client.getNode(net_router.getHome().getId());
 
     Function<String, String> usability = (str) -> str + "success";
     BoundProcedure<String, String> proc = Procedure.of("usability", usability);
-    net_router.getProcedureManager().registerProcedure(proc).getRegisterFuture().await(1000);
+    net_router.getProcedureManager().register(proc).getRegisterFuture().await(1000);
 
     assertNotNull(node);
     assertTrue(node.hasProcedure(proc));
 
     String result = Procedure.of("usability", usability)//
-        .call(net_client.getNode(net_router.getHome().getId()), "test").get(1, TimeUnit.SECONDS);
+        .call(net_client.getNode(net_router.getHome().getId()), "test").getResult().get(1, TimeUnit.SECONDS);
     assertEquals("testsuccess", result);
 
 
@@ -149,7 +151,7 @@ public class ProcedureTest {
       int i = runCount.incrementAndGet();
       return i;
     };
-    net_client.getProcedureManager().registerProcedure("testTypetools", func).getRegisterFuture().await(1000);
+    net_client.getProcedureManager().register("testTypetools", func).getRegisterFuture().await(1000);
 
     Procedure info1 = Procedure.of("testTypetools", String.class, Integer.class);
     Procedure info2 = Procedure.of("testTypetools", func);
@@ -157,10 +159,10 @@ public class ProcedureTest {
     assertEquals(info1, info2);
     assertTrue(info1.equals(info2));
     assertTrue(info1.compareTo(info2) == 0);
-    CallableRegisteredProcedure<?, ?> p = net_client.getProcedureManager().getRegisteredProcedure(info1);
+    CallableRegisteredProcedure<?, ?> p = net_client.getProcedureManager().getRegistered(info1);
 
     assertNotNull(p);
-    assertTrue(p == net_client.getProcedureManager().getRegisteredProcedure(info2));
+    assertTrue(p == net_client.getProcedureManager().getRegistered(info2));
     assertTrue(net_client.getHome().hasProcedure(info1));
     assertTrue(net_client.getHome().hasProcedure(info2));
 
@@ -174,8 +176,8 @@ public class ProcedureTest {
     assertEquals(p1, p2);
 
     assertEquals(0, runCount.get());
-    ProcedureCallResult<String, Integer> call = p1.call(client_on_router, helloWorld);
-    assertEquals(1, call.get(1, TimeUnit.MILLISECONDS).intValue());
+    SingleProcedureCall<String, Integer> call = p1.call(client_on_router, helloWorld);
+    assertEquals(1, call.getResult().get(1, TimeUnit.MILLISECONDS).intValue());
     assertEquals(1, runCount.get());
 
 
@@ -194,7 +196,7 @@ public class ProcedureTest {
       return t;
     };
 
-    net_client.getProcedureManager().registerProcedure("testFunction", func).getRegisterFuture().await(1000);
+    net_client.getProcedureManager().register("testFunction", func).getRegisterFuture().await(1000);
 
     Procedure info1 = Procedure.of("testFunction", String.class, String.class);
     Procedure info2 = Procedure.of("testFunction", func);
@@ -202,10 +204,10 @@ public class ProcedureTest {
     assertEquals(info1, info2);
     assertTrue(info1.equals(info2));
     assertTrue(info1.compareTo(info2) == 0);
-    CallableRegisteredProcedure<?, ?> p = net_client.getProcedureManager().getRegisteredProcedure(info1);
+    CallableRegisteredProcedure<?, ?> p = net_client.getProcedureManager().getRegistered(info1);
 
     assertNotNull(p);
-    assertTrue(p == net_client.getProcedureManager().getRegisteredProcedure(info2));
+    assertTrue(p == net_client.getProcedureManager().getRegistered(info2));
     assertTrue(net_client.getHome().hasProcedure(info1));
     assertTrue(net_client.getHome().hasProcedure(info2));
 
@@ -219,8 +221,8 @@ public class ProcedureTest {
     assertEquals(p1, p2);
 
     assertEquals(0, runCount.get());
-    ProcedureCallResult<String, String> call = p1.call(client_on_router, helloWorld);
-    assertEquals(helloWorld, call.get(1, TimeUnit.MILLISECONDS));
+    SingleProcedureCall<String, String> call = p1.call(client_on_router, helloWorld);
+    assertEquals(helloWorld, call.getResult().get(1, TimeUnit.MILLISECONDS));
     assertEquals(1, runCount.get());
 
 
@@ -238,7 +240,7 @@ public class ProcedureTest {
     Runnable func = () -> {
       runCount.incrementAndGet();
     };
-    net_client.getProcedureManager().registerProcedure("testRunnable", func).getRegisterFuture().await(1000);
+    net_client.getProcedureManager().register("testRunnable", func).getRegisterFuture().await(1000);
 
     Procedure info1 = Procedure.of("testRunnable", Void.class, Void.class);
     Procedure info2 = Procedure.of("testRunnable", func);
@@ -246,10 +248,10 @@ public class ProcedureTest {
     assertEquals(info1, info2);
     assertTrue(info1.equals(info2));
     assertTrue(info1.compareTo(info2) == 0);
-    CallableRegisteredProcedure<?, ?> p = net_client.getProcedureManager().getRegisteredProcedure(info1);
+    CallableRegisteredProcedure<?, ?> p = net_client.getProcedureManager().getRegistered(info1);
 
     assertNotNull(p);
-    assertTrue(p == net_client.getProcedureManager().getRegisteredProcedure(info2));
+    assertTrue(p == net_client.getProcedureManager().getRegistered(info2));
     assertTrue(net_client.getHome().hasProcedure(info1));
     assertTrue(net_client.getHome().hasProcedure(info2));
 
@@ -263,8 +265,8 @@ public class ProcedureTest {
     assertEquals(p1, p2);
 
     assertEquals(0, runCount.get());
-    ProcedureCallResult<Void, Void> call = p1.call(client_on_router, null);
-    assertEquals(null, call.get(1, TimeUnit.MILLISECONDS));
+    SingleProcedureCall<Void, Void> call = p1.call(client_on_router, null);
+    assertEquals(null, call.getResult().get(1, TimeUnit.MILLISECONDS));
     assertEquals(1, runCount.get());
 
   }
@@ -284,7 +286,7 @@ public class ProcedureTest {
         fail();
       }
     };
-    net_client.getProcedureManager().registerProcedure("testConsumer", func).getRegisterFuture().await(1000);
+    net_client.getProcedureManager().register("testConsumer", func).getRegisterFuture().await(1000);
 
     Procedure info1 = Procedure.of("testConsumer", String.class, Void.class);
     Procedure info2 = Procedure.of("testConsumer", func);
@@ -292,10 +294,10 @@ public class ProcedureTest {
     assertEquals(info1, info2);
     assertTrue(info1.equals(info2));
     assertTrue(info1.compareTo(info2) == 0);
-    CallableRegisteredProcedure<?, ?> p = net_client.getProcedureManager().getRegisteredProcedure(info1);
+    CallableRegisteredProcedure<?, ?> p = net_client.getProcedureManager().getRegistered(info1);
 
     assertNotNull(p);
-    assertTrue(p == net_client.getProcedureManager().getRegisteredProcedure(info2));
+    assertTrue(p == net_client.getProcedureManager().getRegistered(info2));
     assertTrue(net_client.getHome().hasProcedure(info1));
     assertTrue(net_client.getHome().hasProcedure(info2));
 
@@ -309,8 +311,8 @@ public class ProcedureTest {
     assertEquals(p1, p2);
 
     assertEquals(0, runCount.get());
-    ProcedureCallResult<String, Void> call = p1.call(client_on_router, helloWorld);
-    assertEquals(null, call.get(1, TimeUnit.MILLISECONDS));
+    SingleProcedureCall<String, Void> call = p1.call(client_on_router, helloWorld);
+    assertEquals(null, call.getResult().get(1, TimeUnit.MILLISECONDS));
     assertEquals(1, runCount.get());
 
   }
@@ -329,7 +331,7 @@ public class ProcedureTest {
       return helloWorld;
     };
 
-    net_client.getProcedureManager().registerProcedure("testSupplier", func).getRegisterFuture().await(1000);
+    net_client.getProcedureManager().register("testSupplier", func).getRegisterFuture().await(1000);
 
 
     Procedure info1 = Procedure.of("testSupplier", Void.class, String.class);
@@ -338,10 +340,10 @@ public class ProcedureTest {
     assertEquals(info1, info2);
     assertTrue(info1.equals(info2));
     assertTrue(info1.compareTo(info2) == 0);
-    CallableRegisteredProcedure<?, ?> p = net_client.getProcedureManager().getRegisteredProcedure(info1);
+    CallableRegisteredProcedure<?, ?> p = net_client.getProcedureManager().getRegistered(info1);
 
     assertNotNull(p);
-    assertTrue(p == net_client.getProcedureManager().getRegisteredProcedure(info2));
+    assertTrue(p == net_client.getProcedureManager().getRegistered(info2));
     assertTrue(net_client.getHome().hasProcedure(info1));
     assertTrue(net_client.getHome().hasProcedure(info2));
 
@@ -355,10 +357,39 @@ public class ProcedureTest {
     assertEquals(p1, p2);
 
     assertEquals(0, runCount.get());
-    ProcedureCallResult<Void, String> call = p1.call(client_on_router, null);
-    assertEquals(helloWorld, call.get(1, TimeUnit.MILLISECONDS));
+    SingleProcedureCall<Void, String> call = p1.call(client_on_router, null);
+    assertEquals(helloWorld, call.getResult().get(1, TimeUnit.MILLISECONDS));
     assertEquals(1, runCount.get());
 
   }
 
+
+  @Test
+  public void testMulti() throws InterruptedException, TimeoutException, ExecutionException {
+
+    String helloWorld = "Hello World!";
+    final AtomicInteger runCount = new AtomicInteger(0);
+    Function<String, String> func = (t) -> {
+      runCount.incrementAndGet();
+      return t;
+    };
+
+    net_router.getProcedureManager().register("testMulti", func);
+    net_client.getProcedureManager().register("testMulti", func).getRegisterFuture().await(1000);
+
+    Procedure info = Procedure.of("testMulti", String.class, String.class);
+    CallableProcedure<String, String> p = info.bind(net_router, func);
+
+    MultiProcedureCall<String, String> call = p.call(Target.toAll(), helloWorld);
+    call.await(1, TimeUnit.SECONDS);
+    ListenableFuture<String> rf = call.getResults().get(net_router.getHome().getId());
+    ListenableFuture<String> cf = call.getResults().get(net_client.getHome().getId());
+    assertNotNull(rf);
+    assertNotNull(cf);
+    assertTrue(rf.isDone());
+    assertTrue(cf.isDone());
+    assertEquals(helloWorld, rf.get());
+    assertEquals(helloWorld, cf.get());
+
+  }
 }

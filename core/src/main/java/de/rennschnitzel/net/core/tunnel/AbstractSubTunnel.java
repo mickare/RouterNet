@@ -7,8 +7,8 @@ import java.util.concurrent.Executor;
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.core.AbstractNetwork;
-import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.Tunnel;
+import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister.Type;
 import lombok.Getter;
 

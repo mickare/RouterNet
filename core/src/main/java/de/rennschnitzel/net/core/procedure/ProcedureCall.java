@@ -1,11 +1,12 @@
 package de.rennschnitzel.net.core.procedure;
 
+import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import com.google.common.util.concurrent.ListenableFuture;
+import java.util.function.Consumer;
 
 import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.protocol.TransportProtocol;
@@ -50,11 +51,9 @@ public interface ProcedureCall<T, R> {
 
   boolean isDone();
 
-  ListenableFuture<?> getFuture();
-  
-  void await() throws InterruptedException;
+  ProcedureCall<T, R> await() throws InterruptedException;
 
-  void await(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException;
+  ProcedureCall<T, R> await(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException;
 
   boolean setException(Throwable throwable);
 
@@ -62,5 +61,14 @@ public interface ProcedureCall<T, R> {
 
   void execute(CallableRegisteredProcedure<T, R> procedure) throws IllegalArgumentException;
 
+  void cancel();
+
+  ProcedureCall<T, R> addListener(Consumer<Collection<ProcedureCallResult<T, R>>> listener);
+
+  ProcedureCall<T, R> addListener(Consumer<Collection<ProcedureCallResult<T, R>>> listener, Executor executor);
+
+  ProcedureCall<T, R> addListenerEach(Consumer<ProcedureCallResult<T, R>> listener);
+
+  ProcedureCall<T, R> addListenerEach(Consumer<ProcedureCallResult<T, R>> listener, Executor executor);
 
 }

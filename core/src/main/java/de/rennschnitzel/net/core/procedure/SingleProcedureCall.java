@@ -1,14 +1,19 @@
 package de.rennschnitzel.net.core.procedure;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 
 import de.rennschnitzel.net.ProtocolUtils;
 import de.rennschnitzel.net.core.Node;
@@ -76,7 +81,7 @@ public class SingleProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
     }
   }
 
-  public ListenableFuture<R> getFuture() {
+  public ListenableFuture<?> getFuture() {
     return this.result;
   }
 
@@ -87,21 +92,23 @@ public class SingleProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
 
 
   @Override
-  public void await() throws InterruptedException {
+  public SingleProcedureCall<T, R> await() throws InterruptedException {
     try {
       this.result.get();
     } catch (ExecutionException e) {
       // Ignore it! We only await the done state.
     }
+    return this;
   }
 
   @Override
-  public void await(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
+  public SingleProcedureCall<T, R> await(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
     try {
       this.result.get(timeout, unit);
     } catch (ExecutionException e) {
       // Ignore it! We only await the done state.
     }
+    return this;
   }
 
   @Override
@@ -121,5 +128,31 @@ public class SingleProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
   public Set<UUID> getNodeUUIDs() {
     return Sets.newHashSet(this.node.getId());
   }
+
+
+  @Override
+  public SingleProcedureCall<T, R> addListener(final Consumer<Collection<ProcedureCallResult<T, R>>> listener) {
+    return addListener(listener, MoreExecutors.directExecutor());
+  }
+
+  @Override
+  public SingleProcedureCall<T, R> addListener(final Consumer<Collection<ProcedureCallResult<T, R>>> listener, final Executor executor) {
+    this.result.addListener(() -> {
+      listener.accept(Arrays.asList(this.result));
+    } , executor);
+    return this;
+  }
+
+  @Override
+  public SingleProcedureCall<T, R> addListenerEach(final Consumer<ProcedureCallResult<T, R>> listener) {
+    return addListenerEach(listener, MoreExecutors.directExecutor());
+  }
+
+  @Override
+  public SingleProcedureCall<T, R> addListenerEach(final Consumer<ProcedureCallResult<T, R>> listener, final Executor executor) {
+    this.result.addListener(listener, executor);
+    return this;
+  }
+
 
 }

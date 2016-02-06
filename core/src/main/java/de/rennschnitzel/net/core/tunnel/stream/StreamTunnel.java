@@ -15,8 +15,8 @@ import com.Ostermiller.util.CircularByteBuffer;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 
-import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.core.Tunnel;
+import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.core.tunnel.AbstractSubTunnel;
 import de.rennschnitzel.net.core.tunnel.AbstractSubTunnelDescriptor;
 import de.rennschnitzel.net.core.tunnel.SubTunnel;

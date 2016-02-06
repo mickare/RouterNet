@@ -1,15 +1,13 @@
 package de.rennschnitzel.net.core.procedure;
 
 import java.util.Collection;
-import java.util.Map;
-import java.util.UUID;
 import java.util.function.BiConsumer;
 
 import com.google.common.base.Preconditions;
-import com.google.common.util.concurrent.ListenableFuture;
 
 import de.rennschnitzel.net.core.AbstractNetwork;
 import de.rennschnitzel.net.core.Node;
+import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.protocol.NetworkProtocol;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureCallMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
@@ -104,21 +102,30 @@ public class CallableProcedure<T, R> extends Procedure {
     return compareTo(o) == 0;
   }
 
-  public ProcedureCallResult<T, R> call(Node node, T argument) {
-    return network.getProcedureManager().callProcedure(node, this, argument);
+  public SingleProcedureCall<T, R> call(Node node, T argument) {
+    return network.getProcedureManager().call(node, this, argument);
   }
 
-  public ProcedureCallResult<T, R> call(Node node, T argument, long timeout) {
-    return network.getProcedureManager().callProcedure(node, this, argument, timeout);
+  public SingleProcedureCall<T, R> call(Node node, T argument, long timeout) {
+    return network.getProcedureManager().call(node, this, argument, timeout);
   }
 
-  public Map<UUID, ? extends ListenableFuture<R>> call(Collection<Node> nodes, T argument) {
-    return network.getProcedureManager().callProcedure(nodes, this, argument);
+  public MultiProcedureCall<T, R> call(Collection<Node> nodes, T argument) {
+    return network.getProcedureManager().call(nodes, this, argument);
   }
 
-  public Map<UUID, ? extends ListenableFuture<R>> call(Collection<Node> nodes, T argument, long timeout) {
-    return network.getProcedureManager().callProcedure(nodes, this, argument, timeout);
+  public MultiProcedureCall<T, R> call(Collection<Node> nodes, T argument, long timeout) {
+    return network.getProcedureManager().call(nodes, this, argument, timeout);
   }
+
+  public MultiProcedureCall<T, R> call(Target target, T argument) {
+    return network.getProcedureManager().call(target, this, argument);
+  }
+
+  public MultiProcedureCall<T, R> call(Target target, T argument, long timeout) {
+    return network.getProcedureManager().call(target, this, argument, timeout);
+  }
+
 
 
 }

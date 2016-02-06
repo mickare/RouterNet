@@ -25,5 +25,4 @@ public class CallableRegisteredProcedure<T, R> extends BoundProcedure<T, R> {
     super(network, name, argClass, resultClass, function);
   }
 
-
 }

@@ -43,7 +43,7 @@ public class OpenCallsCache {
   }
 
   private ScheduledFuture<?> schedule(final ProcedureCall<?, ?> call) {
-    return this.network.getExecutor().schedule(() -> call.checkTimeout(), call.getRemainingTimeout(), TimeUnit.MILLISECONDS);
+    return this.network.getExecutor().schedule(() -> call.checkTimeout(), call.getRemainingTimeout() + 1, TimeUnit.MILLISECONDS);
   }
 
   public void put(ProcedureCall<?, ?> call) {
@@ -51,9 +51,9 @@ public class OpenCallsCache {
     if (!call.isDone()) {
       final int id = call.getId();
       this.openCalls.put(id, new Entry(call, schedule(call)));
-      call.getFuture().addListener(() -> {
+      call.addListener(c -> {
         invalidate(id);
-      } , this.network.getExecutor());
+      });
     }
   }
 

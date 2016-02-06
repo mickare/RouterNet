@@ -2,7 +2,6 @@ package de.rennschnitzel.net.core;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -10,7 +9,6 @@ import java.util.logging.Level;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
-import com.google.common.util.concurrent.ListenableFuture;
 
 import de.rennschnitzel.net.ProtocolUtils;
 import de.rennschnitzel.net.core.procedure.BoundProcedure;
@@ -20,7 +18,6 @@ import de.rennschnitzel.net.core.procedure.MultiProcedureCall;
 import de.rennschnitzel.net.core.procedure.OpenCallsCache;
 import de.rennschnitzel.net.core.procedure.Procedure;
 import de.rennschnitzel.net.core.procedure.ProcedureCall;
-import de.rennschnitzel.net.core.procedure.ProcedureCallResult;
 import de.rennschnitzel.net.core.procedure.SingleProcedureCall;
 import de.rennschnitzel.net.exception.ProtocolException;
 import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
@@ -59,31 +56,31 @@ public class ProcedureManager {
 
 
   @SuppressWarnings("unchecked")
-  public <T, R> CallableRegisteredProcedure<T, R> registerProcedure(String name, Function<T, R> function) {
+  public <T, R> CallableRegisteredProcedure<T, R> register(String name, Function<T, R> function) {
     final Class<?>[] args = TypeUtils.resolveArgumentClass(function);
-    return registerProcedure(name, function, (Class<T>) args[0], (Class<R>) args[1]);
+    return register(name, function, (Class<T>) args[0], (Class<R>) args[1]);
   }
 
 
-  public <T> CallableRegisteredProcedure<T, Void> registerProcedure(final String name, final Consumer<T> consumer) {
-    return registerProcedure(name, (t) -> {
+  public <T> CallableRegisteredProcedure<T, Void> register(final String name, final Consumer<T> consumer) {
+    return register(name, (t) -> {
       consumer.accept(t);
       return null;
     } , (Class<T>) TypeUtils.resolveArgumentClass(consumer), Void.class);
   }
 
-  public <R> CallableRegisteredProcedure<Void, R> registerProcedure(final String name, final Supplier<R> supplier) {
-    return registerProcedure(name, (t) -> supplier.get(), Void.class, (Class<R>) TypeUtils.resolveArgumentClass(supplier));
+  public <R> CallableRegisteredProcedure<Void, R> register(final String name, final Supplier<R> supplier) {
+    return register(name, (t) -> supplier.get(), Void.class, (Class<R>) TypeUtils.resolveArgumentClass(supplier));
   }
 
-  public CallableRegisteredProcedure<Void, Void> registerProcedure(final String name, final Runnable run) {
-    return registerProcedure(name, (t) -> {
+  public CallableRegisteredProcedure<Void, Void> register(final String name, final Runnable run) {
+    return register(name, (t) -> {
       run.run();
       return null;
     } , Void.class, Void.class);
   }
 
-  public <T, R> CallableRegisteredProcedure<T, R> registerProcedure(final String name, final Function<T, R> function,
+  public <T, R> CallableRegisteredProcedure<T, R> register(final String name, final Function<T, R> function,
       final Class<T> argClass, final Class<R> resultClass) {
     Preconditions.checkNotNull(name);
     Preconditions.checkNotNull(function);
@@ -98,13 +95,13 @@ public class ProcedureManager {
   }
 
 
-  public <T, R> CallableRegisteredProcedure<T, R> registerProcedure(CallableProcedure<T, R> procedure, Function<T, R> function) {
+  public <T, R> CallableRegisteredProcedure<T, R> register(CallableProcedure<T, R> procedure, Function<T, R> function) {
     final CallableRegisteredProcedure<T, R> proc = new CallableRegisteredProcedure<>(network, procedure, function);
     proc.setRegisterFuture(_registerProcedure(proc));
     return proc;
   }
 
-  public <T, R> CallableRegisteredProcedure<T, R> registerProcedure(BoundProcedure<T, R> procedure) {
+  public <T, R> CallableRegisteredProcedure<T, R> register(BoundProcedure<T, R> procedure) {
     final CallableRegisteredProcedure<T, R> proc = new CallableRegisteredProcedure<>(network, procedure, procedure.getFunction());
     proc.setRegisterFuture(_registerProcedure(proc));
     return proc;
@@ -120,17 +117,27 @@ public class ProcedureManager {
     return network.getHome().newUpdatePromise();
   }
 
-  public CallableRegisteredProcedure<?, ?> getRegisteredProcedure(Procedure info) {
+  public CallableRegisteredProcedure<?, ?> getRegistered(Procedure info) {
     try (CloseableLock l = lock.readLock().open()) {
       return this.registeredProcedures.get(info);
     }
   }
 
-  public <T, R> ProcedureCallResult<T, R> callProcedure(Node node, CallableProcedure<T, R> procedure, T argument) {
-    return this.callProcedure(node, procedure, argument, PROCEDURE_DEFAULT_TIMEOUT);
+
+
+  public <R> SingleProcedureCall<Void, R> call(Node node, CallableProcedure<Void, R> procedure) {
+    return this.call(node, procedure, null);
   }
 
-  public <T, R> ProcedureCallResult<T, R> callProcedure(Node node, CallableProcedure<T, R> procedure, T argument, long timeout) {
+  public <R> SingleProcedureCall<Void, R> call(Node node, CallableProcedure<Void, R> procedure, long timeout) {
+    return this.call(node, procedure, null, timeout);
+  }
+
+  public <T, R> SingleProcedureCall<T, R> call(Node node, CallableProcedure<T, R> procedure, T argument) {
+    return this.call(node, procedure, argument, PROCEDURE_DEFAULT_TIMEOUT);
+  }
+
+  public <T, R> SingleProcedureCall<T, R> call(Node node, CallableProcedure<T, R> procedure, T argument, long timeout) {
     Preconditions.checkNotNull(node);
     Preconditions.checkNotNull(procedure);
     Preconditions.checkArgument(timeout > 0);
@@ -146,16 +153,41 @@ public class ProcedureManager {
         call.setException(e);
       }
     }
-    return call.getResult();
+    return call;
   }
 
-  public <T, R> Map<UUID, ? extends ListenableFuture<R>> callProcedure(Collection<Node> nodes, CallableProcedure<T, R> procedure,
-      T argument) {
-    return this.callProcedure(nodes, procedure, argument, PROCEDURE_DEFAULT_TIMEOUT);
+
+
+  public <R> MultiProcedureCall<Void, R> call(Target target, CallableProcedure<Void, R> procedure) {
+    return this.call(this.network.getNodes(target), procedure, null);
   }
 
-  public <T, R> Map<UUID, ? extends ListenableFuture<R>> callProcedure(Collection<Node> nodes, CallableProcedure<T, R> procedure,
-      T argument, long timeout) {
+  public <R> MultiProcedureCall<Void, R> call(Target target, CallableProcedure<Void, R> procedure, long timeout) {
+    return this.call(this.network.getNodes(target), procedure, null, timeout);
+  }
+
+  public <R> MultiProcedureCall<Void, R> call(Collection<Node> nodes, CallableProcedure<Void, R> procedure) {
+    return this.call(nodes, procedure, null);
+  }
+
+  public <R> MultiProcedureCall<Void, R> call(Collection<Node> nodes, CallableProcedure<Void, R> procedure, long timeout) {
+    return this.call(nodes, procedure, null, timeout);
+  }
+
+  public <T, R> MultiProcedureCall<T, R> call(Target target, CallableProcedure<T, R> procedure, T argument) {
+    return this.call(this.network.getNodes(target), procedure, argument);
+  }
+
+  public <T, R> MultiProcedureCall<T, R> call(Target target, CallableProcedure<T, R> procedure, T argument, long timeout) {
+    return this.call(this.network.getNodes(target), procedure, argument, timeout);
+  }
+
+  public <T, R> MultiProcedureCall<T, R> call(Collection<Node> nodes, CallableProcedure<T, R> procedure, T argument) {
+    return this.call(nodes, procedure, argument, PROCEDURE_DEFAULT_TIMEOUT);
+  }
+
+  public <T, R> MultiProcedureCall<T, R> call(Collection<Node> nodes, CallableProcedure<T, R> procedure, T argument,
+      long timeout) {
     Preconditions.checkNotNull(nodes);
     Preconditions.checkArgument(!nodes.isEmpty());
     Preconditions.checkNotNull(procedure);
@@ -172,7 +204,7 @@ public class ProcedureManager {
         call.setException(e);
       }
     }
-    return call.getResult();
+    return call;
   }
 
   public <T, R> void handle(final ProcedureCall<T, R> call) {

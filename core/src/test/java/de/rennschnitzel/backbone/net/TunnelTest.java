@@ -22,9 +22,9 @@ import org.junit.Test;
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.Owner;
+import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.Target;
-import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.login.AuthenticationFactory;
 import de.rennschnitzel.net.core.login.ClientLoginEngine;
 import de.rennschnitzel.net.core.login.RouterLoginEngine;

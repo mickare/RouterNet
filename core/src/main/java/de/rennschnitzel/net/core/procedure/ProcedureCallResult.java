@@ -1,7 +1,12 @@
 package de.rennschnitzel.net.core.procedure;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
+
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.AbstractFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 
 import de.rennschnitzel.net.core.Node;
 import lombok.Getter;
@@ -26,6 +31,17 @@ public class ProcedureCallResult<T, R> extends AbstractFuture<R> {
     return doSet;
   }
 
+  public boolean isSuccess() {
+    if (isDone()) {
+      try {
+        this.get();
+        return true;
+      } catch (InterruptedException | ExecutionException e) {
+      }
+    }
+    return false;
+  }
+
   @Override
   public boolean cancel(boolean mayInterruptIfRunning) {
     return setCompletionTime(super.cancel(mayInterruptIfRunning));
@@ -41,4 +57,12 @@ public class ProcedureCallResult<T, R> extends AbstractFuture<R> {
     return setCompletionTime(super.setException(throwable));
   }
 
+  public ProcedureCallResult<T, R> addListener(Consumer<ProcedureCallResult<T, R>> listener) {
+    return this.addListener(listener, MoreExecutors.directExecutor());
+  }
+
+  public ProcedureCallResult<T, R> addListener(Consumer<ProcedureCallResult<T, R>> listener, Executor executor) {
+    this.addListener(() -> listener.accept(this), executor);
+    return this;
+  }
 }

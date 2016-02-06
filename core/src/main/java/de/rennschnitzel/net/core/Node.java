@@ -264,7 +264,7 @@ public @RequiredArgsConstructor class Node {
     }
 
     public void publishChanges() {
-      if (!this.dirty) {
+      if (!this.dirty || network == null) {
         return;
       }
       if (network.getHome() != this) {

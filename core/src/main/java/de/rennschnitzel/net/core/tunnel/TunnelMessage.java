@@ -6,9 +6,9 @@ import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 
 import de.rennschnitzel.net.ProtocolUtils;
+import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.Message;
 import de.rennschnitzel.net.core.Target;
-import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import lombok.Getter;
 

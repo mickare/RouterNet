@@ -1,6 +1,5 @@
 package de.rennschnitzel.net.core.tunnel.object;
 
-import java.io.IOException;
 import java.io.InvalidClassException;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -10,8 +9,8 @@ import java.util.logging.Level;
 import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.Owner;
-import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.core.Tunnel;
+import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.core.tunnel.AbstractSubTunnel;
 import de.rennschnitzel.net.core.tunnel.AbstractSubTunnelDescriptor;
 import de.rennschnitzel.net.core.tunnel.SubTunnel;
@@ -87,15 +86,15 @@ public class ObjectTunnel<T> extends AbstractSubTunnel<ObjectTunnel<T>, ObjectTu
     return this.descriptor.getConverter();
   }
 
-  public boolean broadcast(T obj) throws ConvertObjectTunnelException, IOException {
+  public boolean broadcast(T obj) throws ConvertObjectTunnelException {
     return this.send(Target.toAll(), obj);
   }
 
-  public boolean send(Target target, T obj) throws ConvertObjectTunnelException, IOException {
+  public boolean send(Target target, T obj) throws ConvertObjectTunnelException {
     return send(new ObjectTunnelMessage<T>(this, target, getNetwork().getHome().getId(), obj));
   }
 
-  public boolean send(ObjectTunnelMessage<T> ocmsg) throws IOException {
+  public boolean send(ObjectTunnelMessage<T> ocmsg) {
     return this.parentTunnel.send(ocmsg);
   }
 

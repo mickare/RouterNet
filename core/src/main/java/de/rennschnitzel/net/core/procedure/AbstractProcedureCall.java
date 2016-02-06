@@ -1,6 +1,7 @@
 package de.rennschnitzel.net.core.procedure;
 
 import java.util.Random;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -55,5 +56,11 @@ public abstract class AbstractProcedureCall<T, R> implements ProcedureCall<T, R>
     return false;
   }
 
+  @Override
+  public void cancel() {
+    if (!this.isDone()) {
+      this.setException(new CancellationException());
+    }
+  }
 
 }

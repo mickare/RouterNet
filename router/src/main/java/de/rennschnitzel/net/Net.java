@@ -7,12 +7,12 @@ import java.util.logging.Logger;
 
 import com.google.common.eventbus.EventBus;
 
+import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.Namespace;
 import de.rennschnitzel.net.core.Node;
 import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.ProcedureManager;
 import de.rennschnitzel.net.core.Target;
-import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.tunnel.SubTunnel;
 import de.rennschnitzel.net.core.tunnel.SubTunnelDescriptor;
 import lombok.Getter;

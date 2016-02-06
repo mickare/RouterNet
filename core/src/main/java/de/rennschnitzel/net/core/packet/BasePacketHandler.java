@@ -3,8 +3,8 @@ package de.rennschnitzel.net.core.packet;
 import java.util.UUID;
 
 import de.rennschnitzel.net.ProtocolUtils;
-import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.Tunnel;
+import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.exception.ProtocolException;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginChallengeMessage;
 import de.rennschnitzel.net.protocol.LoginProtocol.LoginHandshakeMessage;

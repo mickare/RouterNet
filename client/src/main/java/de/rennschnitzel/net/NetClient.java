@@ -14,6 +14,7 @@ import com.google.common.util.concurrent.Service;
 
 import de.rennschnitzel.net.client.ClientSettings;
 import de.rennschnitzel.net.client.ConfigFile;
+import de.rennschnitzel.net.client.HomeSettings;
 import de.rennschnitzel.net.client.TestFramework;
 import de.rennschnitzel.net.client.connection.ConnectService;
 import de.rennschnitzel.net.client.connection.LocalConnectService;
@@ -110,18 +111,25 @@ public @Getter @RequiredArgsConstructor class NetClient {
     this.routerAddress = HostAndPort.fromString(this.getConfig().getConnection().getAddress())
         .withDefaultPort(NetConstants.DEFAULT_PORT);
 
-    UUID id = getConfig().getHome().getId();
+
+    ConfigFile<HomeSettings> homeSettings =
+        ConfigFile.create(new File(this.directory, "home.json"), HomeSettings.class);
+    homeSettings.saveDefault();
+    HomeSettings home = homeSettings.getConfig();
+
+    UUID id = home.getId();
     if (id == null) {
       id = UUID.randomUUID();
-      this.getConfig().getHome().setId(id);
-      this.saveConfig();
+      home.setId(id);
+      homeSettings.save();
     }
 
-    this.home = new HomeNode(id, getConfig().getHome().getNamespaces());
+    this.home = new HomeNode(id, home.getNamespaces());
     this.home.setType(this.type);
+    this.home.setName(home.getName());
+    
     network = new Network(this);
     Net.setNetwork(network);
-    this.home.setName(getConfig().getHome().getName());
 
     if (this.getConfig().getConnection().isTestingMode()) {
       this.testFramework = new TestFramework(this);

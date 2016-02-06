@@ -88,4 +88,8 @@ public class BoundProcedure<T, R> extends CallableProcedure<T, R> {
     return result;
   }
 
+  public CallableRegisteredProcedure<T, R> register() {
+    return this.getNetwork().getProcedureManager().register(this);
+  }
+
 }

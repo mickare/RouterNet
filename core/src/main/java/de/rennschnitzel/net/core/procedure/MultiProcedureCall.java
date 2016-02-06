@@ -2,19 +2,20 @@ package de.rennschnitzel.net.core.procedure;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 
 import de.rennschnitzel.net.core.Node;
 import de.rennschnitzel.net.core.Target;
@@ -25,8 +26,8 @@ import lombok.Getter;
 
 public class MultiProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
 
-  private final ImmutableMap<UUID, ProcedureCallResult<T, R>> results;
-  private final @Getter ListenableFuture<List<R>> future;
+  private final @Getter ImmutableMap<UUID, ProcedureCallResult<T, R>> results;
+  private final ListenableFuture<?> future;
 
   public MultiProcedureCall(Collection<Node> nodes, CallableProcedure<T, R> procedure, T argument, long maxTimeout) {
     super(procedure, Target.to(nodes), argument, maxTimeout);
@@ -46,11 +47,7 @@ public class MultiProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
     this.future = Futures.successfulAsList(this.results.values());
 
   }
-
-  public Map<UUID, ? extends ListenableFuture<R>> getResult() {
-    return this.results;
-  }
-
+  
   @Override
   public void execute(CallableRegisteredProcedure<T, R> procedure) throws IllegalArgumentException {
     if (!getProcedure().isApplicable(procedure)) {
@@ -97,23 +94,25 @@ public class MultiProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
   }
 
   @Override
-  public void await() throws InterruptedException {
+  public MultiProcedureCall<T, R> await() throws InterruptedException {
     try {
       future.get();
     } catch (ExecutionException e) {
       // should not happen;
       throw new RuntimeException(e);
     }
+    return this;
   }
 
   @Override
-  public void await(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
+  public MultiProcedureCall<T, R> await(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
     try {
       future.get(timeout, unit);
     } catch (ExecutionException e) {
       // should not happen;
       throw new RuntimeException(e);
     }
+    return this;
   }
 
 
@@ -140,6 +139,30 @@ public class MultiProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
   @Override
   public Set<UUID> getNodeUUIDs() {
     return Collections.unmodifiableSet(this.results.keySet());
+  }
+
+  @Override
+  public MultiProcedureCall<T, R> addListener(final Consumer<Collection<ProcedureCallResult<T, R>>> listener) {
+    return addListener(listener, MoreExecutors.directExecutor());
+  }
+
+  @Override
+  public MultiProcedureCall<T, R> addListener(final Consumer<Collection<ProcedureCallResult<T, R>>> listener, final Executor executor) {
+    this.future.addListener(() -> {
+      listener.accept(this.results.values());
+    } , executor);
+    return this;
+  }
+
+  @Override
+  public ProcedureCall<T, R> addListenerEach(final Consumer<ProcedureCallResult<T, R>> listener) {
+    return addListenerEach(listener, MoreExecutors.directExecutor());
+  }
+
+  @Override
+  public ProcedureCall<T, R> addListenerEach(final Consumer<ProcedureCallResult<T, R>> listener, final Executor executor) {
+    this.results.values().forEach(r -> r.addListener(listener, executor));
+    return this;
   }
 
 }

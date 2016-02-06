@@ -1,5 +1,6 @@
 package de.rennschnitzel.net.core;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -26,7 +27,9 @@ import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.procedure.ProcedureCall;
 import de.rennschnitzel.net.core.tunnel.SubTunnel;
 import de.rennschnitzel.net.core.tunnel.SubTunnelDescriptor;
+import de.rennschnitzel.net.core.tunnel.TunnelDescriptors;
 import de.rennschnitzel.net.core.tunnel.TunnelMessage;
+import de.rennschnitzel.net.core.tunnel.object.ObjectTunnel;
 import de.rennschnitzel.net.event.NodeEvent;
 import de.rennschnitzel.net.exception.ConnectionException;
 import de.rennschnitzel.net.exception.ProtocolException;
@@ -187,6 +190,10 @@ public abstract class AbstractNetwork {
       }
     }
     return tunnel;
+  }
+
+  public <T extends Serializable> ObjectTunnel<T> getTunnel(String name, Class<T> dataClass) {
+    return this.getTunnel(TunnelDescriptors.getObjectTunnel(name, dataClass));
   }
 
   /**

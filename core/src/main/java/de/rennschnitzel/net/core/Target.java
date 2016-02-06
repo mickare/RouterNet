@@ -30,6 +30,10 @@ public @Getter class Target {
     return to(node.getId());
   }
 
+  public static Target to(String namespace) {
+    return Builder.builder().include(namespace).build();
+  }
+
 
   public static Target to(Collection<Node> nodes) {
     return Builder.builder().includeAllNodes(nodes).build();
@@ -271,6 +275,7 @@ public @Getter class Target {
     }
 
   }
+
 
 
 }

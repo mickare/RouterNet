@@ -9,12 +9,12 @@ import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.ProtocolUtils;
 import de.rennschnitzel.net.core.AbstractNetwork;
+import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.Node;
 import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.NotConnectedException;
 import de.rennschnitzel.net.core.Target;
-import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.packet.Packer;
 import de.rennschnitzel.net.core.procedure.ProcedureCall;
 import de.rennschnitzel.net.core.tunnel.TunnelMessage;
