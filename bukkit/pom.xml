@@ -109,13 +109,24 @@
 
 	<repositories>
 		<repository>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<id>spigot-public</id>
+			<name>SpigotMC</name>
+			<url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
+		</repository>
+		<repository>
 			<id>rs-protected</id>
 			<name>Rennschnitzel Protected Repository</name>
 			<url>http://nexus.spacier.de/content/repositories/rs-protected/</url>
 		</repository>
 		<repository>
-			<id>public</id>
-			<name>Rennschnitzel Public Group</name>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<id>rs-public</id>
+			<name>Rennschnitzel Public Repository</name>
 			<url>http://nexus.spacier.de/content/groups/public/</url>
 		</repository>
 	</repositories>
