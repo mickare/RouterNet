@@ -115,7 +115,10 @@ public class Tunnel {
   }
 
   public final void receiveProto(final TransportProtocol.TunnelMessage msg) {
-    this.receive(new TunnelMessage(this, msg));
+    if (this.listeners.size() > 0 || this.handler != null) {
+      // Only handle it if there are handlers.
+      this.receive(new TunnelMessage(this, msg));
+    }
   }
 
   public final void receive(final TunnelMessage cmsg) {
