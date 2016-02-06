@@ -1,0 +1,15 @@
+name: RS-Net-BukkitTest
+main: de.rennschnitzel.net.bukkittest.BukkitTestPlugin
+version: 0.0.1
+website: http://www.rennschnitzel.de
+authors: [mickare]
+description: Plugin um das RS-Net Netzwerk zu testen.
+depends: [RS-Net]
+commands:
+  players:
+    description: Listet die Spieler im Netzwerk auf.
+    usage: /<command>
+  m:
+    description: Sendet eine private Nachricht im Netzwerk
+    usage: /<command> <player> <text>
+    
