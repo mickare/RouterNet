@@ -1,0 +1,7 @@
+name: RS-Net
+main: de.rennschnitzel.net.bukkit.NetPlugin
+version: 0.0.1
+website: http://www.rennschnitzel.de
+authors: [mickare]
+description: Network Plugin
+commands:
