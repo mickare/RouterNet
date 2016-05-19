@@ -56,7 +56,7 @@ public @Getter @RequiredArgsConstructor class NetClient {
 		throw new UnsupportedOperationException("Shutdown not supported");
 	};
 	private @Setter @NonNull Runnable restartFunction = () -> {
-		throw new UnsupportedOperationException("Shutdown not supported");
+		throw new UnsupportedOperationException("Restart not supported");
 	};
 	private @Setter @NonNull Consumer<Runnable> syncExecutor = null;
 
