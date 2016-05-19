@@ -8,23 +8,27 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import de.rennschnitzel.net.NetClient;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
 import net.md_5.bungee.api.plugin.Plugin;
+import net.md_5.bungee.api.scheduler.GroupedThreadFactory;
 
+@SuppressWarnings( "deprecation" )
 public class NetPlugin extends Plugin {
-	
+
 	private final NetClient client = new NetClient( NodeMessage.Type.BUNGEECORD );
-	
+
 	@Override
 	public void onLoad() {
-		
-		ScheduledExecutorService executor = Executors.newScheduledThreadPool( 1, new ThreadFactoryBuilder().setNameFormat( "net-pool-%d" ).build() );
-		
+
+		String name = ( getDescription() == null ) ? "unknown" : getDescription().getName();
+		ScheduledExecutorService executor = Executors.newScheduledThreadPool( 1, new ThreadFactoryBuilder()//
+				.setNameFormat( "net-pool-%d" )//
+				// This may be needed to fake "Bungeecord tasks". ;)
+				.setThreadFactory( new GroupedThreadFactory( this, name ) )//
+				.build() );
+
 		client.init( getLogger(), this.getDataFolder(), executor );
-		
-		// client.setRestartFunction(Bukkit.spigot()::restart);
-		// client.setShutdownFunction(Bukkit::shutdown);
-		// client.setSyncExecutor( task -> getProxy().getScheduler().runAsync( this, task ) );
+
 	}
-	
+
 	@Override
 	public void onEnable() {
 		try {
@@ -33,7 +37,7 @@ public class NetPlugin extends Plugin {
 			throw new RuntimeException( e );
 		}
 	}
-	
+
 	@Override
 	public void onDisable() {
 		try {
@@ -42,5 +46,5 @@ public class NetPlugin extends Plugin {
 			throw new RuntimeException( e );
 		}
 	}
-	
+
 }
