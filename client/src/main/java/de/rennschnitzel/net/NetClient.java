@@ -57,7 +57,7 @@ public @Getter @RequiredArgsConstructor class NetClient {
   };
   private @Setter @NonNull Runnable restartFunction = () -> {
   };
-  private @Setter @NonNull Consumer<Runnable> syncExecutor = (command) -> this.executor.execute(command);
+  private @Setter @NonNull Consumer<Runnable> syncExecutor = this.executor::execute;
 
   public synchronized void init(Logger logger, File directory, ScheduledExecutorService executor) {
     Preconditions.checkState(initialized == false, "NetClient already initialized");
