@@ -22,7 +22,7 @@ public class NetPlugin extends Plugin {
 		
 		// client.setRestartFunction(Bukkit.spigot()::restart);
 		// client.setShutdownFunction(Bukkit::shutdown);
-		client.setSyncExecutor( task -> getProxy().getScheduler().runAsync( this, task ) );
+		// client.setSyncExecutor( task -> getProxy().getScheduler().runAsync( this, task ) );
 	}
 	
 	@Override
