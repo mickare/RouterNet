@@ -15,74 +15,73 @@ import de.rennschnitzel.net.protocol.TransportProtocol.TunnelMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister;
 
 public class SimplePacketHandler<C> implements PacketHandler<C> {
-
-  public SimplePacketHandler() {}
-
-  @Override
-  public void handle(C ctx, HeartbeatMessage heartbeat) throws Exception {
-    throw new UnsupportedOperationException("Not implemented!");
-  }
-
-  @Override
-  public void handle(C ctx, CloseMessage msg) throws Exception {
-    throw new UnsupportedOperationException("Not implemented!");
-  }
-
-  @Override
-  public void handle(C ctx, LoginHandshakeMessage msg) throws Exception {
-    throw new UnsupportedOperationException("Not implemented!");
-  }
-
-  @Override
-  public void handle(C ctx, LoginResponseMessage msg) throws Exception {
-    throw new UnsupportedOperationException("Not implemented!");
-  }
-
-  @Override
-  public void handle(C ctx, LoginChallengeMessage msg) throws Exception {
-    throw new UnsupportedOperationException("Not implemented!");
-  }
-
-  @Override
-  public void handle(C ctx, LoginSuccessMessage msg) throws Exception {
-    throw new UnsupportedOperationException("Not implemented!");
-  }
-
-  @Override
-  public void handle(C ctx, LoginUpgradeMessage msg) throws Exception {
-    throw new UnsupportedOperationException("Not implemented!");
-  }
-
-  @Override
-  public void handle(C ctx, NodeTopologyMessage msg) throws Exception {
-    throw new UnsupportedOperationException("Not implemented!");
-  }
-
-  @Override
-  public void handle(C ctx, NodeUpdateMessage msg) throws Exception {
-    throw new UnsupportedOperationException("Not implemented!");
-  }
-
-  @Override
-  public void handle(C ctx, NodeRemoveMessage msg) throws Exception {
-    throw new UnsupportedOperationException("Not implemented!");
-  }
-
-  @Override
-  public void handle(C ctx, TunnelMessage msg) throws Exception {
-    throw new UnsupportedOperationException("Not implemented!");
-  }
-
-  @Override
-  public void handle(C ctx, TunnelRegister msg) throws Exception {
-    throw new UnsupportedOperationException("Not implemented!");
-  }
-
-  @Override
-  public void handle(C ctx, ProcedureMessage msg) throws Exception {
-    throw new UnsupportedOperationException("Not implemented!");
-  }
-
-
-
+	
+	public SimplePacketHandler() {
+	}
+	
+	@Override
+	public void handle( C ctx, HeartbeatMessage heartbeat ) throws Exception {
+		throw new UnsupportedOperationException( "Not implemented!" );
+	}
+	
+	@Override
+	public void handle( C ctx, CloseMessage msg ) throws Exception {
+		throw new UnsupportedOperationException( "Not implemented!" );
+	}
+	
+	@Override
+	public void handle( C ctx, LoginHandshakeMessage msg ) throws Exception {
+		throw new UnsupportedOperationException( "Not implemented!" );
+	}
+	
+	@Override
+	public void handle( C ctx, LoginResponseMessage msg ) throws Exception {
+		throw new UnsupportedOperationException( "Not implemented!" );
+	}
+	
+	@Override
+	public void handle( C ctx, LoginChallengeMessage msg ) throws Exception {
+		throw new UnsupportedOperationException( "Not implemented!" );
+	}
+	
+	@Override
+	public void handle( C ctx, LoginSuccessMessage msg ) throws Exception {
+		throw new UnsupportedOperationException( "Not implemented!" );
+	}
+	
+	@Override
+	public void handle( C ctx, LoginUpgradeMessage msg ) throws Exception {
+		throw new UnsupportedOperationException( "Not implemented!" );
+	}
+	
+	@Override
+	public void handle( C ctx, NodeTopologyMessage msg ) throws Exception {
+		throw new UnsupportedOperationException( "Not implemented!" );
+	}
+	
+	@Override
+	public void handle( C ctx, NodeUpdateMessage msg ) throws Exception {
+		throw new UnsupportedOperationException( "Not implemented!" );
+	}
+	
+	@Override
+	public void handle( C ctx, NodeRemoveMessage msg ) throws Exception {
+		throw new UnsupportedOperationException( "Not implemented!" );
+	}
+	
+	@Override
+	public void handle( C ctx, TunnelMessage msg ) throws Exception {
+		throw new UnsupportedOperationException( "Not implemented!" );
+	}
+	
+	@Override
+	public void handle( C ctx, TunnelRegister msg ) throws Exception {
+		throw new UnsupportedOperationException( "Not implemented!" );
+	}
+	
+	@Override
+	public void handle( C ctx, ProcedureMessage msg ) throws Exception {
+		throw new UnsupportedOperationException( "Not implemented!" );
+	}
+	
 }

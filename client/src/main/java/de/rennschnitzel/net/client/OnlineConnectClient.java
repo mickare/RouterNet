@@ -16,56 +16,54 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
-
 public @RequiredArgsConstructor class OnlineConnectClient extends AbstractConnectClient {
-
-  private final @NonNull HostAndPort addr;
-  private final @NonNull ChannelInitializer<Channel> clientInit;
-  private @Getter @Setter boolean shutdownGroup = true;
-  private EventLoopGroup group = null;
-  private Channel clientChannel = null;
-
-  public OnlineConnectClient(HostAndPort addr, ChannelInitializer<Channel> clientInit,
-      EventLoopGroup group) {
-    this(addr, clientInit);
-    Preconditions.checkArgument(!group.isShutdown());
-    this.group = group;
-    this.shutdownGroup = false;
-  }
-
-  @Override
-  protected void doConnect() throws Exception {
-    if (group == null) {
-      group = new DefaultEventLoopGroup();
-    }
-
-    Bootstrap cb = new Bootstrap();
-    cb.group(group).channel(PipelineUtils.getChannelClass()).handler(clientInit);
-    cb.connect(addr.getHostText(), addr.getPort()) //
-        .addListener((ChannelFutureListener) f -> {
-
-          if (f.isSuccess()) {
-            clientChannel = f.channel();
-            clientChannel.closeFuture().addListener(cf -> {
-              close();
-            });
-            notfiyConnected();
-          } else {
-            notifyFailed(f.cause());
-          }
-
-        });
-
-  }
-
-  @Override
-  protected void doClose() throws Exception {
-    if (clientChannel != null) {
-      clientChannel.close();
-    }
-    if (shutdownGroup && group != null) {
-      group.shutdownGracefully();
-    }
-  }
-
+	
+	private final @NonNull HostAndPort addr;
+	private final @NonNull ChannelInitializer<Channel> clientInit;
+	private @Getter @Setter boolean shutdownGroup = true;
+	private EventLoopGroup group = null;
+	private Channel clientChannel = null;
+	
+	public OnlineConnectClient( HostAndPort addr, ChannelInitializer<Channel> clientInit, EventLoopGroup group ) {
+		this( addr, clientInit );
+		Preconditions.checkArgument( !group.isShutdown() );
+		this.group = group;
+		this.shutdownGroup = false;
+	}
+	
+	@Override
+	protected void doConnect() throws Exception {
+		if ( group == null ) {
+			group = new DefaultEventLoopGroup();
+		}
+		
+		Bootstrap cb = new Bootstrap();
+		cb.group( group ).channel( PipelineUtils.getChannelClass() ).handler( clientInit );
+		cb.connect( addr.getHostText(), addr.getPort() ) //
+				.addListener( ( ChannelFutureListener ) f -> {
+					
+					if ( f.isSuccess() ) {
+						clientChannel = f.channel();
+						clientChannel.closeFuture().addListener( cf -> {
+							close();
+						} );
+						notfiyConnected();
+					} else {
+						notifyFailed( f.cause() );
+					}
+					
+				} );
+		
+	}
+	
+	@Override
+	protected void doClose() throws Exception {
+		if ( clientChannel != null ) {
+			clientChannel.close();
+		}
+		if ( shutdownGroup && group != null ) {
+			group.shutdownGracefully();
+		}
+	}
+	
 }

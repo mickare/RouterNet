@@ -12,38 +12,37 @@ import de.rennschnitzel.net.NetClient;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
 
 public class NetPlugin extends JavaPlugin {
-
-  private final NetClient client = new NetClient(NodeMessage.Type.BUKKIT);
-
-  @Override
-  public void onLoad() {
-
-    ScheduledExecutorService executor = Executors.newScheduledThreadPool(1,
-        new ThreadFactoryBuilder().setNameFormat("net-pool-%d").build());
-
-    client.init(getLogger(), this.getDataFolder(), executor);
-
-    client.setRestartFunction(Bukkit.spigot()::restart);
-    client.setShutdownFunction(Bukkit::shutdown);
-    client.setSyncExecutor(task -> Bukkit.getScheduler().runTask(this, task));
-  }
-
-  @Override
-  public void onEnable() {
-    try {
-      client.enable();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override
-  public void onDisable() {
-    try {
-      client.disable();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
+	
+	private final NetClient client = new NetClient( NodeMessage.Type.BUKKIT );
+	
+	@Override
+	public void onLoad() {
+		
+		ScheduledExecutorService executor = Executors.newScheduledThreadPool( 1, new ThreadFactoryBuilder().setNameFormat( "net-pool-%d" ).build() );
+		
+		client.init( getLogger(), this.getDataFolder(), executor );
+		
+		client.setRestartFunction( Bukkit.spigot()::restart );
+		client.setShutdownFunction( Bukkit::shutdown );
+		client.setSyncExecutor( task -> Bukkit.getScheduler().runTask( this, task ) );
+	}
+	
+	@Override
+	public void onEnable() {
+		try {
+			client.enable();
+		} catch ( Exception e ) {
+			throw new RuntimeException( e );
+		}
+	}
+	
+	@Override
+	public void onDisable() {
+		try {
+			client.disable();
+		} catch ( Exception e ) {
+			throw new RuntimeException( e );
+		}
+	}
+	
 }

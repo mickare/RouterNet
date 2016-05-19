@@ -8,9 +8,9 @@ import java.util.concurrent.locks.ReadWriteLock;
  *
  */
 public interface CloseableReadWriteLock extends ReadWriteLock {
-
-  public CloseableLock readLock();
-
-  public CloseableLock writeLock();
-
+	
+	public CloseableLock readLock();
+	
+	public CloseableLock writeLock();
+	
 }

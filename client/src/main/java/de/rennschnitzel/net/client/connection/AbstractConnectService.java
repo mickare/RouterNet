@@ -25,123 +25,120 @@ import io.netty.util.concurrent.Promise;
 import lombok.AccessLevel;
 import lombok.Getter;
 
-public abstract class AbstractConnectService extends AbstractScheduledService
-    implements ConnectService {
-
-  private @Getter final NetClient client;
-  private @Getter final long delay_time;
-  private @Getter final TimeUnit delay_unit;
-
-  private final CloseableReadWriteLock lock = new ReentrantCloseableReadWriteLock();
-  private @Getter Promise<Connection> currentFuture = null;
-  private ConnectClient connector = null;
-  private @Getter(AccessLevel.PROTECTED) EventLoopGroup group;
-
-  private final Set<Consumer<Connection>> listeners = Sets.newIdentityHashSet();
-
-  public AbstractConnectService(NetClient client) {
-    this(client, 1, TimeUnit.SECONDS);
-  }
-
-  public AbstractConnectService(NetClient client, long delay_time, TimeUnit delay_unit) {
-    Preconditions.checkNotNull(client);
-    Preconditions.checkArgument(delay_time > 0);
-    Preconditions.checkArgument(delay_unit.toSeconds(delay_time) > 0);
-    this.client = client;
-    this.delay_time = delay_time;
-    this.delay_unit = delay_unit;
-  }
-
-  public boolean addListener(Consumer<Connection> listener) {
-    return listeners.add(listener);
-  }
-
-  @Override
-  public Logger getLogger() {
-    return client.getLogger();
-  }
-
-  protected void startUp() throws Exception {
-    group = PipelineUtils.newEventLoopGroup(0,
-        new ThreadFactoryBuilder().setNameFormat("Net-Netty IO Thread #%1$d").build());
-    getLogger().info("Connect service started");
-
-    connectSoft();
-  }
-
-  protected void shutDown() throws Exception {
-    disconnect();
-    group.shutdownGracefully().awaitUninterruptibly();
-  }
-
-  @Override
-  protected void runOneIteration() throws Exception {
-    ConnectClient con = connectSoft();
-    if (con != null) {
-      if (this.isRunning()) {
-        con.awaitRunning(1000);
-        if (con.getState() != ConnectClient.State.ACTIVE) {
-          con.close();
-        }
-      } else {
-        con.close();
-      }
-    }
-  }
-
-  private void disconnect() {
-    try (CloseableLock l = lock.writeLock().open()) {
-      if (connector != null) {
-        connector.close();
-      }
-    }
-  }
-
-  private ConnectClient connectSoft() {
-    if (connector == null || connector.isClosed()) {
-
-      if (currentFuture != null) {
-
-        if (!currentFuture.isDone()) {
-          if (connector.getState() == ConnectClient.State.FAILED) {
-            currentFuture.tryFailure(connector.getFailureCause());
-          } else {
-            currentFuture.tryFailure(new NotConnectedException("timed out"));
-          }
-        }
-
-      }
-
-      try (CloseableLock l = lock.writeLock().open()) {
-        currentFuture = FutureUtils.newPromise();
-        currentFuture.addListener(f -> {
-          if (!f.isSuccess()) {
-            if (f.cause() != null) {
-              getLogger().log(Level.INFO, "Failed to connect: " + f.cause().getMessage(),
-                  f.cause());
-            } else {
-              getLogger().log(Level.INFO, "Failed to connect: unknown cause");
-            }
-            handleFailConnect();
-          }
-        });
-        connector = newConnectClient(currentFuture);
-        getLogger().info("Connecting to network...");
-        connector.connect();
-      }
-    }
-    return connector;
-  }
-
-  public void handleFailConnect() {
-    this.client.handleFailConnect(this);
-  }
-
-  protected abstract ConnectClient newConnectClient(Promise<Connection> future);
-
-  @Override
-  protected Scheduler scheduler() {
-    return Scheduler.newFixedDelaySchedule(delay_time, delay_time, delay_unit);
-  }
-
+public abstract class AbstractConnectService extends AbstractScheduledService implements ConnectService {
+	
+	private @Getter final NetClient client;
+	private @Getter final long delay_time;
+	private @Getter final TimeUnit delay_unit;
+	
+	private final CloseableReadWriteLock lock = new ReentrantCloseableReadWriteLock();
+	private @Getter Promise<Connection> currentFuture = null;
+	private ConnectClient connector = null;
+	private @Getter( AccessLevel.PROTECTED ) EventLoopGroup group;
+	
+	private final Set<Consumer<Connection>> listeners = Sets.newIdentityHashSet();
+	
+	public AbstractConnectService( NetClient client ) {
+		this( client, 1, TimeUnit.SECONDS );
+	}
+	
+	public AbstractConnectService( NetClient client, long delay_time, TimeUnit delay_unit ) {
+		Preconditions.checkNotNull( client );
+		Preconditions.checkArgument( delay_time > 0 );
+		Preconditions.checkArgument( delay_unit.toSeconds( delay_time ) > 0 );
+		this.client = client;
+		this.delay_time = delay_time;
+		this.delay_unit = delay_unit;
+	}
+	
+	public boolean addListener( Consumer<Connection> listener ) {
+		return listeners.add( listener );
+	}
+	
+	@Override
+	public Logger getLogger() {
+		return client.getLogger();
+	}
+	
+	protected void startUp() throws Exception {
+		group = PipelineUtils.newEventLoopGroup( 0, new ThreadFactoryBuilder().setNameFormat( "Net-Netty IO Thread #%1$d" ).build() );
+		getLogger().info( "Connect service started" );
+		
+		connectSoft();
+	}
+	
+	protected void shutDown() throws Exception {
+		disconnect();
+		group.shutdownGracefully().awaitUninterruptibly();
+	}
+	
+	@Override
+	protected void runOneIteration() throws Exception {
+		ConnectClient con = connectSoft();
+		if ( con != null ) {
+			if ( this.isRunning() ) {
+				con.awaitRunning( 1000 );
+				if ( con.getState() != ConnectClient.State.ACTIVE ) {
+					con.close();
+				}
+			} else {
+				con.close();
+			}
+		}
+	}
+	
+	private void disconnect() {
+		try ( CloseableLock l = lock.writeLock().open() ) {
+			if ( connector != null ) {
+				connector.close();
+			}
+		}
+	}
+	
+	private ConnectClient connectSoft() {
+		if ( connector == null || connector.isClosed() ) {
+			
+			if ( currentFuture != null ) {
+				
+				if ( !currentFuture.isDone() ) {
+					if ( connector.getState() == ConnectClient.State.FAILED ) {
+						currentFuture.tryFailure( connector.getFailureCause() );
+					} else {
+						currentFuture.tryFailure( new NotConnectedException( "timed out" ) );
+					}
+				}
+				
+			}
+			
+			try ( CloseableLock l = lock.writeLock().open() ) {
+				currentFuture = FutureUtils.newPromise();
+				currentFuture.addListener( f -> {
+					if ( !f.isSuccess() ) {
+						if ( f.cause() != null ) {
+							getLogger().log( Level.INFO, "Failed to connect: " + f.cause().getMessage(), f.cause() );
+						} else {
+							getLogger().log( Level.INFO, "Failed to connect: unknown cause" );
+						}
+						handleFailConnect();
+					}
+				} );
+				connector = newConnectClient( currentFuture );
+				getLogger().info( "Connecting to network..." );
+				connector.connect();
+			}
+		}
+		return connector;
+	}
+	
+	public void handleFailConnect() {
+		this.client.handleFailConnect( this );
+	}
+	
+	protected abstract ConnectClient newConnectClient( Promise<Connection> future );
+	
+	@Override
+	protected Scheduler scheduler() {
+		return Scheduler.newFixedDelaySchedule( delay_time, delay_time, delay_unit );
+	}
+	
 }

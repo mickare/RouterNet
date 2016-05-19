@@ -8,9 +8,9 @@ import de.rennschnitzel.net.core.Connection;
 import io.netty.util.concurrent.Future;
 
 public interface ConnectService extends Service {
-
-  Logger getLogger();
-
-  Future<Connection> getCurrentFuture();
-
+	
+	Logger getLogger();
+	
+	Future<Connection> getCurrentFuture();
+	
 }

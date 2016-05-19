@@ -12,33 +12,29 @@ import de.rennschnitzel.net.dummy.DummClientNetwork;
 import lombok.Getter;
 
 public class TestFramework {
-
-  @Getter
-  private final NetClient client;
-
-  @Getter
-  private final DummClientNetwork routerNetwork;
-
-  @Getter
-  private RouterAuthentication authenticationRouter;
-
-  public TestFramework(NetClient client) {
-    Preconditions.checkNotNull(client);
-    this.client = client;
-    this.authenticationRouter = AuthenticationFactory
-        .newPasswordForRouter(client.getConfig().getConnection().getPassword());
-
-
-    UUID temp;
-    do {
-      temp = UUID.randomUUID();
-    } while (client.getHome().getId().equals(temp));
-
-    this.routerNetwork = new DummClientNetwork(client.getExecutor(), new HomeNode(temp));
-    this.routerNetwork.setName("TestNetwork");
-
-  }
-
-
-
+	
+	@Getter
+	private final NetClient client;
+	
+	@Getter
+	private final DummClientNetwork routerNetwork;
+	
+	@Getter
+	private RouterAuthentication authenticationRouter;
+	
+	public TestFramework( NetClient client ) {
+		Preconditions.checkNotNull( client );
+		this.client = client;
+		this.authenticationRouter = AuthenticationFactory.newPasswordForRouter( client.getConfig().getConnection().getPassword() );
+		
+		UUID temp;
+		do {
+			temp = UUID.randomUUID();
+		} while ( client.getHome().getId().equals( temp ) );
+		
+		this.routerNetwork = new DummClientNetwork( client.getExecutor(), new HomeNode( temp ) );
+		this.routerNetwork.setName( "TestNetwork" );
+		
+	}
+	
 }
