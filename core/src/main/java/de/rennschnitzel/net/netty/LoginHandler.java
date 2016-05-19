@@ -21,10 +21,10 @@ import io.netty.util.concurrent.Promise;
 import lombok.Getter;
 
 public class LoginHandler extends SimpleChannelInboundHandler<Packet> {
-	
+
 	private @Getter final LoginEngine engine;
 	private @Getter Promise<Connection> promise;
-	
+
 	public LoginHandler( LoginEngine engine, Promise<Connection> promise ) {
 		super( Packet.class );
 		Preconditions.checkNotNull( engine );
@@ -37,16 +37,16 @@ public class LoginHandler extends SimpleChannelInboundHandler<Packet> {
 			}
 		} );
 	}
-	
+
 	public Logger getLogger() {
 		return engine.getNetwork().getLogger();
 	}
-	
+
 	@Override
 	public void handlerAdded( final ChannelHandlerContext ctx ) throws Exception {
 		this.engine.checkState( State.NEW );
 		this.engine.setChannel( new ChannelWrapper( ctx.channel() ) );
-		
+
 		this.engine.getFuture().addListener( f -> {
 			if ( f.isSuccess() ) {
 				Connection connection = new Connection( engine.getNetwork(), engine.getLoginId(), engine.getChannel() );
@@ -57,7 +57,7 @@ public class LoginHandler extends SimpleChannelInboundHandler<Packet> {
 			} else {
 				Throwable cause = f.cause();
 				if ( promise.tryFailure( cause ) ) {
-					getLogger().log( Level.WARNING, "Failed login (" + engine.getFailureState() + "): " + cause.getMessage(), cause );
+					getLogger().log( Level.WARNING, "Failed login (" + engine.getFailureState() + "): ", cause );
 					ctx.writeAndFlush( Packet.newBuilder().setClose( createCloseMessage( cause ) ).build() ).addListener( ChannelFutureListener.CLOSE );
 				} else {
 					ctx.close();
@@ -65,24 +65,24 @@ public class LoginHandler extends SimpleChannelInboundHandler<Packet> {
 			}
 		} );
 	}
-	
+
 	@Override
 	public void channelActive( final ChannelHandlerContext ctx ) throws Exception {
 		this.engine.start();
 		super.channelActive( ctx );
 	}
-	
+
 	@Override
 	public void channelInactive( final ChannelHandlerContext ctx ) throws Exception {
 		ctx.read();
 		this.engine.fail( new HandshakeException( "channel inactive" ) );
 	}
-	
+
 	@Override
 	protected void channelRead0( final ChannelHandlerContext ctx, final Packet msg ) throws Exception {
 		engine.handle( engine, msg );
 	}
-	
+
 	@Override
 	public void exceptionCaught( final ChannelHandlerContext ctx, final Throwable cause ) throws Exception {
 		try {
@@ -92,7 +92,7 @@ public class LoginHandler extends SimpleChannelInboundHandler<Packet> {
 			getLogger().log( Level.WARNING, "Exception while login (" + engine.getFailureCause() + "): " + cause.getMessage(), cause );
 		}
 	}
-	
+
 	private CloseMessage createCloseMessage( Throwable cause ) {
 		ErrorMessage.Type type;
 		String text;
@@ -107,5 +107,5 @@ public class LoginHandler extends SimpleChannelInboundHandler<Packet> {
 		ErrorMessage.Builder error = ErrorMessage.newBuilder().setType( type ).setMessage( text );
 		return CloseMessage.newBuilder().setError( error ).build();
 	}
-	
+
 }
