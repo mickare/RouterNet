@@ -1,4 +1,4 @@
-package de.rennschnitzel.backbone.net;
+package de.rennschnitzel.net;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

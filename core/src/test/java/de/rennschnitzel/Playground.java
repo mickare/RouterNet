@@ -1,4 +1,4 @@
-package de.rennschnitzel.backbone;
+package de.rennschnitzel;
 
 import org.junit.Test;
 
