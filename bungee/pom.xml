@@ -9,8 +9,8 @@
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>bukkit</artifactId>
-	<name>RS-Net-bukkit</name>
+	<artifactId>bungee</artifactId>
+	<name>RS-Net-bungee</name>
 
 	<dependencies>
 		<dependency>
