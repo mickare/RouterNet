@@ -71,7 +71,7 @@ public class TestClientTestFramework {
 		
 		final AtomicInteger received = new AtomicInteger( 0 );
 		
-		DummClientNetwork net_router = client.getTestFramework().getRouterNetwork();
+		DummClientNetwork net_router = client.getTestFramework().getTestNetwork();
 		Network net_client = client.getNetwork();
 		
 		Tunnel tunnel = net_router.getTunnel( "testTunnel" );

@@ -32,10 +32,10 @@ public class LocalConnectService extends AbstractConnectService {
 	@Override
 	protected LocalConnectClient newConnectClient( Promise<Connection> promise ) {
 		
-		RouterLoginEngine engine_test = new RouterLoginEngine( framework.getRouterNetwork(), framework.getAuthenticationRouter() );
+		RouterLoginEngine engine_test = new RouterLoginEngine( framework.getTestNetwork(), framework.getAuthenticationRouter() );
 		ChannelInitializer<LocalChannel> init_test = PipelineUtils.baseInitAnd( ch -> {
 			ch.pipeline().addLast( new LoginHandler( engine_test, FutureUtils.newPromise() ) );
-			ch.pipeline().addLast( new ConnectionHandler( framework.getRouterNetwork(), BasePacketHandler.DEFAULT ) );
+			ch.pipeline().addLast( new ConnectionHandler( framework.getTestNetwork(), BasePacketHandler.DEFAULT ) );
 		} );
 		
 		ClientLoginEngine engine_client = new ClientLoginEngine( getClient().getNetwork(), getClient().getAuthentication() );

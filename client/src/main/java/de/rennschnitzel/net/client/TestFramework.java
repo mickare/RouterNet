@@ -14,17 +14,17 @@ import lombok.Getter;
 public class TestFramework {
 	
 	@Getter
-	private final NetClient client;
+	private final NetClient testClient;
 	
 	@Getter
-	private final DummClientNetwork routerNetwork;
+	private final DummClientNetwork testNetwork;
 	
 	@Getter
 	private RouterAuthentication authenticationRouter;
 	
 	public TestFramework( NetClient client ) {
 		Preconditions.checkNotNull( client );
-		this.client = client;
+		this.testClient = client;
 		this.authenticationRouter = AuthenticationFactory.newPasswordForRouter( client.getConfig().getConnection().getPassword() );
 		
 		UUID temp;
@@ -32,8 +32,8 @@ public class TestFramework {
 			temp = UUID.randomUUID();
 		} while ( client.getHome().getId().equals( temp ) );
 		
-		this.routerNetwork = new DummClientNetwork( client.getExecutor(), new HomeNode( temp ) );
-		this.routerNetwork.setName( "TestNetwork" );
+		this.testNetwork = new DummClientNetwork( client.getExecutor(), new HomeNode( temp ) );
+		this.testNetwork.setName( "TestNetwork" );
 		
 	}
 	
