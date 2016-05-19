@@ -53,8 +53,10 @@ public @Getter @RequiredArgsConstructor class NetClient {
 	private HostAndPort routerAddress = null;
 
 	private @Setter @NonNull Runnable shutdownFunction = () -> {
+		throw new UnsupportedOperationException("Shutdown not supported");
 	};
 	private @Setter @NonNull Runnable restartFunction = () -> {
+		throw new UnsupportedOperationException("Shutdown not supported");
 	};
 	private @Setter @NonNull Consumer<Runnable> syncExecutor = null;
 
