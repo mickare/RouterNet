@@ -29,6 +29,10 @@ public class Net {
 		Net.network = network;
 	}
 	
+	public static NetClient getClient() {
+		return network.getClient();
+	}
+	
 	public static HomeNode getHome() {
 		return network.getHome();
 	}
