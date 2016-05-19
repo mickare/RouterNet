@@ -30,34 +30,34 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 public @Getter @RequiredArgsConstructor class NetClient {
-	
+
 	@NonNull
 	private final NodeMessage.Type type;
-	
+
 	private boolean initialized = false;
 	private boolean enabled = false;
-	
+
 	private Logger logger = Logger.getGlobal();
 	private File directory;
 	private ConfigFile<ClientSettings> configFile;
-	
+
 	private HomeNode home;
 	private Network network;
 	private ConnectService connectService;
 	private ScheduledExecutorService executor;
-	
+
 	private TestFramework testFramework = null;
-	
+
 	private ClientAuthentication authentication = null;
-	
+
 	private HostAndPort routerAddress = null;
-	
+
 	private @Setter @NonNull Runnable shutdownFunction = () -> {
 	};
 	private @Setter @NonNull Runnable restartFunction = () -> {
 	};
-	private @Setter @NonNull Consumer<Runnable> syncExecutor = this.executor::execute;
-	
+	private @Setter @NonNull Consumer<Runnable> syncExecutor = null;
+
 	public synchronized void init( Logger logger, File directory, ScheduledExecutorService executor ) {
 		Preconditions.checkState( initialized == false, "NetClient already initialized" );
 		Preconditions.checkNotNull( logger );
@@ -67,15 +67,18 @@ public @Getter @RequiredArgsConstructor class NetClient {
 		this.logger = logger;
 		this.directory = directory;
 		this.executor = executor;
+		if(this.syncExecutor == null) {
+			this.syncExecutor = executor::execute;
+		}
 		this.configFile = ConfigFile.create( new File( directory, "settings.json" ), ClientSettings.class );
 		saveConfigDefault();
 		initialized = true;
 	}
-	
+
 	public ClientSettings getConfig() {
 		return configFile.getConfig();
 	}
-	
+
 	public void reloadConfig() {
 		try {
 			configFile.reload();
@@ -83,7 +86,7 @@ public @Getter @RequiredArgsConstructor class NetClient {
 			logger.log( Level.SEVERE, "Could not reload config!\n" + e.getMessage(), e );
 		}
 	}
-	
+
 	public void saveConfig() {
 		try {
 			configFile.save();
@@ -91,7 +94,7 @@ public @Getter @RequiredArgsConstructor class NetClient {
 			logger.log( Level.SEVERE, "Could not save config!\n" + e.getMessage(), e );
 		}
 	}
-	
+
 	public void saveConfigDefault() {
 		try {
 			configFile.saveDefault();
@@ -99,34 +102,34 @@ public @Getter @RequiredArgsConstructor class NetClient {
 			logger.log( Level.SEVERE, "Could not save config!\n" + e.getMessage(), e );
 		}
 	}
-	
+
 	public synchronized void enable() throws Exception {
 		Preconditions.checkState( initialized == true, "NetClient is not initialized" );
 		Preconditions.checkState( enabled == false, "NetClient is already enabled" );
 		this.configFile.reload();
-		
+
 		this.authentication = AuthenticationFactory.newPasswordForClient( this.getConfig().getConnection().getPassword() );
-		
+
 		this.routerAddress = HostAndPort.fromString( this.getConfig().getConnection().getAddress() ).withDefaultPort( NetConstants.DEFAULT_PORT );
-		
+
 		ConfigFile<HomeSettings> homeSettings = ConfigFile.create( new File( this.directory, "home.json" ), HomeSettings.class );
 		homeSettings.saveDefault();
 		HomeSettings home = homeSettings.getConfig();
-		
+
 		UUID id = home.getId();
 		if ( id == null ) {
 			id = UUID.randomUUID();
 			home.setId( id );
 			homeSettings.save();
 		}
-		
+
 		this.home = new HomeNode( id, home.getNamespaces() );
 		this.home.setType( this.type );
 		this.home.setName( home.getName() );
-		
+
 		network = new Network( this );
 		Net.setNetwork( network );
-		
+
 		if ( this.getConfig().getConnection().isTestingMode() ) {
 			this.testFramework = new TestFramework( this );
 			this.connectService = new LocalConnectService( this, this.testFramework );
@@ -136,7 +139,7 @@ public @Getter @RequiredArgsConstructor class NetClient {
 		}
 		this.connectService.startAsync();
 		this.connectService.awaitRunning( 1, TimeUnit.SECONDS );
-		
+
 		if ( this.connectService.state() != Service.State.RUNNING ) {
 			if ( this.connectService.state() == Service.State.FAILED ) {
 				throw new IllegalStateException( "connectService failed", this.connectService.failureCause() );
@@ -144,27 +147,27 @@ public @Getter @RequiredArgsConstructor class NetClient {
 				throw new IllegalStateException( "connectService is not running!" );
 			}
 		}
-		
+
 		this.network.resetInstance();
-		
+
 		enabled = true;
-		
+
 		getLogger().info( "NetClient enabled!" );
 	}
-	
+
 	public synchronized void disable() throws Exception {
 		Preconditions.checkState( enabled == true, "NetClient is not enabled" );
 		this.connectService.stopAsync();
 		this.testFramework = null;
 		enabled = false;
-		
+
 		getLogger().info( "NetClient disabled!" );
 	}
-	
+
 	public boolean isTestMode() {
 		return this.testFramework != null;
 	}
-	
+
 	public void handleFailConnect( ConnectService service ) {
 		switch ( this.getConfig().getConnection().getFailHandler() ) {
 			case RETRY:
@@ -179,9 +182,9 @@ public @Getter @RequiredArgsConstructor class NetClient {
 				shutdownFunction.run();
 		}
 	}
-	
+
 	protected void syncExecute( Runnable command ) {
 		this.syncExecutor.accept( command );
 	}
-	
+
 }
