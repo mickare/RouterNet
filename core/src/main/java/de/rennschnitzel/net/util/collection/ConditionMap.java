@@ -126,7 +126,9 @@ public class ConditionMap<K, V> implements Map<K, V> {
 	@Override
 	public V remove( Object key ) {
 		try ( CloseableLock l = lock.writeLock().open() ) {
-			return delegate.remove( key );
+			V result = delegate.remove( key );
+			condition.signalAll();			
+			return result;
 		}
 	}
 	

@@ -1,7 +1,6 @@
 package de.rennschnitzel.net.util.collection;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.function.Predicate;
@@ -95,7 +94,7 @@ public class ConditionCollection<E> implements Collection<E> {
 	
 	@Override
 	@Deprecated
-	public Iterator<E> iterator() {
+	public ConditionIterator<E> iterator() {
 		try ( CloseableLock l = lock.readLock().open() ) {
 			return new ConditionIterator<>( delegate.iterator(), this.lock, this.condition );
 		}
