@@ -21,9 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.base.Preconditions;
-import com.google.common.util.concurrent.ListenableFuture;
 
-import de.rennschnitzel.net.Owner;
 import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.Node;
 import de.rennschnitzel.net.core.Target;
@@ -45,6 +43,7 @@ import de.rennschnitzel.net.netty.LoginHandler;
 import de.rennschnitzel.net.netty.PipelineUtils;
 import de.rennschnitzel.net.service.ConnectClient;
 import de.rennschnitzel.net.util.FutureUtils;
+import de.rennschnitzel.net.util.SimpleOwner;
 import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.concurrent.Promise;
@@ -65,17 +64,7 @@ public class ProcedureTest {
 	@Before
 	public void setup() throws Throwable {
 		
-		testingOwner = new Owner() {
-			@Override
-			public Logger getLogger() {
-				return Logger.getLogger( "ProcedureTest" );
-			}
-			
-			@Override
-			public String getName() {
-				return "ProcedureTestOwner";
-			}
-		};
+		testingOwner = new SimpleOwner( "ProcedureTestOwner", Logger.getLogger( "ProcedureTest" ) );
 		
 		net_router = new DummClientNetwork( group, new UUID( 0, 1 ) );
 		net_router.setName( "Router" );

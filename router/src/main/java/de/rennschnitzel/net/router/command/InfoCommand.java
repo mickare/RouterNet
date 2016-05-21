@@ -68,7 +68,7 @@ public class InfoCommand extends AbstractCommand {
 				sb.append( "\nConnected: " + con.isActive() );
 				
 				sb.append( "\nRemote Tunnels:" );
-				if ( con.getRemoteTunnels().values().isEmpty() ) {
+				if ( con.hasRemoteTunnels() ) {
 					sb.append( " none" );
 				} else {
 					con.getRemoteTunnels().values().stream().forEach( t -> sb.append( "\n - " ).append( t ) );

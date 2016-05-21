@@ -37,7 +37,8 @@ public class ListCommand extends AbstractCommand {
 		for ( Connection con : connections ) {
 			sb.append( "\n" );
 			sb.append( Strings.padEnd( con.getPeerId().toString(), maxIdLength, ' ' ) );
-			sb.append( Strings.padEnd( con.getName(), maxNameLength, ' ' ) );
+			String name = con.getName();
+			sb.append( Strings.padEnd( name != null ? name : "null", maxNameLength, ' ' ) );
 			sb.append( con.getNode().getType().name() );
 		}
 		

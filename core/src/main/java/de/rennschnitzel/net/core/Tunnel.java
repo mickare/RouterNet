@@ -136,15 +136,15 @@ public class Tunnel {
 		}
 	}
 	
-	public final void registerMessageListener( final Owner owner, final Consumer<TunnelMessage> dataConsumer ) {
+	public final void register( final Owner owner, final Consumer<TunnelMessage> dataConsumer ) {
 		listeners.add( new RegisteredMessageListener( owner, dataConsumer ) );
 	}
 	
-	public void register( Connection connection ) {
-		register( connection, true );
+	public void sendTunnelRegister( Connection connection ) {
+		sendTunnelRegister( connection, true );
 	}
 	
-	public void register( Connection connection, boolean flush ) {
+	public void sendTunnelRegister( Connection connection, boolean flush ) {
 		TunnelRegister.Builder b = TunnelRegister.newBuilder();
 		b.setTunnelId( this.getId() );
 		b.setName( this.getName() );

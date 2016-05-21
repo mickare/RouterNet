@@ -136,7 +136,7 @@ public class RouterPacketHandler extends BasePacketHandler {
 			
 			if ( node != home && !sender.equals( node.getId() ) ) {
 				Connection out = net.getConnection( node.getId() );
-				if ( out != null && out.getRemoteTunnels().containsKey( msg.getTunnelId() ) ) {
+				if ( out != null && out.hasRemoteTunnel( msg.getTunnelId() ) ) {
 					out.writeAndFlush( msg );
 				}
 			}

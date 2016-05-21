@@ -38,7 +38,7 @@ public class LoginTest {
 	@Before
 	public void setup() {
 		
-		testingOwner = new SimpleOwner( "ChannelTestOwner", Logger.getLogger( "ChannelTest" ) );
+		testingOwner = new SimpleOwner( "LoginTestOwner", Logger.getLogger( "LoginTest" ) );
 		
 		net_router = new DummClientNetwork( group );
 		net_router.setName( "Router" );

@@ -40,6 +40,7 @@ import de.rennschnitzel.net.netty.LoginHandler;
 import de.rennschnitzel.net.netty.PipelineUtils;
 import de.rennschnitzel.net.service.ConnectClient;
 import de.rennschnitzel.net.util.FutureUtils;
+import de.rennschnitzel.net.util.SimpleOwner;
 import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.concurrent.Promise;
@@ -62,17 +63,7 @@ public class TunnelTest {
 	@Before
 	public void setup() throws InterruptedException {
 		
-		testingOwner = new Owner() {
-			@Override
-			public Logger getLogger() {
-				return Logger.getLogger( "ProcedureTest" );
-			}
-			
-			@Override
-			public String getName() {
-				return "ProcedureTestOwner";
-			}
-		};
+		testingOwner =  new SimpleOwner( "TunnelTestOwner", Logger.getLogger( "TunnelTest" ) );
 		
 		net_router = new DummClientNetwork( group, new UUID( 0, 1 ) );
 		net_router.setName( "Router" );
@@ -158,12 +149,12 @@ public class TunnelTest {
 		final AtomicInteger rec_client = new AtomicInteger( 0 );
 		final AtomicInteger rec_router = new AtomicInteger( 0 );
 		
-		net_client.getTunnelIfPresent( "base0" ).registerMessageListener( testingOwner, ( msg ) -> {
+		net_client.getTunnelIfPresent( "base0" ).register( testingOwner, ( msg ) -> {
 			assertArrayEquals( data0, msg.getData().toByteArray() );
 			rec_client.incrementAndGet();
 		} );
 		
-		net_router.getTunnelIfPresent( "base1" ).registerMessageListener( testingOwner, ( msg ) -> {
+		net_router.getTunnelIfPresent( "base1" ).register( testingOwner, ( msg ) -> {
 			assertArrayEquals( data1, msg.getData().toByteArray() );
 			rec_router.incrementAndGet();
 		} );
@@ -191,7 +182,7 @@ public class TunnelTest {
 		assertWaiting( 10, () -> 2 == rec_router.get(), 100 );
 		assertEquals( 2, rec_router.get() );
 		
-		net_router.getTunnelIfPresent( "base1" ).registerMessageListener( testingOwner, ( msg ) -> {
+		net_router.getTunnelIfPresent( "base1" ).register( testingOwner, ( msg ) -> {
 			assertEquals( net_client.getHome().getId(), msg.getSenderId() );
 		} );
 		

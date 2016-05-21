@@ -151,7 +151,7 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
 			String name = connection.getName();
 			getLogger().info( connection.getPeerId() + ( name != null ? "(" + name + ")" : "" ) + " connected." );
 			
-			this.getTunnels().forEach( t -> t.register( connection, false ) );
+			this.getTunnels().forEach( t -> t.sendTunnelRegister( connection, false ) );
 			connection.getChannel().flush();
 			
 			connectedCondition.signalAll();
@@ -232,7 +232,7 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
 	
 	@Override
 	protected boolean registerTunnel( final Tunnel tunnel ) {
-		return send( tunnel::register );
+		return send( tunnel::sendTunnelRegister );
 	}
 	
 }
