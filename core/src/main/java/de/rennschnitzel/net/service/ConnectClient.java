@@ -16,9 +16,9 @@ public interface ConnectClient extends AutoCloseable {
 	
 	ConnectClient connect();
 	
-	ConnectClient awaitRunning() throws InterruptedException;
+	void awaitRunning() throws InterruptedException;
 	
-	ConnectClient awaitRunning( long timeoutMillis ) throws InterruptedException;
+	boolean awaitRunning( long timeoutMillis ) throws InterruptedException;
 	
 	boolean isClosed();
 	

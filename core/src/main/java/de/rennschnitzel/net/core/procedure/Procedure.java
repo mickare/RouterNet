@@ -193,9 +193,9 @@ public class Procedure implements Comparable<Procedure> {
 		if ( !( o instanceof Procedure ) )
 			return false;
 		final Procedure oi = ( Procedure ) o;
-		if ( !name.equals( oi.name ) || !argumentType.equals( oi.argumentType ) || !resultType.equals( oi.resultType ) )
-			return false;
-		return true;
+		//if ( !name.equals( oi.name ) || !argumentType.equals( oi.argumentType ) || !resultType.equals( oi.resultType ) )
+		//	return false;
+		return compareTo( oi ) == 0;
 	}
 	
 	@Override

@@ -35,14 +35,12 @@ public abstract class AbstractConnectClient implements ConnectClient {
 		}
 	}
 	
-	public AbstractConnectClient awaitRunning() throws InterruptedException {
+	public void awaitRunning() throws InterruptedException {
 		latch.await();
-		return this;
 	}
 	
-	public AbstractConnectClient awaitRunning( long timeoutMillis ) throws InterruptedException {
-		latch.await( timeoutMillis, TimeUnit.MILLISECONDS );
-		return this;
+	public boolean awaitRunning( long timeoutMillis ) throws InterruptedException {
+		return latch.await( timeoutMillis, TimeUnit.MILLISECONDS );
 	}
 	
 	protected void notifyFailed( Throwable cause ) {

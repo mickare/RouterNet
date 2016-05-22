@@ -122,10 +122,8 @@ public class ResourcePool<R> {
 	
 	public void recycle( R resource ) {
 		Preconditions.checkArgument( this.elements.contains( resource ) );
-		synchronized ( this.queue ) {
-			this.queue.remove( resource );
-			this.queue.offer( resource );
-		}
+		this.queue.remove( resource );
+		this.queue.offer( resource );
 	}
 	
 	public void clear() {

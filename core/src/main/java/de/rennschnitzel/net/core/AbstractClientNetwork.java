@@ -36,7 +36,7 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
 	private final CloseableReadWriteLock connectionLock = new ReentrantCloseableReadWriteLock();
 	private final Condition connectedCondition = connectionLock.writeLock().newCondition();
 	private Connection connection = null;
-	private final Map<Callback<AbstractClientNetwork>, ExecutorService> connectCallbacks = Maps.newConcurrentMap();
+	private final Map<Callback<AbstractClientNetwork>, ExecutorService> connectCallbacks = Maps.newIdentityHashMap();
 	
 	/**
 	 * When the client is connected and ready to send messages this method returns true.
@@ -117,25 +117,23 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
 		try ( CloseableLock l = connectionLock.readLock().open() ) {
 			
 			if ( this.isConnected() ) {
-				runConnectListener( callback, executor );
-				
-			} else {
-				synchronized ( connectCallbacks ) {
-					
-					if ( this.isConnected() ) {
-						runConnectListener( callback, executor );
-					} else {
-						connectCallbacks.put( callback, executor );
-					}
-					
-				}
-			}
-			
+				runConnectListener( callback, executor );	
+				return;
+			}			
 		}
+
+		try ( CloseableLock l = connectionLock.writeLock().open() ) {
+			if ( this.isConnected() ) {
+				runConnectListener( callback, executor );
+			} else {
+				connectCallbacks.put( callback, executor );
+			}	
+		}
+		
 	}
 	
 	private void runConnectCallbacks() {
-		synchronized ( connectCallbacks ) {
+		try ( CloseableLock l = connectionLock.writeLock().open() ) {
 			for ( Entry<Callback<AbstractClientNetwork>, ExecutorService> e : this.connectCallbacks.entrySet() ) {
 				runConnectListener( e.getKey(), e.getValue() );
 			}
