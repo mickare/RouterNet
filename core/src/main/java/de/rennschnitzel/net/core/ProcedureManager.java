@@ -281,6 +281,7 @@ public class ProcedureManager {
 		final CallableRegisteredProcedure<?, ?> proc = this.registeredProcedures.get( key );
 		if ( proc == null ) {
 			sendFail( msg, call, ErrorMessage.newBuilder().setType( ErrorMessage.Type.UNDEFINED ).setMessage( "unregistered procedure" ) );
+			return;
 		}
 		
 		final Runnable run = () -> {
