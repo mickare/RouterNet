@@ -79,7 +79,8 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
 			if ( isConnected() ) {
 				return true;
 			}
-			return connectedCondition.await( time, unit );
+			connectedCondition.await( time, unit );
+			return isConnected();
 		}
 	}
 	
@@ -117,17 +118,17 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
 		try ( CloseableLock l = connectionLock.readLock().open() ) {
 			
 			if ( this.isConnected() ) {
-				runConnectListener( callback, executor );	
+				runConnectListener( callback, executor );
 				return;
-			}			
+			}
 		}
-
+		
 		try ( CloseableLock l = connectionLock.writeLock().open() ) {
 			if ( this.isConnected() ) {
 				runConnectListener( callback, executor );
 			} else {
 				connectCallbacks.put( callback, executor );
-			}	
+			}
 		}
 		
 	}

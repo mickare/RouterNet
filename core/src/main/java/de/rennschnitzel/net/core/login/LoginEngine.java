@@ -57,7 +57,7 @@ public @Getter abstract class LoginEngine implements PacketHandler<LoginEngine> 
 		this.network = network;
 	}
 	
-	public synchronized void setChannel( ChannelWrapper channel ) {
+	public void setChannel( ChannelWrapper channel ) {
 		Preconditions.checkState( this.channel == null );
 		Preconditions.checkNotNull( channel );
 		this.channel = channel;

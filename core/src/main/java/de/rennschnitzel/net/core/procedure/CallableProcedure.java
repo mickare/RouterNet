@@ -89,14 +89,18 @@ public class CallableProcedure<T, R> extends Procedure {
 	
 	@Override
 	public boolean equals( Object object ) {
-		if ( this == object ) {
-			return true;
+		if(!super.equals( object )) {
+			return false;
 		}
+		//if ( this == object ) {
+		//	return true;
+		//}
 		if ( !( object instanceof CallableProcedure ) ) {
 			return false;
 		}
-		CallableProcedure<?, ?> o = ( CallableProcedure<?, ?> ) object;
-		return compareTo( o ) == 0;
+		return true;
+		//CallableProcedure<?, ?> o = ( CallableProcedure<?, ?> ) object;
+		//return compareTo( o ) == 0;
 	}
 	
 	public SingleProcedureCall<T, R> call( Node node, T argument ) {
