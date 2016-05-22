@@ -12,10 +12,10 @@ import com.google.common.util.concurrent.AbstractScheduledService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import de.rennschnitzel.net.NetClient;
+import de.rennschnitzel.net.client.ConnectClient;
 import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.NotConnectedException;
 import de.rennschnitzel.net.netty.PipelineUtils;
-import de.rennschnitzel.net.service.ConnectClient;
 import de.rennschnitzel.net.util.FutureUtils;
 import de.rennschnitzel.net.util.concurrent.CloseableLock;
 import de.rennschnitzel.net.util.concurrent.CloseableReadWriteLock;

@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.net.HostAndPort;
 
 import de.rennschnitzel.net.netty.PipelineUtils;
-import de.rennschnitzel.net.service.AbstractConnectClient;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;

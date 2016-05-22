@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.base.Preconditions;
 
-import de.rennschnitzel.net.service.AbstractConnectClient;
+import de.rennschnitzel.net.client.AbstractConnectClient;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;

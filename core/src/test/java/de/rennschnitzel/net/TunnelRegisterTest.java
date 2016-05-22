@@ -14,6 +14,7 @@ import org.junit.Test;
 
 import com.google.common.base.Preconditions;
 
+import de.rennschnitzel.net.client.ConnectClient;
 import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.core.login.AuthenticationFactory;
@@ -25,7 +26,6 @@ import de.rennschnitzel.net.netty.ConnectionHandler;
 import de.rennschnitzel.net.netty.LocalConnectClient;
 import de.rennschnitzel.net.netty.LoginHandler;
 import de.rennschnitzel.net.netty.PipelineUtils;
-import de.rennschnitzel.net.service.ConnectClient;
 import de.rennschnitzel.net.util.FutureUtils;
 import de.rennschnitzel.net.util.SimpleOwner;
 import io.netty.channel.DefaultEventLoopGroup;

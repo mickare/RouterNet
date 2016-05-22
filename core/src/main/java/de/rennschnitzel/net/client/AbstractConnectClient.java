@@ -1,4 +1,4 @@
-package de.rennschnitzel.net.service;
+package de.rennschnitzel.net.client;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

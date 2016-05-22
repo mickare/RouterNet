@@ -1,4 +1,4 @@
-package de.rennschnitzel.net.service;
+package de.rennschnitzel.net.client;
 
 public interface ConnectClient extends AutoCloseable {
 	
