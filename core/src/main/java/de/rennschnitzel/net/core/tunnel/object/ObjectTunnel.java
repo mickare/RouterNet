@@ -110,7 +110,7 @@ public class ObjectTunnel<T> extends AbstractSubTunnel<ObjectTunnel<T>, ObjectTu
 		this.listeners.forEach( c -> c.accept( ocmsg ) );
 	}
 	
-	public final void registerMessageListener( final Owner owner, final Consumer<ObjectTunnelMessage<T>> dataConsumer ) {
+	public final void registerListener( final Owner owner, final Consumer<ObjectTunnelMessage<T>> dataConsumer ) {
 		listeners.add( new RegisteredMessageListener( owner, dataConsumer ) );
 	}
 	

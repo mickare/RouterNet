@@ -136,8 +136,12 @@ public class Tunnel {
 		}
 	}
 	
-	public final void register( final Owner owner, final Consumer<TunnelMessage> dataConsumer ) {
+	public final void registerListener( final Owner owner, final Consumer<TunnelMessage> dataConsumer ) {
 		listeners.add( new RegisteredMessageListener( owner, dataConsumer ) );
+	}
+
+	public final void unregisterListeners( final Owner owner ) {
+		this.listeners.removeIf( ( l ) -> l.getOwner().equals( owner ) );
 	}
 	
 	public void sendTunnelRegister( Connection connection ) {

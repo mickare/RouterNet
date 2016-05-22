@@ -18,6 +18,8 @@ import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.packet.Packer;
 import de.rennschnitzel.net.core.procedure.ProcedureCall;
 import de.rennschnitzel.net.core.tunnel.TunnelMessage;
+import de.rennschnitzel.net.event.ConnectionAddedEvent;
+import de.rennschnitzel.net.event.ConnectionRemovedEvent;
 import de.rennschnitzel.net.exception.ProtocolException;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureMessage;
@@ -133,15 +135,6 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
 		
 	}
 	
-	private void runConnectCallbacks() {
-		try ( CloseableLock l = connectionLock.writeLock().open() ) {
-			for ( Entry<Callback<AbstractClientNetwork>, ExecutorService> e : this.connectCallbacks.entrySet() ) {
-				runConnectListener( e.getKey(), e.getValue() );
-			}
-			this.connectCallbacks.clear();
-		}
-	}
-	
 	@Override
 	protected void addConnection( final Connection connection ) {
 		Preconditions.checkNotNull( connection );
@@ -156,6 +149,16 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
 			connectedCondition.signalAll();
 		}
 		runConnectCallbacks();
+		this.getEventBus().post( new ConnectionAddedEvent( connection ) );
+	}
+	
+	private void runConnectCallbacks() {
+		try ( CloseableLock l = connectionLock.writeLock().open() ) {
+			for ( Entry<Callback<AbstractClientNetwork>, ExecutorService> e : this.connectCallbacks.entrySet() ) {
+				runConnectListener( e.getKey(), e.getValue() );
+			}
+			this.connectCallbacks.clear();
+		}
 	}
 	
 	protected void removeConnection( final Connection connection ) {
@@ -170,6 +173,7 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
 			String name = connection.getName();
 			getLogger().info( connection.getPeerId() + ( name != null ? "(" + name + ")" : "" ) + " disconnected." );
 		}
+		this.getEventBus().post( new ConnectionRemovedEvent( connection ) );
 	}
 	
 	@Override

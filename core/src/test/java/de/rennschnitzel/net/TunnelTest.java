@@ -149,12 +149,12 @@ public class TunnelTest {
 		final AtomicInteger rec_client = new AtomicInteger( 0 );
 		final AtomicInteger rec_router = new AtomicInteger( 0 );
 		
-		net_client.getTunnelIfPresent( "base0" ).register( testingOwner, ( msg ) -> {
+		net_client.getTunnelIfPresent( "base0" ).registerListener( testingOwner, ( msg ) -> {
 			assertArrayEquals( data0, msg.getData().toByteArray() );
 			rec_client.incrementAndGet();
 		} );
 		
-		net_router.getTunnelIfPresent( "base1" ).register( testingOwner, ( msg ) -> {
+		net_router.getTunnelIfPresent( "base1" ).registerListener( testingOwner, ( msg ) -> {
 			assertArrayEquals( data1, msg.getData().toByteArray() );
 			rec_router.incrementAndGet();
 		} );
@@ -182,7 +182,7 @@ public class TunnelTest {
 		assertWaiting( 10, () -> 2 == rec_router.get(), 100 );
 		assertEquals( 2, rec_router.get() );
 		
-		net_router.getTunnelIfPresent( "base1" ).register( testingOwner, ( msg ) -> {
+		net_router.getTunnelIfPresent( "base1" ).registerListener( testingOwner, ( msg ) -> {
 			assertEquals( net_client.getHome().getId(), msg.getSenderId() );
 		} );
 		
@@ -207,7 +207,7 @@ public class TunnelTest {
 		}
 		String testData = sb.toString();
 		
-		ch_router.registerMessageListener( testingOwner, msg -> {
+		ch_router.registerListener( testingOwner, msg -> {
 			assertEquals( net_client.getHome().getId(), msg.getSenderId() );
 			assertEquals( testData, msg.getObject() );
 		} );

@@ -49,7 +49,7 @@ public class BukkitTestPlugin extends JavaPlugin implements Owner, Listener {
 		this.online_players = Procedure.of( "online_players", this::getOnlinePlayers ).register();
 		this.private_message = Procedure.of( "private_message", this::receivePrivateMessage ).register();
 		
-		Net.getTunnel( BROADCAST ).registerMessageListener( this, ( msg ) -> {
+		Net.getTunnel( BROADCAST ).registerListener( this, ( msg ) -> {
 			Bukkit.broadcastMessage( msg.getObject() );
 		} );
 		;

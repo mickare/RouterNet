@@ -57,7 +57,7 @@ public abstract class AbstractSubTunnel<SELF extends AbstractSubTunnel<SELF, D>,
 		return parentTunnel.getNetwork();
 	}
 	
-	public void register( Connection connection, boolean flush ) {
+	public void sendRegister( Connection connection, boolean flush ) {
 		parentTunnel.sendTunnelRegister( connection, flush );
 	}
 	

@@ -75,7 +75,7 @@ public class TestClientTestFramework {
 		Network net_client = client.getNetwork();
 		
 		Tunnel tunnel = net_router.getTunnel( "testTunnel" );
-		tunnel.register( owner, msg -> {
+		tunnel.registerListener( owner, msg -> {
 			received.addAndGet( msg.getData().byteAt( 0 ) );
 		} );
 		

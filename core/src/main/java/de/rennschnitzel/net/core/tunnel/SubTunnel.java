@@ -20,10 +20,10 @@ public interface SubTunnel {
 	
 	AbstractNetwork getNetwork();
 	
-	default void register( Connection connection ) {
-		register( connection, true );
+	default void sendRegister( Connection connection ) {
+		sendRegister( connection, true );
 	}
 	
-	void register( Connection connection, boolean flush );
+	void sendRegister( Connection connection, boolean flush );
 	
 }
