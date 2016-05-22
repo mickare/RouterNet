@@ -1,8 +1,10 @@
 package de.rennschnitzel.net.util.collection;
 
 import java.util.concurrent.locks.Condition;
+import java.util.function.Consumer;
 
 import com.google.common.collect.BiMap;
+import com.google.common.collect.ImmutableBiMap;
 
 import de.rennschnitzel.net.util.concurrent.CloseableLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
@@ -42,6 +44,18 @@ public class ConditionBiMap<K, V> extends ConditionMap<K, V>implements BiMap<K, 
 		this.condition = condition;
 		this.values = new ConditionSet<>( inverse.values() );
 		this.inverse = parent;
+	}
+	
+	public void safeBiMap( Consumer<BiMap<K, V>> safe ) {
+		try ( CloseableLock l = lock.writeLock().open() ) {
+			safe.accept( this );
+		}
+	}
+	
+	public ImmutableBiMap<K, V> immutable() {
+		try ( CloseableLock l = lock.readLock().open() ) {
+			return ImmutableBiMap.copyOf( delegate );
+		}
 	}
 	
 	@Override

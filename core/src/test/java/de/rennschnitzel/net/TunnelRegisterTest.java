@@ -1,6 +1,8 @@
 package de.rennschnitzel.net;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -14,7 +16,6 @@ import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.Target;
-import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.login.AuthenticationFactory;
 import de.rennschnitzel.net.core.login.ClientLoginEngine;
 import de.rennschnitzel.net.core.login.RouterLoginEngine;

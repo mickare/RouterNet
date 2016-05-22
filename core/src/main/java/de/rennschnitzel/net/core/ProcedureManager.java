@@ -27,7 +27,6 @@ import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
 import de.rennschnitzel.net.util.TypeUtils;
 import de.rennschnitzel.net.util.concurrent.CloseableLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
-import io.netty.util.concurrent.Future;
 import lombok.Getter;
 import net.jodah.typetools.TypeResolver;
 
@@ -106,7 +105,7 @@ public class ProcedureManager {
 		Preconditions.checkArgument( argClass != TypeResolver.Unknown.class );
 		Preconditions.checkArgument( resultClass != TypeResolver.Unknown.class );
 		final CallableRegisteredProcedure<T, R> proc = new CallableRegisteredProcedure<T, R>( network, name, argClass, resultClass, function, synchronization );
-		proc.setRegisterFuture( _registerProcedure( proc ) );
+		_registerProcedure( proc );
 		return proc;
 	}
 	
@@ -116,7 +115,7 @@ public class ProcedureManager {
 	
 	public <T, R> CallableRegisteredProcedure<T, R> register( CallableProcedure<T, R> procedure, Function<T, R> function, boolean synchronization ) {
 		final CallableRegisteredProcedure<T, R> proc = new CallableRegisteredProcedure<>( network, procedure, function, synchronization );
-		proc.setRegisterFuture( _registerProcedure( proc ) );
+		_registerProcedure( proc );
 		return proc;
 	}
 	
@@ -126,16 +125,15 @@ public class ProcedureManager {
 	
 	public <T, R> CallableRegisteredProcedure<T, R> register( BoundProcedure<T, R> procedure, boolean synchronization ) {
 		final CallableRegisteredProcedure<T, R> proc = new CallableRegisteredProcedure<>( network, procedure, procedure.getFunction(), synchronization );
-		proc.setRegisterFuture( _registerProcedure( proc ) );
+		_registerProcedure( proc );
 		return proc;
 	}
 	
-	private Future<?> _registerProcedure( CallableRegisteredProcedure<?, ?> proc ) {
+	private void _registerProcedure( CallableRegisteredProcedure<?, ?> proc ) {
 		try ( CloseableLock l = lock.writeLock().open() ) {
 			registeredProcedures.put( proc, proc );
 		}
 		network.getHome().addRegisteredProcedure( proc );
-		return network.getHome().newUpdatePromise();
 	}
 	
 	public CallableRegisteredProcedure<?, ?> getRegistered( Procedure info ) {

@@ -5,11 +5,12 @@ import java.util.function.Function;
 import de.rennschnitzel.net.core.AbstractNetwork;
 import io.netty.util.concurrent.Future;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 
 public class CallableRegisteredProcedure<T, R> extends BoundProcedure<T, R> {
 	
-	private @Getter @Setter Future<?> registerFuture = null;
+	private @Getter @Setter @NonNull Future<?> registerFuture = null;
 	private final @Getter boolean synchronization;
 	
 	public CallableRegisteredProcedure( AbstractNetwork network, CallableProcedure<T, R> procedure, Function<T, R> function, boolean synchronization ) {

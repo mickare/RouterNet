@@ -2,13 +2,10 @@ package de.rennschnitzel.net.core;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import com.google.common.collect.ImmutableBiMap;
-import com.google.common.collect.Maps;
 
 import de.rennschnitzel.net.core.packet.PacketWriter;
 import de.rennschnitzel.net.exception.ConnectionException;
@@ -17,9 +14,7 @@ import de.rennschnitzel.net.protocol.TransportProtocol;
 import de.rennschnitzel.net.protocol.TransportProtocol.CloseMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
-import de.rennschnitzel.net.util.concurrent.CloseableLock;
-import de.rennschnitzel.net.util.concurrent.CloseableReadWriteLock;
-import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
+import de.rennschnitzel.net.util.collection.ConditionBiMap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.util.concurrent.Future;
@@ -34,9 +29,7 @@ public @Getter class Connection implements PacketWriter<ChannelFuture> {
 	private final ChannelWrapper channel;
 	private @Setter @NonNull CloseMessage closeMessage = null;
 	
-	private final CloseableReadWriteLock remoteTunnelsLock = new ReentrantCloseableReadWriteLock();
-	private final Condition tunnelRegisteredCondition = remoteTunnelsLock.writeLock().newCondition();
-	private final BiMap<Integer, String> remoteTunnels = Maps.synchronizedBiMap( HashBiMap.create() );
+	private final ConditionBiMap<Integer, String> remoteTunnels = new ConditionBiMap<>( HashBiMap.create() );
 	
 	public Connection( AbstractNetwork network, UUID peerId, ChannelWrapper channel ) {
 		Preconditions.checkNotNull( network );
@@ -122,10 +115,7 @@ public @Getter class Connection implements PacketWriter<ChannelFuture> {
 	}
 	
 	public void registerRemoteTunnel( int id, String name ) {
-		try ( CloseableLock l = this.remoteTunnelsLock.writeLock().open() ) {
-			this.remoteTunnels.forcePut( id, name.toLowerCase() );
-			this.tunnelRegisteredCondition.signalAll();
-		}
+		this.remoteTunnels.forcePut( id, name.toLowerCase() );
 	}
 	
 	public void awaitTunnelRegistered( Tunnel tunnel ) throws InterruptedException {
@@ -133,19 +123,11 @@ public @Getter class Connection implements PacketWriter<ChannelFuture> {
 	}
 	
 	public void awaitTunnelRegistered( int id ) throws InterruptedException {
-		try ( CloseableLock l = this.remoteTunnelsLock.writeLock().open() ) {
-			while ( !this.hasRemoteTunnel( id ) ) {
-				this.tunnelRegisteredCondition.await();
-			}
-		}
+		this.remoteTunnels.awaitContainsKey( id );
 	}
 	
 	public void awaitTunnelRegistered( String name ) throws InterruptedException {
-		try ( CloseableLock l = this.remoteTunnelsLock.writeLock().open() ) {
-			while ( !this.hasRemoteTunnel( name ) ) {
-				this.tunnelRegisteredCondition.await();
-			}
-		}
+		this.remoteTunnels.awaitContainsValue( name.toLowerCase() );
 	}
 	
 	public boolean awaitTunnelRegistered( Tunnel tunnel, long time, TimeUnit unit ) throws InterruptedException {
@@ -153,47 +135,27 @@ public @Getter class Connection implements PacketWriter<ChannelFuture> {
 	}
 	
 	public boolean awaitTunnelRegistered( int id, long time, TimeUnit unit ) throws InterruptedException {
-		try ( CloseableLock l = this.remoteTunnelsLock.writeLock().open() ) {
-			boolean waiting = true;
-			while ( !this.hasRemoteTunnel( id ) && waiting ) {
-				waiting = this.tunnelRegisteredCondition.await( time, unit );
-			}
-			return this.hasRemoteTunnel( id );
-		}
+		return this.remoteTunnels.awaitContainsKey( id, time, unit );
 	}
 	
 	public boolean awaitTunnelRegistered( String name, long time, TimeUnit unit ) throws InterruptedException {
-		try ( CloseableLock l = this.remoteTunnelsLock.writeLock().open() ) {
-			boolean waiting = true;
-			while ( !this.hasRemoteTunnel( name ) && waiting ) {
-				waiting = this.tunnelRegisteredCondition.await( time, unit );
-			}
-			return this.hasRemoteTunnel( name );
-		}
+		return this.remoteTunnels.awaitContainsKey( name.toLowerCase(), time, unit );
 	}
 	
 	public BiMap<Integer, String> getRemoteTunnels() {
-		try ( CloseableLock l = this.remoteTunnelsLock.readLock().open() ) {
-			return ImmutableBiMap.copyOf( remoteTunnels );
-		}
+		return remoteTunnels.immutable();
 	}
 	
 	public boolean hasRemoteTunnels() {
-		try ( CloseableLock l = this.remoteTunnelsLock.readLock().open() ) {
-			return !this.remoteTunnels.isEmpty();
-		}
+		return this.remoteTunnels.isEmpty();
 	}
 	
 	public boolean hasRemoteTunnel( int id ) {
-		try ( CloseableLock l = this.remoteTunnelsLock.readLock().open() ) {
-			return this.remoteTunnels.containsKey( id );
-		}
+		return this.remoteTunnels.containsKey( id );
 	}
 	
 	public boolean hasRemoteTunnel( String name ) {
-		try ( CloseableLock l = this.remoteTunnelsLock.readLock().open() ) {
-			return this.remoteTunnels.containsValue( name.toLowerCase() );
-		}
+		return this.remoteTunnels.containsValue( name.toLowerCase() );
 	}
 	
 	public void addToNetwork() {

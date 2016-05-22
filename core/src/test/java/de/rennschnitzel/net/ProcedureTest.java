@@ -63,7 +63,7 @@ public class ProcedureTest {
 	
 	@Before
 	public void setup() throws Throwable {
-		
+				
 		testingOwner = new SimpleOwner( "ProcedureTestOwner", Logger.getLogger( "ProcedureTest" ) );
 		
 		net_router = new DummClientNetwork( group, new UUID( 0, 1 ) );
@@ -117,6 +117,7 @@ public class ProcedureTest {
 		Function<String, String> usability = ( str ) -> str + "success";
 		BoundProcedure<String, String> proc = Procedure.of( "usability", usability );
 		net_router.getProcedureManager().register( proc ).getRegisterFuture().await( 1000 );
+		assertTrue( node.awaitProcedure( proc, 1, TimeUnit.SECONDS ));
 		
 		assertNotNull( node );
 		assertTrue( node.hasProcedure( proc ) );
@@ -155,6 +156,7 @@ public class ProcedureTest {
 		assertTrue( net_client.getHome().hasProcedure( info2 ) );
 		
 		assertNotNull( client_on_router );
+		assertTrue( client_on_router.awaitProcedure( info1, 1, TimeUnit.SECONDS ));
 		assertTrue( client_on_router.getProcedures().size() > 0 );
 		assertTrue( client_on_router.hasProcedure( info1 ) );
 		assertTrue( client_on_router.hasProcedure( info2 ) );
@@ -198,6 +200,7 @@ public class ProcedureTest {
 		assertTrue( net_client.getHome().hasProcedure( info2 ) );
 		
 		assertNotNull( client_on_router );
+		assertTrue( client_on_router.awaitProcedure( info1, 1, TimeUnit.SECONDS ));
 		assertTrue( client_on_router.getProcedures().size() > 0 );
 		assertTrue( client_on_router.hasProcedure( info1 ) );
 		assertTrue( client_on_router.hasProcedure( info2 ) );
@@ -238,6 +241,7 @@ public class ProcedureTest {
 		assertTrue( net_client.getHome().hasProcedure( info2 ) );
 		
 		assertNotNull( client_on_router );
+		assertTrue( client_on_router.awaitProcedure( info1, 1, TimeUnit.SECONDS ));
 		assertTrue( client_on_router.getProcedures().size() > 0 );
 		assertTrue( client_on_router.hasProcedure( info1 ) );
 		assertTrue( client_on_router.hasProcedure( info2 ) );
@@ -283,6 +287,7 @@ public class ProcedureTest {
 		assertTrue( net_client.getHome().hasProcedure( info2 ) );
 		
 		assertNotNull( client_on_router );
+		assertTrue( client_on_router.awaitProcedure( info1, 1, TimeUnit.SECONDS ));
 		assertTrue( client_on_router.getProcedures().size() > 0 );
 		assertTrue( client_on_router.hasProcedure( info1 ) );
 		assertTrue( client_on_router.hasProcedure( info2 ) );
@@ -326,6 +331,7 @@ public class ProcedureTest {
 		assertTrue( net_client.getHome().hasProcedure( info2 ) );
 		
 		assertNotNull( client_on_router );
+		assertTrue(client_on_router.awaitProcedure( info1, 1, TimeUnit.SECONDS ));
 		assertTrue( client_on_router.getProcedures().size() > 0 );
 		assertTrue( client_on_router.hasProcedure( info1 ) );
 		assertTrue( client_on_router.hasProcedure( info2 ) );
@@ -343,7 +349,7 @@ public class ProcedureTest {
 	
 	@Test
 	public void testMulti() throws InterruptedException, TimeoutException, ExecutionException {
-		
+				
 		String helloWorld = "Hello World!";
 		final AtomicInteger runCount = new AtomicInteger( 0 );
 		Function<String, String> func = ( t ) -> {
@@ -351,10 +357,18 @@ public class ProcedureTest {
 			return t;
 		};
 		
+
+		Procedure info = Procedure.of( "testMulti", String.class, String.class );
+		
+		
 		net_router.getProcedureManager().register( "testMulti", func );
 		net_client.getProcedureManager().register( "testMulti", func ).getRegisterFuture().await( 1000 );
 		
-		Procedure info = Procedure.of( "testMulti", String.class, String.class );
+
+		assertTrue(net_client.getNode( net_router.getHome().getId() ).awaitProcedure( info, 1, TimeUnit.SECONDS ));
+		assertTrue(net_router.getNode( net_client.getHome().getId() ).awaitProcedure( info, 1, TimeUnit.SECONDS ));
+		
+		
 		CallableProcedure<String, String> p = info.bind( net_router, func );
 		
 		MultiProcedureCall<String, String> call = p.call( Target.toAll(), helloWorld );
@@ -367,6 +381,7 @@ public class ProcedureTest {
 		assertTrue( cf.isDone() );
 		assertEquals( helloWorld, rf.get() );
 		assertEquals( helloWorld, cf.get() );
+		
 		
 	}
 }

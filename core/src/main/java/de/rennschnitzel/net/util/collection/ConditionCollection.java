@@ -3,6 +3,7 @@ package de.rennschnitzel.net.util.collection;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import com.google.common.base.Preconditions;
@@ -62,6 +63,12 @@ public class ConditionCollection<E> implements Collection<E> {
 				waiting = condition.await( time, unit );
 			}
 			return awaited;
+		}
+	}
+	
+	public void safe( Consumer<Collection<E>> safe ) {
+		try ( CloseableLock l = lock.writeLock().open() ) {
+			safe.accept( this );
 		}
 	}
 	

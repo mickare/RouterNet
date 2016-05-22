@@ -3,9 +3,11 @@ package de.rennschnitzel.net.util.collection;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 
 import de.rennschnitzel.net.util.concurrent.CloseableLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
@@ -42,6 +44,18 @@ public class ConditionMap<K, V> implements Map<K, V> {
 		this.keySet = new ConditionSet<>( delegate.keySet(), this.lock, this.condition );
 		this.entrySet = new ConditionSet<>( delegate.entrySet(), this.lock, this.condition );
 		this.values = new ConditionCollection<>( delegate.values(), this.lock, this.condition );
+	}
+	
+	public void safe( Consumer<Map<K, V>> safe ) {
+		try ( CloseableLock l = lock.writeLock().open() ) {
+			safe.accept( this );
+		}
+	}
+	
+	public ImmutableMap<K, V> immutable() {
+		try ( CloseableLock l = lock.readLock().open() ) {
+			return ImmutableMap.copyOf( delegate );
+		}
 	}
 	
 	public void awaitContainsKey( Object o ) throws InterruptedException {
@@ -127,7 +141,7 @@ public class ConditionMap<K, V> implements Map<K, V> {
 	public V remove( Object key ) {
 		try ( CloseableLock l = lock.writeLock().open() ) {
 			V result = delegate.remove( key );
-			condition.signalAll();			
+			condition.signalAll();
 			return result;
 		}
 	}

@@ -3,6 +3,7 @@ package de.rennschnitzel.net.util.collection;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.locks.Condition;
+import java.util.function.Consumer;
 
 import de.rennschnitzel.net.util.concurrent.CloseableLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
@@ -30,6 +31,13 @@ public class ConditionList<E> extends ConditionCollection<E>implements List<E> {
 		this.delegate = delegate;
 		this.lock = lock;
 		this.condition = condition;
+	}
+	
+
+	public void safeList( Consumer<List<E>> safe ) {
+		try ( CloseableLock l = lock.writeLock().open() ) {
+			safe.accept( this );
+		}
 	}
 	
 	@Override

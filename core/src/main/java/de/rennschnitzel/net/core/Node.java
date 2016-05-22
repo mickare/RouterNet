@@ -2,7 +2,6 @@ package de.rennschnitzel.net.core;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
@@ -29,6 +28,7 @@ import de.rennschnitzel.net.protocol.NetworkProtocol.NodeUpdateMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import de.rennschnitzel.net.util.FutureUtils;
+import de.rennschnitzel.net.util.collection.ConditionSet;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
 import lombok.AccessLevel;
@@ -42,9 +42,10 @@ public @RequiredArgsConstructor class Node {
 	private final @Getter @NonNull UUID id;
 	protected @Getter NodeMessage.Type type = NodeMessage.Type.UNRECOGNIZED;
 	protected @Getter Optional<String> name = Optional.empty();
-	protected final Set<String> namespaces = Collections.synchronizedSet( new HashSet<>() );
+	protected final Set<String> namespaces = Collections.synchronizedSet( Sets.newHashSet() );
 	protected @Getter long startTimestamp = -1;
-	protected final Set<Procedure> procedures = Collections.synchronizedSet( Sets.newTreeSet() );
+	
+	protected final ConditionSet<Procedure> procedures = ConditionSet.of( Sets.newTreeSet() );
 	private volatile @Getter boolean connected = false;
 	private @Getter Data data = new Data();
 	private final Stack<Consumer<Node>> updateListeners = new Stack<>();
@@ -77,24 +78,30 @@ public @RequiredArgsConstructor class Node {
 			this.namespaces.clear();
 			this.namespaces.addAll( msg.getNamespacesList() );
 		}
-		synchronized ( this.procedures ) {
+		this.procedures.safe( s -> {
 			Set<Procedure> procedures = msg.getProceduresList().stream().map( Procedure::new ).collect( Collectors.toSet() );
 			this.procedures.clear();
 			this.procedures.addAll( procedures );
-		}
+		} );
 		this.data.set( msg );
 		this.startTimestamp = msg.getStartTimestamp();
 		this.connected = true;
 		
-		while ( !this.updateListeners.isEmpty() ) {
-			try {
-				this.updateListeners.pop().accept( this );
-			} catch ( Exception e ) {
-				AbstractNetwork.getInstance().getLogger().log( Level.SEVERE, "Listener failed: " + e.getMessage(), e );
-			}
-		}
+		notifyUpdateListeners();
 		
 		return true;
+	}
+	
+	protected void notifyUpdateListeners() {
+		synchronized ( this.updateListeners ) {
+			while ( !this.updateListeners.isEmpty() ) {
+				try {
+					this.updateListeners.pop().accept( this );
+				} catch ( Exception e ) {
+					AbstractNetwork.getInstance().getLogger().log( Level.SEVERE, "Listener failed: " + e.getMessage(), e );
+				}
+			}
+		}
 	}
 	
 	protected synchronized void disconnected() {
@@ -108,9 +115,7 @@ public @RequiredArgsConstructor class Node {
 	}
 	
 	public Set<Procedure> getProcedures() {
-		synchronized ( this.procedures ) {
-			return ImmutableSet.copyOf( procedures );
-		}
+		return this.procedures.immutable();
 	}
 	
 	public boolean hasNamespace( String namespace ) {
@@ -132,6 +137,10 @@ public @RequiredArgsConstructor class Node {
 	
 	public boolean hasProcedure( Procedure info ) {
 		return procedures.contains( info );
+	}
+	
+	public boolean awaitProcedure( Procedure info, long time, TimeUnit unit ) throws InterruptedException {
+		return procedures.awaitContains( info, time, unit );
 	}
 	
 	@Override
@@ -194,7 +203,8 @@ public @RequiredArgsConstructor class Node {
 		}
 		b.setStartTimestamp( this.startTimestamp );
 		b.addAllNamespaces( this.namespaces );
-		this.procedures.stream().map( Procedure::toProtocol ).forEach( b::addProcedures );
+		this.procedures.safeSet( s -> s.stream().map( Procedure::toProtocol ).forEach( b::addProcedures ) );
+		// this.procedures.stream().map( Procedure::toProtocol ).forEach( b::addProcedures );
 		return b.build();
 	}
 	
@@ -252,6 +262,7 @@ public @RequiredArgsConstructor class Node {
 		
 		protected void addRegisteredProcedure( CallableRegisteredProcedure<?, ?> procedure ) {
 			dirty |= this.procedures.add( procedure );
+			procedure.setRegisterFuture( this.newUpdatePromise() );
 			publishChanges();
 		}
 		
@@ -276,22 +287,24 @@ public @RequiredArgsConstructor class Node {
 						}
 					}
 				}
-			}, 1, TimeUnit.MILLISECONDS );
+			} , 1, TimeUnit.MILLISECONDS );
 		}
 		
 		public void sendUpdate( final Collection<? extends PacketWriter<?>> connections ) {
 			final NodeUpdateMessage msg = NodeUpdateMessage.newBuilder().setNode( this.toProtocol() ).build();
 			final Packet packet = Packet.newBuilder().setNodeUpdate( msg ).build();
 			connections.forEach( con -> con.writeAndFlushFast( packet ) );
+			notifyUpdateListeners();
 		}
 		
 		public void sendUpdate( final PacketWriter<?> out ) {
 			final NodeUpdateMessage packet = NodeUpdateMessage.newBuilder().setNode( this.toProtocol() ).build();
 			out.writeAndFlushFast( packet );
+			notifyUpdateListeners();
 		}
 		
 		@Override
-		public boolean update( NodeMessage server ) {
+		public boolean update( NodeMessage msg ) {
 			throw new UnsupportedOperationException();
 		}
 		

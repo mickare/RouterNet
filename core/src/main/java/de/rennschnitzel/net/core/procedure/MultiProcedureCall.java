@@ -31,23 +31,24 @@ public class MultiProcedureCall<T, R> extends AbstractProcedureCall<T, R> {
 		super( procedure, Target.to( nodes ), argument, maxTimeout );
 		Preconditions.checkArgument( !nodes.isEmpty() );
 		
+
 		ImmutableMap.Builder<UUID, ProcedureCallResult<T, R>> b = ImmutableMap.builder();
-		for ( Node node : Sets.newHashSet( nodes ) ) {
-			
+		for(Node node : Sets.newHashSet(nodes)) {
 			ProcedureCallResult<T, R> res = new ProcedureCallResult<>( this, node );
 			if ( !node.hasProcedure( procedure ) ) {
 				res.setException( new UndefinedServerProcedure() );
 			}
-			
+			b.put( node.getId(), res );
+		}
+		this.results = b.build();
+		
+		this.results.forEach( (uuid, res) -> {
 			res.addListener( f -> {
 				if ( MultiProcedureCall.this.isDone() ) {
 					future.setSuccess( MultiProcedureCall.this );
 				}
 			} );
-			
-			b.put( node.getId(), res );
-		}
-		this.results = b.build();
+		} );
 		
 	}
 	
