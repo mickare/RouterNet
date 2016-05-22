@@ -212,7 +212,7 @@ public class RouterNetwork extends AbstractNetwork {
 	@Override
 	protected boolean registerTunnel( Tunnel tunnel ) {
 		try ( CloseableLock l = connectionLock.readLock().open() ) {
-			this.connections.values().forEach( tunnel::register );
+			this.connections.values().forEach( tunnel::sendTunnelRegister );
 		}
 		return true;
 	}
