@@ -1,13 +1,10 @@
 package de.rennschnitzel.net.client.connection;
 
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AbstractScheduledService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
@@ -53,14 +50,17 @@ public abstract class AbstractConnectService extends AbstractScheduledService im
 	public Logger getLogger() {
 		return client.getLogger();
 	}
-	
+
+	@Override
 	protected void startUp() throws Exception {
+		getLogger().info( "Connect service: Event loop group created" );
 		group = PipelineUtils.newEventLoopGroup( 0, new ThreadFactoryBuilder().setNameFormat( "Net-Netty IO Thread #%1$d" ).build() );
-		getLogger().info( "Connect service started" );
+		getLogger().info( "Connect service: Started" );
 		
 		connectSoft();
 	}
-	
+
+	@Override
 	protected void shutDown() throws Exception {
 		disconnect();
 		group.shutdownGracefully().awaitUninterruptibly();

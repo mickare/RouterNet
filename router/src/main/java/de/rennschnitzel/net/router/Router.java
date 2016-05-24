@@ -132,12 +132,14 @@ public class Router extends AbstractIdleService implements Owner {
     this.authentication = AuthenticationFactory
         .newPasswordForRouter(this.getConfigFile().getConfig().getRouterSettings().getPassword());
 
-    // Enable plugins
-    this.pluginManager.enablePlugins();
-
+    // Init EventLoop
     this.eventLoops = PipelineUtils.newEventLoopGroup(0,
         new ThreadFactoryBuilder().setNameFormat("Netty IO Thread #%1$d").build());
     this.metric = new Metric(eventLoops);
+
+    // Enable plugins
+    this.pluginManager.enablePlugins();
+
     startNetty();
 
     logger.info("Router started.");
@@ -152,8 +154,8 @@ public class Router extends AbstractIdleService implements Owner {
 
     b.childHandler(PipelineUtils.baseInitAnd(ch -> {
       final ChannelPipeline p = ch.pipeline();
-      p.addFirst(this.metric.getChannelTrafficHandler());
-      p.addLast(this.metric.getPacketCounterHandler());
+      p.addFirst("trafficMetric", this.metric.getChannelTrafficHandler());
+      p.addLast("packetMetric", this.metric.getPacketTrafficHandler());
       p.addLast(
           new LoginHandler(new RouterLoginEngine(Router.this.getNetwork(), this.authentication),
               FutureUtils.newPromise()));

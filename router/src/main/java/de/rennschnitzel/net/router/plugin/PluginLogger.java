@@ -18,7 +18,7 @@ public class PluginLogger extends Logger {
    *
    * @param context A reference to the plugin
    */
-  public PluginLogger(Plugin context) {
+  public PluginLogger(JavaPlugin context) {
     super(context.getClass().getCanonicalName(), null);
     pluginName = "[" + context.getName() + "] ";
     setParent(context.getRouter().getLogger());

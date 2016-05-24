@@ -111,57 +111,61 @@ public @Getter @RequiredArgsConstructor class NetClient {
 		Preconditions.checkState( enabled == false, "NetClient is already enabled" );
 		this.configFile.reload();
 		
-		this.authentication = AuthenticationFactory.newPasswordForClient( this.getConfig().getConnection().getPassword() );
-		
-		this.routerAddress = HostAndPort.fromString( this.getConfig().getConnection().getAddress() ).withDefaultPort( NetConstants.DEFAULT_PORT );
-		
-		ConfigFile<HomeSettings> homeSettings = ConfigFile.create( new File( this.directory, "home.json" ), HomeSettings.class );
-		homeSettings.saveDefault();
-		HomeSettings home = homeSettings.getConfig();
-		
-		UUID id = home.getId();
-		if ( id == null ) {
-			id = UUID.randomUUID();
-			home.setId( id );
-			homeSettings.save();
-		}
-		
-		this.home = new HomeNode( id, home.getNamespaces() );
-		this.home.setType( this.type );
-		this.home.setName( home.getName() );
-		
-		network = new Network( this );
-		Net.setNetwork( network );
-		
-		if ( this.getConfig().getConnection().isTestingMode() ) {
-			this.testFramework = new TestFramework( this );
-			this.connectService = new LocalConnectService( this, this.testFramework );
-		} else {
-			this.testFramework = null;
-			this.connectService = new OnlineConnectService( this );
-		}
-		this.connectService.startAsync();
-		
 		try {
-			this.connectService.awaitRunning( 2, TimeUnit.SECONDS );
-		} catch ( TimeoutException te ) {
-			this.connectService.stopAsync();
-			throw te;
-		}
-		
-		if ( this.connectService.state() != Service.State.RUNNING ) {
-			if ( this.connectService.state() == Service.State.FAILED ) {
-				throw new IllegalStateException( "connectService failed", this.connectService.failureCause() );
-			} else {
-				throw new IllegalStateException( "connectService is not running!" );
+			
+			this.authentication = AuthenticationFactory.newPasswordForClient( this.getConfig().getConnection().getPassword() );
+			
+			this.routerAddress = HostAndPort.fromString( this.getConfig().getConnection().getAddress() ).withDefaultPort( NetConstants.DEFAULT_PORT );
+			
+			ConfigFile<HomeSettings> homeSettings = ConfigFile.create( new File( this.directory, "home.json" ), HomeSettings.class );
+			homeSettings.saveDefault();
+			HomeSettings home = homeSettings.getConfig();
+			
+			UUID id = home.getId();
+			if ( id == null ) {
+				id = UUID.randomUUID();
+				home.setId( id );
+				homeSettings.save();
 			}
+			
+			this.home = new HomeNode( id, home.getNamespaces() );
+			this.home.setType( this.type );
+			this.home.setName( home.getName() );
+			
+			network = new Network( this );
+			Net.setNetwork( network );
+			
+			if ( this.getConfig().getConnection().isTestingMode() ) {
+				this.testFramework = new TestFramework( this );
+				this.connectService = new LocalConnectService( this, this.testFramework );
+			} else {
+				this.testFramework = null;
+				this.connectService = new OnlineConnectService( this );
+			}
+			this.connectService.startAsync();
+			
+			this.connectService.awaitRunning( 10, TimeUnit.SECONDS );
+			
+			if ( this.connectService.state() != Service.State.RUNNING ) {
+				if ( this.connectService.state() == Service.State.FAILED ) {
+					throw new IllegalStateException( "connectService failed", this.connectService.failureCause() );
+				} else {
+					throw new IllegalStateException( "connectService is not running!" );
+				}
+			}
+			
+			this.network.resetInstance();
+			
+			enabled = true;
+			
+			getLogger().info( "NetClient enabled!" );
+			
+		} catch ( Exception e ) {
+			this.connectService.stopAsync();
+			this.testFramework = null;
+			enabled = false;
+			throw e;
 		}
-		
-		this.network.resetInstance();
-		
-		enabled = true;
-		
-		getLogger().info( "NetClient enabled!" );
 	}
 	
 	public synchronized void disable() throws Exception {

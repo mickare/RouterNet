@@ -1,13 +1,17 @@
 package de.rennschnitzel.net.router;
 
-import de.rennschnitzel.net.router.plugin.PluginManager;
+import java.util.List;
+
+import de.mickare.metricweb.MetricWebPlugin;
+import de.rennschnitzel.net.router.plugin.JavaPlugin;
 
 public class Plugins {
 
-  public static void loadPlugins(PluginManager mgr) {
+  public static void loadPlugins(List<Class<? extends JavaPlugin>> plugins) {
 
     // Define all plugins here in correct order...
-    // mgr.add(...);
+
+    plugins.add(MetricWebPlugin.class);
 
   }
 
