@@ -33,6 +33,8 @@ public abstract class AbstractConnectService extends AbstractScheduledService im
 	private ConnectClient connector = null;
 	private @Getter( AccessLevel.PROTECTED ) EventLoopGroup group;
 	
+	private @Getter volatile int failCounter = 0;
+	
 	public AbstractConnectService( NetClient client ) {
 		this( client, 1, TimeUnit.SECONDS );
 	}
@@ -50,7 +52,7 @@ public abstract class AbstractConnectService extends AbstractScheduledService im
 	public Logger getLogger() {
 		return client.getLogger();
 	}
-
+	
 	@Override
 	protected void startUp() throws Exception {
 		getLogger().info( "Connect service: Event loop group created" );
@@ -59,7 +61,7 @@ public abstract class AbstractConnectService extends AbstractScheduledService im
 		
 		connectSoft();
 	}
-
+	
 	@Override
 	protected void shutDown() throws Exception {
 		disconnect();
@@ -108,16 +110,27 @@ public abstract class AbstractConnectService extends AbstractScheduledService im
 				currentFuture = FutureUtils.newPromise();
 				currentFuture.addListener( f -> {
 					if ( !f.isSuccess() ) {
-						if ( f.cause() != null ) {
-							getLogger().log( Level.INFO, "Failed to connect: " + f.cause().getMessage(), f.cause() );
-						} else {
-							getLogger().log( Level.INFO, "Failed to connect: unknown cause" );
+						if ( failCounter % 10 == 0 ) {
+							if ( f.cause() != null ) {
+								getLogger().log( Level.INFO, "Failed to connect: " + f.cause().getMessage() );
+							} else {
+								getLogger().log( Level.INFO, "Failed to connect: unknown cause" );
+							}
 						}
+						failCounter++;
 						handleFailConnect();
+					} else {
+						failCounter = 0;
 					}
 				} );
 				connector = newConnectClient( currentFuture );
-				getLogger().info( "Connecting to network..." );
+				if ( failCounter % 10 == 0 ) {
+					if ( failCounter > 0 ) {
+						getLogger().info( "Connecting to network... (Retry " + failCounter + ")" );
+					} else {
+						getLogger().info( "Connecting to network..." );
+					}
+				}
 				connector.connect();
 			}
 		}
