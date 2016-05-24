@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import de.rennschnitzel.net.Net;
@@ -29,6 +30,7 @@ public class BukkitTestPlugin extends JavaPlugin implements Owner, Listener {
 	private static String msg_args = "§cFehler: Zu wenig argumente!";
 	
 	private SubTunnelDescriptor<ObjectTunnel<String>> BROADCAST = TunnelDescriptors.getObjectTunnel( "broadcast", String.class );
+	private SubTunnelDescriptor<ObjectTunnel<DataPlayerPosition>> PLAYER_POSITION = TunnelDescriptors.getObjectTunnel( "playerposition", DataPlayerPosition.class );
 	
 	private CallableRegisteredProcedure<Void, DataPlayerList> online_players;
 	private CallableRegisteredProcedure<DataPrivateMessage, Boolean> private_message;
@@ -76,6 +78,14 @@ public class BukkitTestPlugin extends JavaPlugin implements Owner, Listener {
 			broadcast( event.getPlayer().getDisplayName() + ": " + event.getMessage() );
 			event.setCancelled( true );
 		}
+	}
+	
+	@EventHandler
+	public void onMove( PlayerMoveEvent event ) {
+		// take it to the extreme!
+		
+		Net.getTunnel( PLAYER_POSITION ).broadcast( new DataPlayerPosition( Net.getClient().getHome().getId(), event.getPlayer() ) );
+		
 	}
 	
 	public Boolean receivePrivateMessage( DataPrivateMessage msg ) {
