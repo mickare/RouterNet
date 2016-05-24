@@ -36,8 +36,6 @@ public abstract class AbstractConnectService extends AbstractScheduledService im
 	private ConnectClient connector = null;
 	private @Getter( AccessLevel.PROTECTED ) EventLoopGroup group;
 	
-	private final Set<Consumer<Connection>> listeners = Sets.newIdentityHashSet();
-	
 	public AbstractConnectService( NetClient client ) {
 		this( client, 1, TimeUnit.SECONDS );
 	}
@@ -49,10 +47,6 @@ public abstract class AbstractConnectService extends AbstractScheduledService im
 		this.client = client;
 		this.delay_time = delay_time;
 		this.delay_unit = delay_unit;
-	}
-	
-	public boolean addListener( Consumer<Connection> listener ) {
-		return listeners.add( listener );
 	}
 	
 	@Override
