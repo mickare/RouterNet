@@ -145,34 +145,36 @@ public class Router extends AbstractIdleService implements Owner {
   }
 
   private void startNetty() {
-		
-	    this.trafficHandler = new CustomGlobalChannelTrafficShapingHandler(eventLoops, 1000);
-	  
-		ServerBootstrap b = new ServerBootstrap();
-		b.group( eventLoops );
-		b.channel( PipelineUtils.getServerChannelClass() );
-		b.option( ChannelOption.SO_REUSEADDR, true );
-		
-		b.childHandler( PipelineUtils.baseInitAnd( ch -> {
-			final ChannelPipeline p = ch.pipeline();
-			    p.addFirst(this.trafficHandler);
-			p.addLast( new LoginHandler( new RouterLoginEngine( Router.this.getNetwork(), this.authentication ), FutureUtils.newPromise() ) );
-			p.addLast( new ConnectionHandler( Router.this.getNetwork(), new RouterPacketHandler() ) );
-		} ) );
-		
-		b.localAddress( new InetSocketAddress( this.address.getHostText(), this.address.getPort() ) );
-		b.bind().addListener( new ChannelFutureListener() {
-			@Override
-			public void operationComplete( ChannelFuture future ) throws Exception {
-				if ( future.isSuccess() ) {
-					listener = future.channel();
-					getLogger().log( Level.INFO, "Listening on {0}", getAddress() );
-				} else {
-					getLogger().log( Level.WARNING, "Could not bind to host " + getAddress(), future.cause() );
-				}
-			}
-		} );
-	}
+
+    this.trafficHandler = new CustomGlobalChannelTrafficShapingHandler(eventLoops, 1000);
+
+    ServerBootstrap b = new ServerBootstrap();
+    b.group(eventLoops);
+    b.channel(PipelineUtils.getServerChannelClass());
+    b.option(ChannelOption.SO_REUSEADDR, true);
+
+    b.childHandler(PipelineUtils.baseInitAnd(ch -> {
+      final ChannelPipeline p = ch.pipeline();
+      p.addFirst(this.trafficHandler);
+      p.addLast(
+          new LoginHandler(new RouterLoginEngine(Router.this.getNetwork(), this.authentication),
+              FutureUtils.newPromise()));
+      p.addLast(new ConnectionHandler(Router.this.getNetwork(), new RouterPacketHandler()));
+    }));
+
+    b.localAddress(new InetSocketAddress(this.address.getHostText(), this.address.getPort()));
+    b.bind().addListener(new ChannelFutureListener() {
+      @Override
+      public void operationComplete(ChannelFuture future) throws Exception {
+        if (future.isSuccess()) {
+          listener = future.channel();
+          getLogger().log(Level.INFO, "Listening on {0}", getAddress());
+        } else {
+          getLogger().log(Level.WARNING, "Could not bind to host " + getAddress(), future.cause());
+        }
+      }
+    });
+  }
 
   private void stopNetty() {
 

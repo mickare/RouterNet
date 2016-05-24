@@ -18,10 +18,10 @@ public class Metric {
   public long getLong(String key) {
     return getLongAdder(key).longValue();
   }
-  
+
   public void reset() {
     longMetrics.forEachValue(1, LongAdder::reset);
   }
-  
+
 
 }
