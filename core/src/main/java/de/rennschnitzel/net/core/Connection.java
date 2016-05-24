@@ -40,6 +40,10 @@ public @Getter class Connection implements PacketWriter<ChannelFuture> {
 		this.channel = channel;
 	}
 	
+	public int getChannelHashCode() {
+		return channel.getChannel().hashCode();
+	}
+	
 	public String getName() {
 		return network.getNodeUnsafe( peerId ).getName().orElse( null );
 	}

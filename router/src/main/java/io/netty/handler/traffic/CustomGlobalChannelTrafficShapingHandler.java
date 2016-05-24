@@ -40,7 +40,11 @@ public class CustomGlobalChannelTrafficShapingHandler extends GlobalChannelTraff
   }
 
   public TrafficCounter getTrafficCounter(Channel channel) {
-    PerChannel perChannel = this.channelQueues.get(channel.hashCode());
+    return getTrafficCounter(channel.hashCode());
+  }
+
+  public TrafficCounter getTrafficCounter(int channelHashCode) {
+    PerChannel perChannel = this.channelQueues.get(channelHashCode);
     if (perChannel != null) {
       return perChannel.channelTrafficCounter;
     }
