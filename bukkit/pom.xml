@@ -75,6 +75,7 @@
 									<include>org.objenesis:objenesis:*</include>
 									<include>org.projectlombok:*</include>
 									<include>com.google.guava:*</include>
+									<include>net.jodah:typetools:*</include>
 								</includes>
 							</artifactSet>
 							<relocations>

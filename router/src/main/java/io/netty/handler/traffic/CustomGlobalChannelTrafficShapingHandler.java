@@ -6,7 +6,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 
 public class CustomGlobalChannelTrafficShapingHandler extends GlobalChannelTrafficShapingHandler {
-
+  
   public CustomGlobalChannelTrafficShapingHandler(ScheduledExecutorService executor) {
     super(executor);
   }
@@ -40,11 +40,7 @@ public class CustomGlobalChannelTrafficShapingHandler extends GlobalChannelTraff
   }
 
   public TrafficCounter getTrafficCounter(Channel channel) {
-    return getTrafficCounter(channel.hashCode());
-  }
-
-  public TrafficCounter getTrafficCounter(int channelHashCode) {
-    PerChannel perChannel = this.channelQueues.get(channelHashCode);
+    PerChannel perChannel = this.channelQueues.get(channel.hashCode());
     if (perChannel != null) {
       return perChannel.channelTrafficCounter;
     }

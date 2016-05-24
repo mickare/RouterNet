@@ -1,27 +1,18 @@
 package de.rennschnitzel.net.router.metric;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.LongAdder;
+import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
+import io.netty.channel.EventLoopGroup;
+import io.netty.handler.traffic.CustomGlobalChannelTrafficShapingHandler;
+import lombok.Getter;
 
 public class Metric {
 
-  private final ConcurrentHashMap<String, LongAdder> longMetrics = new ConcurrentHashMap<>();
+  private @Getter CustomGlobalChannelTrafficShapingHandler channelTrafficHandler;
+  private @Getter PacketCounterHandler<Packet> packetCounterHandler;
 
-  private LongAdder getLongAdder(String key) {
-    return longMetrics.computeIfAbsent(key, k -> new LongAdder());
+  public Metric(EventLoopGroup group) {
+    this.channelTrafficHandler = new CustomGlobalChannelTrafficShapingHandler(group, 1000);
+    this.packetCounterHandler = new PacketCounterHandler<>(group, Packet.class, 1000);
   }
-
-  public void addLong(String key, long value) {
-    getLongAdder(key).add(value);
-  }
-
-  public long getLong(String key) {
-    return getLongAdder(key).longValue();
-  }
-
-  public void reset() {
-    longMetrics.forEachValue(1, LongAdder::reset);
-  }
-
 
 }

@@ -30,6 +30,7 @@ import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
 import de.rennschnitzel.net.router.command.CommandManager;
 import de.rennschnitzel.net.router.config.ConfigFile;
 import de.rennschnitzel.net.router.config.Settings;
+import de.rennschnitzel.net.router.metric.Metric;
 import de.rennschnitzel.net.router.packet.RouterPacketHandler;
 import de.rennschnitzel.net.router.plugin.PluginManager;
 import de.rennschnitzel.net.util.FutureUtils;
@@ -41,8 +42,6 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
-import io.netty.handler.traffic.CustomGlobalChannelTrafficShapingHandler;
-import io.netty.handler.traffic.GlobalChannelTrafficShapingHandler;
 import jline.console.ConsoleReader;
 import lombok.Getter;
 
@@ -64,8 +63,7 @@ public class Router extends AbstractIdleService implements Owner {
   private EventLoopGroup eventLoops = null;
   private Channel listener = null;
   private @Getter RouterAuthentication authentication = null;
-
-  private @Getter CustomGlobalChannelTrafficShapingHandler trafficHandler = null;
+  private @Getter Metric metric;
 
   protected Router(ConsoleReader console, Logger logger) throws IOException {
     Preconditions.checkNotNull(console);
@@ -137,16 +135,15 @@ public class Router extends AbstractIdleService implements Owner {
     // Enable plugins
     this.pluginManager.enablePlugins();
 
-    eventLoops = PipelineUtils.newEventLoopGroup(0,
+    this.eventLoops = PipelineUtils.newEventLoopGroup(0,
         new ThreadFactoryBuilder().setNameFormat("Netty IO Thread #%1$d").build());
+    this.metric = new Metric(eventLoops);
     startNetty();
 
     logger.info("Router started.");
   }
 
   private void startNetty() {
-
-    this.trafficHandler = new CustomGlobalChannelTrafficShapingHandler(eventLoops, 1000);
 
     ServerBootstrap b = new ServerBootstrap();
     b.group(eventLoops);
@@ -155,7 +152,8 @@ public class Router extends AbstractIdleService implements Owner {
 
     b.childHandler(PipelineUtils.baseInitAnd(ch -> {
       final ChannelPipeline p = ch.pipeline();
-      p.addFirst(this.trafficHandler);
+      p.addFirst(this.metric.getChannelTrafficHandler());
+      p.addLast(this.metric.getPacketCounterHandler());
       p.addLast(
           new LoginHandler(new RouterLoginEngine(Router.this.getNetwork(), this.authentication),
               FutureUtils.newPromise()));
