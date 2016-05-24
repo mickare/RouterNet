@@ -3,8 +3,10 @@ package de.mickare.metricweb.websocket;
 import java.util.logging.Level;
 
 import de.mickare.metricweb.protocol.WebProtocol.PacketMessage;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -27,7 +29,7 @@ public @RequiredArgsConstructor class WebSocketConnectionHandler
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
     server.getLogger().log(Level.WARNING, "Channel Exception", cause);
-    ctx.channel().close();
+    ctx.write(new CloseWebSocketFrame()).addListener(ChannelFutureListener.CLOSE);
   }
 
 }

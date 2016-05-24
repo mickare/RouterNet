@@ -92,7 +92,7 @@ public @RequiredArgsConstructor class WebSocketServer extends AbstractIdleServic
           pipeline.addLast(new HttpServerCodec());
           pipeline.addLast(new HttpObjectAggregator(65536));
           pipeline.addLast(new WebSocketServerCompressionHandler());
-          pipeline.addLast(new WebSocketServerProtocolHandler("/ws"));
+          pipeline.addLast(new WebSocketServerProtocolHandler("/ws", null, true));
           pipeline.addLast(new WebProtocolDecoder(protocol));
           pipeline.addLast(new WebProtocolEncoder(protocol));
           pipeline.addLast(new WebSocketConnectionHandler(WebSocketServer.this));

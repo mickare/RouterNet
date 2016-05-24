@@ -5,7 +5,7 @@ import lombok.Data;
 public class MetricWebProtocol extends WebProtocol {
 
   public MetricWebProtocol() {
-    // TODO Auto-generated constructor stub
+    init();
   }
 
   @Override

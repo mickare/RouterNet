@@ -21,10 +21,11 @@ public abstract class JavaPlugin {
   private boolean enabled = false;
 
   public JavaPlugin() {
-    this.logger = new PluginLogger(this);
   }
 
   final void init(Router router) {
+    this.router = router;
+    this.logger = new PluginLogger(this);
     Plugin plugin = this.getClass().getDeclaredAnnotation(Plugin.class);
     if (plugin != null) {
       this.name = plugin.name();
@@ -34,7 +35,6 @@ public abstract class JavaPlugin {
     if (this.name == null) {
       this.name = this.getClass().getName();
     }
-    this.router = router;
   }
 
   protected synchronized final void enable() {

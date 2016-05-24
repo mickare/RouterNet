@@ -1,6 +1,7 @@
 package de.mickare.metricweb;
 
 import java.util.Map;
+import java.util.logging.Level;
 
 import com.google.common.collect.Maps;
 import com.google.common.eventbus.Subscribe;
@@ -8,9 +9,12 @@ import com.google.common.eventbus.Subscribe;
 import de.mickare.metricweb.event.OpenedWebConnectionEvent;
 import de.mickare.metricweb.protocol.MetricWebProtocol;
 import de.mickare.metricweb.websocket.WebConnection;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
-public class PushServiceManager {
+public @RequiredArgsConstructor class PushServiceManager {
 
+  private @NonNull final MetricWebPlugin plugin;
   private final Map<String, PushService> services = Maps.newConcurrentMap();
 
   public synchronized void register(PushService service) {
@@ -36,8 +40,13 @@ public class PushServiceManager {
 
   @Subscribe
   public void on(OpenedWebConnectionEvent event) {
-    event.getConnection().registerMessageHandler(MetricWebProtocol.Subscribe.class,
-        this::handleSubscribeMessage);
+    try {
+      event.getConnection().registerMessageHandler(MetricWebProtocol.Subscribe.class,
+          this::handleSubscribeMessage);
+    } catch (Exception e) {
+      plugin.getLogger().log(Level.SEVERE, "Could not register message handler!", e);
+      throw e;
+    }
   }
 
 }

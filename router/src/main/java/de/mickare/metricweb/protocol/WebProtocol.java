@@ -30,6 +30,11 @@ public abstract class WebProtocol {
   public static @Data @AllArgsConstructor class PacketMessage {
     private @NonNull final String name;
     private final PacketData data;
+
+    @Override
+    public String toString() {
+      return "PacketMessage(name=\"" + name + "\", data=(" + data.toString() + "))";
+    }
   }
 
   // *************************

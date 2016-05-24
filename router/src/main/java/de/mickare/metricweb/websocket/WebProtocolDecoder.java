@@ -3,6 +3,8 @@ package de.mickare.metricweb.websocket;
 import java.util.List;
 
 import de.mickare.metricweb.protocol.WebProtocol;
+import de.mickare.metricweb.protocol.WebProtocol.PacketMessage;
+import de.rennschnitzel.net.router.Router;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
@@ -21,7 +23,9 @@ public @RequiredArgsConstructor class WebProtocolDecoder
 
     if (frame instanceof TextWebSocketFrame) {
 
-      out.add(protocol.decode(((TextWebSocketFrame) frame).text()));
+      PacketMessage msg = protocol.decode(((TextWebSocketFrame) frame).text());
+      // Router.getInstance().getLogger().info(msg.toString());
+      out.add(msg);
 
     } else {
       String message = "unsupported frame type: " + frame.getClass().getName();

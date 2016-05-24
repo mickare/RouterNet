@@ -17,7 +17,7 @@ public class PacketMetricPushService extends PushService {
 
   private final MetricWebPlugin plugin;
 
-  private final List<PacketMetric> history = new EvictingLinkedList<>(300);
+  private final List<PacketMetric> history = new EvictingLinkedList<>(100);
 
   public PacketMetricPushService(MetricWebPlugin plugin) {
     super("packetMetric");

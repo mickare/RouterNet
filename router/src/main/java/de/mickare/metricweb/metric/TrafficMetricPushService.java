@@ -17,7 +17,7 @@ public class TrafficMetricPushService extends PushService {
 
   private final MetricWebPlugin plugin;
 
-  private final List<ByteMetric> history = new EvictingLinkedList<>(300);
+  private final List<ByteMetric> history = new EvictingLinkedList<>(100);
 
   public TrafficMetricPushService(MetricWebPlugin plugin) {
     super("trafficMetric");
@@ -54,7 +54,7 @@ public class TrafficMetricPushService extends PushService {
   }
 
 
-  @Packet(name = "packetMetric")
+  @Packet(name = "trafficMetric")
   public static @Data @AllArgsConstructor class ByteMetric implements PacketData {
     private long timestamp;
     private long write;

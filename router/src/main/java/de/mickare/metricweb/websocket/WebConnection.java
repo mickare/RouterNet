@@ -10,6 +10,7 @@ import de.mickare.metricweb.protocol.WebProtocol.PacketMessage;
 import de.mickare.metricweb.protocol.WebProtocol.RegisteredPacket;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import lombok.Getter;
@@ -72,9 +73,8 @@ public @RequiredArgsConstructor class WebConnection {
   }
 
   private ChannelFuture close(CloseWebSocketFrame closeFrame) {
-    this.channel.write(closeFrame);
-    this.channel.flush();
-    return this.channel.close();
+    this.channel.write(closeFrame).addListener(ChannelFutureListener.CLOSE);
+    return this.channel.closeFuture();
   }
 
   public ChannelFuture send(PacketData data) {

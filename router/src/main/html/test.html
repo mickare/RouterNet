@@ -1,0 +1,203 @@
+<!doctype html> 
+<html>
+<head>
+  <title>Router Metric Test</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+  <link type="text/css" rel="stylesheet" href="css/rickshaw.min.css">
+  <script src="d3.v3.js"></script>
+  <script src="rickshaw.js"></script>
+
+  <style>
+  
+body {
+        font-family: Arial, Helvetica, sans-serif;
+        padding:0;
+}
+  
+.metric_container {
+        display: inline-block;
+        position: relative;
+        font-family: Arial, Helvetica, sans-serif;
+        background-color: #EEE;
+        padding:10px;
+        width:670px;
+        margin:0;
+}
+
+#packetMetric {
+}
+.chart {
+        display: inline-block;
+        margin-left: 44px;
+}
+.y_axis {
+        position: absolute;
+        top: 10px;
+        bottom: 0;
+        width: 40px;
+}
+.x_axis {
+        margin:0;
+        margin-left: 44px;
+        height:20px;
+}
+
+.metric_box {
+  padding: 1px;
+  margin:5px;
+  padding-left:25px;
+  position:relative;
+  display: inline-block;
+  background-color: #DDD;
+}
+
+.metric_box > .label {
+        width: 70px;
+        height:30px;
+        padding:2px;        
+        position: absolute;
+        top:22px;
+        left:-18px;
+        text-align: right;
+        moz-transform: rotate(-90deg);
+        -ms-transform: rotate(-90deg);
+        -o-transform: rotate(-90deg);
+        -webkit-transform: rotate(-90deg);
+
+        transform: rotate(-90deg);
+        
+}
+
+
+</style>
+
+  
+  </head>
+<body>
+
+<div class="metric_box">
+<div class="label">Packets</div>
+<div class="metric_container" id="packetMetric">
+<div class="y_axis"></div>
+<div class="chart"></div>
+<div class="x_axis"></div>
+</div>
+</div>
+
+<div class="metric_box">
+<div class="label">Bytes</div>
+<div class="metric_container" id="trafficMetric">
+<div class="y_axis"></div>
+<div class="chart"></div>
+<div class="x_axis"></div>
+</div>
+</div>
+
+<script>
+
+var graphPacketMetric = new Rickshaw.Graph( {
+        element: document.querySelector("#packetMetric > div.chart"),
+        width: 600,
+        height: 250,
+        renderer: 'area',
+        stack: false,        
+        series: new Rickshaw.Series.FixedDuration([
+                  { name: 'read' },
+                  { name: 'write'}
+                ],
+                undefined, {
+                  timeInterval: 1000,
+                  maxDataPoints: 100,
+                  timeBase: new Date().getTime()
+        })
+} );
+
+var graphPacketMetric_axis_x = new Rickshaw.Graph.Axis.X({
+  graph: graphPacketMetric,
+  orientation: 'bottom',
+  element: document.querySelector("#packetMetric > div.x_axis"),
+  tickFormat: function(x) {
+    var date = new Date(x);
+    return date.getMinutes() + ":" + date.getSeconds();
+  }
+  
+});
+
+var graphPacketMetric_axis_y = new Rickshaw.Graph.Axis.Y( {
+        graph: graphPacketMetric,
+        orientation: 'left',
+        tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+        element: document.querySelector("#packetMetric > div.y_axis")
+} );
+
+var graphPacketMetric_smoother = new Rickshaw.Graph.Smoother({
+        graph: graphPacketMetric
+});
+
+// *********************************************
+
+var graphTrafficMetric = new Rickshaw.Graph( {
+        element: document.querySelector("#trafficMetric > div.chart"),
+        width: 600,
+        height: 250,
+        renderer: 'area',
+        stack: false,          
+        series: new Rickshaw.Series.FixedDuration([
+                  { name: 'read' },
+                  { name: 'write'}
+                ],
+                undefined, {
+                  timeInterval: 1000,
+                  maxDataPoints: 100,
+                  timeBase: new Date().getTime()
+        })
+} );
+
+var graphTrafficMetric_axis_x = new Rickshaw.Graph.Axis.X({
+  graph: graphTrafficMetric,
+  orientation: 'bottom',
+  element: document.querySelector("#trafficMetric > div.x_axis"),
+  tickFormat: function(x) {
+    var date = new Date(x);
+    return date.getMinutes() + ":" + date.getSeconds();
+  }
+  
+});
+
+var graphTrafficMetric_axis_y = new Rickshaw.Graph.Axis.Y( {
+        graph: graphTrafficMetric,
+        orientation: 'left',
+        tickFormat: function(y) {
+          return Rickshaw.Fixtures.Number.formatKMBT(y) + "B";
+        },
+        element: document.querySelector("#trafficMetric > div.y_axis")
+} );
+
+
+graphPacketMetric.render();
+
+
+var socket = new WebSocket('ws://localhost:5546/ws');
+socket.onopen = function() {
+  socket.send(JSON.stringify({name:"subscribe", data:{service:"packetMetric"}}));
+  socket.send(JSON.stringify({name:"subscribe", data:{service:"trafficMetric"}}));
+};
+socket.onmessage = function(evt) {
+  var msg = JSON.parse(evt.data);
+  
+  //console.log(msg.data);
+  
+  if(msg.name == "packetMetric") {
+  graphPacketMetric.series.addData({read: msg.data.read, write: msg.data.write}, msg.data.timestamp);  
+  graphPacketMetric.render();
+  } else if(msg.name == "trafficMetric") {  
+  graphTrafficMetric.series.addData({read: msg.data.read, write: msg.data.write}, msg.data.timestamp);  
+  graphTrafficMetric.render();
+  }
+};
+
+</script>
+
+
+</body>
+</html>
