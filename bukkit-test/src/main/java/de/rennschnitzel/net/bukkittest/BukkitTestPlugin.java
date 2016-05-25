@@ -56,6 +56,10 @@ public class BukkitTestPlugin extends JavaPlugin implements Owner, Listener {
 		} );
 		;
 		
+		Net.getTunnel( PLAYER_POSITION ).registerListener( this, ( msg ) -> {
+		
+		} );
+		
 		Bukkit.getPluginManager().registerEvents( this, this );
 		
 		getLogger().info( getName() + " enabled!" );

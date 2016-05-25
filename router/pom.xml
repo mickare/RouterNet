@@ -70,6 +70,10 @@
 					<include>*.properties</include>
 				</includes>
 			</resource>
+			<resource>
+				<targetPath>./html</targetPath>
+				<directory>${basedir}/src/main/html</directory>
+			</resource>
 		</resources>
 		<plugins>
 			<plugin>

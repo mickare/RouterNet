@@ -68,12 +68,37 @@ body {
         
 }
 
+#socket-status {
+  display: inline-block;
+  margin:5px;
+  padding:3px;
+  background-color:#DDD;
+  float:right;
+}
+
+#socket-status.disconnected {
+  color: red;
+}
+#socket-status.connected {
+  color: green;
+}
+#socket-status::before {
+  content: "Status: ";
+}
+#socket-status.disconnected::after {
+  content: "disconnected";
+}
+#socket-status.connected::after {
+  content: "connected";
+}
 
 </style>
 
   
   </head>
 <body>
+
+<div id="socket-status" class="disconnected"></div>
 
 <div class="metric_box">
 <div class="label">Packets</div>
@@ -176,25 +201,37 @@ var graphTrafficMetric_axis_y = new Rickshaw.Graph.Axis.Y( {
 
 graphPacketMetric.render();
 
+function connect() {
 
-var socket = new WebSocket('ws://localhost:5546/ws');
-socket.onopen = function() {
-  socket.send(JSON.stringify({name:"subscribe", data:{service:"packetMetric"}}));
-  socket.send(JSON.stringify({name:"subscribe", data:{service:"trafficMetric"}}));
-};
-socket.onmessage = function(evt) {
-  var msg = JSON.parse(evt.data);
-  
-  //console.log(msg.data);
-  
-  if(msg.name == "packetMetric") {
-  graphPacketMetric.series.addData({read: msg.data.read, write: msg.data.write}, msg.data.timestamp);  
-  graphPacketMetric.render();
-  } else if(msg.name == "trafficMetric") {  
-  graphTrafficMetric.series.addData({read: msg.data.read, write: msg.data.write}, msg.data.timestamp);  
-  graphTrafficMetric.render();
+  var socket = new WebSocket('ws://localhost:5546/ws');
+  socket.onopen = function() {
+    $("#socket-status").removeClass("disconnected", false).addClass("connected", false);
+
+    socket.send(JSON.stringify({name:"subscribe", data:{service:"packetMetric"}}));
+    socket.send(JSON.stringify({name:"subscribe", data:{service:"trafficMetric"}}));
+  };
+  socket.onmessage = function(evt) {
+    var msg = JSON.parse(evt.data);
+    
+    //console.log(msg.data);
+    
+    if(msg.name == "packetMetric") {
+    graphPacketMetric.series.addData({read: msg.data.read, write: msg.data.write}, msg.data.timestamp);  
+    graphPacketMetric.render();
+    } else if(msg.name == "trafficMetric") {  
+    graphTrafficMetric.series.addData({read: msg.data.read, write: msg.data.write}, msg.data.timestamp);  
+    graphTrafficMetric.render();
+    }
+  };
+  socket.onclose = function() {
+    $("#socket-status").removeClass("connected", false).addClass("disconnected", false);
+    setTimeout(function(){connect()}, 5000);
   }
-};
+
+}
+
+connect();
+
 
 </script>
 

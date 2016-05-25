@@ -1,5 +1,8 @@
 package de.mickare.metricweb;
 
+import java.io.File;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 
 import de.mickare.metricweb.metric.PacketMetricPushService;
@@ -45,7 +48,15 @@ public class MetricWebPlugin extends JavaPlugin {
     if (!this.socketServer.isRunning()) {
       throw new IllegalStateException("WebSocket Server not running!");
     }
+
+    File target = new File(System.getProperty("user.dir"), "html");
+    if (!target.isDirectory() && target.mkdir()) {
+      FileUtils.copyResourcesRecursively(this.getClass().getResource("/html"), target);
+    }
+
   }
+
+
 
   @Override
   protected void onDisable() throws Exception {
