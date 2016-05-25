@@ -26,5 +26,8 @@ public class Settings {
 
   private RouterConfig routerSettings = new RouterConfig();
   // private DatabaseConfig databaseSettings = new DatabaseConfig();
+  
+  
+  private String restartScript = "start.sh";
 
 }

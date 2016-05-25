@@ -28,7 +28,6 @@ public class TrafficMetricPushService extends PushService {
     plugin.getPushServiceManager().register(this);
     plugin.getRouter().getMetric().getChannelTrafficHandler().registerListener(plugin,
         this::onMetric);
-
   }
 
   @Override
@@ -38,7 +37,6 @@ public class TrafficMetricPushService extends PushService {
       temp = ImmutableList.copyOf(this.history);
     }
     temp.forEach(p -> con.sendFast(p));
-    con.flush();
   }
 
   @Override
@@ -62,8 +60,8 @@ public class TrafficMetricPushService extends PushService {
 
     public ByteMetric(ByteCount count) {
       this.timestamp = count.getTimestamp();
-      this.write = count.getLastBytesWrite();
-      this.read = count.getLastBytesRead();
+      this.write = (long) (count.getLastBytesWrite()+ Math.random() * 10);
+      this.read = (long) (count.getLastBytesRead()+ Math.random() * 10);
     }
 
   }

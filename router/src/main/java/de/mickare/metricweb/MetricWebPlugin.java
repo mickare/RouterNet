@@ -1,11 +1,15 @@
 package de.mickare.metricweb;
 
 import java.io.File;
-import java.net.URL;
-import java.nio.file.Paths;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.collect.Sets;
+
+import de.mickare.metricweb.metric.CPUMetricPushService;
 import de.mickare.metricweb.metric.PacketMetricPushService;
+import de.mickare.metricweb.metric.RAMMetricPushService;
+import de.mickare.metricweb.metric.Stoppable;
 import de.mickare.metricweb.metric.TrafficMetricPushService;
 import de.mickare.metricweb.protocol.MetricWebProtocol;
 import de.mickare.metricweb.websocket.WebSocketServer;
@@ -19,6 +23,8 @@ public class MetricWebPlugin extends JavaPlugin {
   private @Getter PushServiceManager pushServiceManager;
   private @Getter WebSocketServer socketServer;
 
+  private Set<Stoppable> stoppable = Sets.newHashSet();
+  
   @Override
   protected void onLoad() throws Exception {
     // TODO Auto-generated method stub
@@ -32,12 +38,22 @@ public class MetricWebPlugin extends JavaPlugin {
 
     this.getRouter().getEventBus().register(pushServiceManager);
 
-    this.socketServer = new WebSocketServer(getLogger(), 5546, false, new MetricWebProtocol());
+    this.socketServer = new WebSocketServer(getLogger(), getRouter().getEventLoop(), 5546, false, new MetricWebProtocol());
     this.socketServer.startAsync();
 
     new PacketMetricPushService(this).register();
     new TrafficMetricPushService(this).register();
 
+    CPUMetricPushService cpu = new CPUMetricPushService(this);
+    stoppable.add(cpu);
+    cpu.start();
+    cpu.register();
+    
+    RAMMetricPushService ram = new RAMMetricPushService(this);
+    stoppable.add(ram);
+    ram.start();
+    ram.register();
+    
     try {
       this.socketServer.awaitRunning(5, TimeUnit.SECONDS);
     } catch (Exception e) {
@@ -63,6 +79,9 @@ public class MetricWebPlugin extends JavaPlugin {
 
     this.socketServer.stopAsync();
 
+    this.stoppable.forEach(s -> s.stop());
+    this.stoppable.clear();
+    
     this.getRouter().getEventBus().unregister(pushServiceManager);
 
     this.getRouter().getMetric().getPacketTrafficHandler().unregisterListeners(this);

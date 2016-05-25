@@ -28,7 +28,6 @@ public class PacketMetricPushService extends PushService {
     plugin.getPushServiceManager().register(this);
     plugin.getRouter().getMetric().getPacketTrafficHandler().registerListener(plugin,
         this::onMetric);
-
   }
 
   @Override
@@ -38,7 +37,6 @@ public class PacketMetricPushService extends PushService {
       temp = ImmutableList.copyOf(history);
     }
     temp.forEach(p -> con.sendFast(p));
-    con.flush();
   }
 
   @Override
@@ -62,8 +60,8 @@ public class PacketMetricPushService extends PushService {
 
     public PacketMetric(PacketCount count) {
       this.timestamp = count.getTimestamp();
-      this.write = count.getLastPacketsWrite();
-      this.read = count.getLastPacketsRead();
+      this.write = (long) (count.getLastPacketsWrite() + Math.random() * 10);
+      this.read = (long) (count.getLastPacketsRead() + Math.random() * 10);
     }
 
   }

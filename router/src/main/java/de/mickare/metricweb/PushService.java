@@ -21,9 +21,9 @@ public abstract class PushService {
   }
 
   public void subscribe(WebConnection con) throws Exception {
-    subscribed.add(con);
     con.getChannel().closeFuture().addListener(f -> unsubscribe(con));
     onSubscribe(con);
+    subscribed.add(con);
   }
 
   protected abstract void onSubscribe(WebConnection con) throws Exception;

@@ -60,7 +60,7 @@ public class Router extends AbstractIdleService implements Owner {
   private @Getter HostAndPort address;
   private final @Getter RouterNetwork network;
 
-  private EventLoopGroup eventLoops = null;
+  private @Getter EventLoopGroup eventLoop = null;
   private Channel listener = null;
   private @Getter RouterAuthentication authentication = null;
   private @Getter Metric metric;
@@ -133,9 +133,9 @@ public class Router extends AbstractIdleService implements Owner {
         .newPasswordForRouter(this.getConfigFile().getConfig().getRouterSettings().getPassword());
 
     // Init EventLoop
-    this.eventLoops = PipelineUtils.newEventLoopGroup(0,
+    this.eventLoop = PipelineUtils.newEventLoopGroup(0,
         new ThreadFactoryBuilder().setNameFormat("Netty IO Thread #%1$d").build());
-    this.metric = new Metric(eventLoops);
+    this.metric = new Metric(eventLoop);
 
     // Enable plugins
     this.pluginManager.enablePlugins();
@@ -148,7 +148,7 @@ public class Router extends AbstractIdleService implements Owner {
   private void startNetty() {
 
     ServerBootstrap b = new ServerBootstrap();
-    b.group(eventLoops);
+    b.group(eventLoop);
     b.channel(PipelineUtils.getServerChannelClass());
     b.option(ChannelOption.SO_REUSEADDR, true);
 
@@ -187,9 +187,9 @@ public class Router extends AbstractIdleService implements Owner {
     }
 
     getLogger().info("Closing IO threads");
-    eventLoops.shutdownGracefully();
+    eventLoop.shutdownGracefully();
     try {
-      eventLoops.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+      eventLoop.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
     } catch (InterruptedException ex) {
     }
 
@@ -205,10 +205,6 @@ public class Router extends AbstractIdleService implements Owner {
     getLogger().info("Disabling plugins");
     this.pluginManager.disablePlugins();
     scheduler.shutdown();
-    try {
-      scheduler.awaitTermination(5, TimeUnit.SECONDS);
-    } catch (InterruptedException ie) {
-    }
 
     StringBuilder sb = new StringBuilder();
     sb.append("\n****************************************************");

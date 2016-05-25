@@ -5,9 +5,11 @@ import com.google.common.net.HostAndPort;
 
 import de.rennschnitzel.net.netty.PipelineUtils;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoopGroup;
 import lombok.Getter;
@@ -38,6 +40,7 @@ public @RequiredArgsConstructor class OnlineConnectClient extends AbstractConnec
 		
 		Bootstrap cb = new Bootstrap();
 		cb.group( group ).channel( PipelineUtils.getChannelClass() ).handler( clientInit );
+	    cb.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
 		cb.connect( addr.getHostText(), addr.getPort() ) //
 				.addListener( ( ChannelFutureListener ) f -> {
 					
