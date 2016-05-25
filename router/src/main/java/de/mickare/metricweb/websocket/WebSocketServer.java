@@ -35,6 +35,7 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 import lombok.Getter;
+import lombok.Setter;
 
 public class WebSocketServer extends AbstractIdleService {
 
@@ -50,6 +51,8 @@ public class WebSocketServer extends AbstractIdleService {
   private final Map<String, PushService> streamServices = Maps.newConcurrentMap();
 
   private @Getter final WebProtocol protocol;
+  
+  private @Getter @Setter boolean doesInfluenceMetrics = true;
 
   public WebSocketServer(Logger logger, EventLoopGroup group, int port, boolean SSL,  WebProtocol protocol) {
     Preconditions.checkNotNull(logger);
@@ -106,6 +109,12 @@ public class WebSocketServer extends AbstractIdleService {
           pipeline.addLast(new HttpObjectAggregator(65536));
           pipeline.addLast(new WebSocketServerCompressionHandler());
           pipeline.addLast(new WebSocketServerProtocolHandler("/ws", null, true));
+          
+          if(WebSocketServer.this.doesInfluenceMetrics) {
+            pipeline.addFirst("trafficMetric", Router.getInstance().getMetric().getChannelTrafficHandler());
+            pipeline.addLast("packetMetric", Router.getInstance().getMetric().getPacketTrafficHandler());
+          }
+          
           pipeline.addLast(new WebProtocolDecoder(protocol));
           pipeline.addLast(new WebProtocolEncoder(protocol));
           pipeline.addLast(new WebSocketConnectionHandler(WebSocketServer.this));

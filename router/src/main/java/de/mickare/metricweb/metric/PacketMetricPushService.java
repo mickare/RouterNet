@@ -61,8 +61,8 @@ public class PacketMetricPushService extends PushService {
 
     public PacketMetric(PacketCount count) {
       this.timestamp = count.getTimestamp();
-      this.write = (long) (count.getLastPacketsWrite() + Math.random() * 10);
-      this.read = (long) (count.getLastPacketsRead() + Math.random() * 10);
+      this.write = count.getLastPacketsWrite();
+      this.read = count.getLastPacketsRead();
     }
 
   }

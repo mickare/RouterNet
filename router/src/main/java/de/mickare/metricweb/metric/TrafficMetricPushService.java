@@ -61,8 +61,8 @@ public class TrafficMetricPushService extends PushService {
 
     public ByteMetric(ByteCount count) {
       this.timestamp = count.getTimestamp();
-      this.write = (long) (count.getLastBytesWrite()+ Math.random() * 10);
-      this.read = (long) (count.getLastBytesRead()+ Math.random() * 10);
+      this.write = count.getLastBytesWrite();
+      this.read = count.getLastBytesRead();
     }
 
   }
