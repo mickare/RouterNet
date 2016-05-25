@@ -176,8 +176,11 @@ public class Router extends AbstractIdleService implements Owner {
     });
   }
 
-  private void stopNetty() {
-
+  
+  @Override
+  protected void shutDown() throws Exception {
+    logger.info("Stopping...");
+    
     // Close main server socket
     getLogger().log(Level.INFO, "Closing listener {0}", listener);
     try {
@@ -186,25 +189,23 @@ public class Router extends AbstractIdleService implements Owner {
       getLogger().severe("Could not close listener thread");
     }
 
+    // Disable plugins
+    getLogger().info("Disabling plugins");
+    this.pluginManager.disablePlugins();
+    
+    // Close EventLoopGroup
     getLogger().info("Closing IO threads");
     eventLoop.shutdownGracefully();
     try {
       eventLoop.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
     } catch (InterruptedException ex) {
     }
-
-  }
-
-  @Override
-  protected void shutDown() throws Exception {
-    logger.info("Stopping...");
-
-    stopNetty();
-
-    // Disable plugins
-    getLogger().info("Disabling plugins");
-    this.pluginManager.disablePlugins();
+        
     scheduler.shutdown();
+    try {
+      scheduler.awaitTermination(5, TimeUnit.SECONDS);
+    } catch (InterruptedException ie) {
+    }
 
     StringBuilder sb = new StringBuilder();
     sb.append("\n****************************************************");

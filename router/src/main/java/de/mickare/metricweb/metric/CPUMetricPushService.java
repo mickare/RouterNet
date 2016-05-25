@@ -108,6 +108,7 @@ public class CPUMetricPushService extends PushService implements Stoppable {
       temp = ImmutableList.copyOf(history);
     }
     temp.forEach(p -> con.sendFast(p));
+    con.flush();
   }
 
   @Override

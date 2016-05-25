@@ -38,9 +38,6 @@ public class RestartCommand extends AbstractCommand {
           if ( script.isFile() )
           {
               System.out.println( "Attempting to restart with " + script.getName());
-
-              Router.getInstance().stopAsync();
-              Router.getInstance().awaitTerminated(20, TimeUnit.SECONDS);
               
               // This will be done AFTER the server has completely halted
               Thread shutdownHook = new Thread()
@@ -67,16 +64,14 @@ public class RestartCommand extends AbstractCommand {
                       }
                   }
               };
-
               shutdownHook.setDaemon( true );
-              Runtime.getRuntime().addShutdownHook( shutdownHook );
+              Runtime.getRuntime().addShutdownHook( shutdownHook );              
           } else
           {
               System.out.println( "Startup script '" + script.getAbsolutePath() + "' does not exist! Stopping server." );
-              Router.getInstance().stopAsync();
-              Router.getInstance().awaitTerminated(20, TimeUnit.SECONDS);
           }
-          System.exit( 0 );
+          Router.getInstance().stopAsync();
+          Router.getInstance().awaitTerminated(20, TimeUnit.SECONDS);
       } catch ( Exception ex )
       {
           ex.printStackTrace();

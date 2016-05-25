@@ -3,12 +3,15 @@ package de.mickare.metricweb.websocket;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AbstractIdleService;
+import com.google.common.util.concurrent.MoreExecutors;
 
 import de.mickare.metricweb.PushService;
 import de.mickare.metricweb.event.ClosedWebConnectionEvent;
@@ -32,13 +35,11 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 import lombok.Getter;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 
-public @RequiredArgsConstructor class WebSocketServer extends AbstractIdleService {
+public class WebSocketServer extends AbstractIdleService {
 
-  private @NonNull @Getter final Logger logger;
-  private @NonNull final EventLoopGroup group;
+  private @Getter final Logger logger;
+  private final EventLoopGroup group;
 
   private @Getter final int port;
   private @Getter final boolean SSL;
@@ -48,8 +49,20 @@ public @RequiredArgsConstructor class WebSocketServer extends AbstractIdleServic
   private final Set<WebConnection> connections = Sets.newConcurrentHashSet();
   private final Map<String, PushService> streamServices = Maps.newConcurrentMap();
 
-  private @NonNull @Getter final WebProtocol protocol;
+  private @Getter final WebProtocol protocol;
 
+  public WebSocketServer(Logger logger, EventLoopGroup group, int port, boolean SSL,  WebProtocol protocol) {
+    Preconditions.checkNotNull(logger);
+    Preconditions.checkNotNull(group);
+    Preconditions.checkNotNull(protocol);
+    this.logger = logger;
+    this.group = group;
+    this.port = port;
+    this.SSL = SSL;
+    this.protocol = protocol;
+    group.terminationFuture().addListener(f -> this.stopAsync());
+  }
+  
   WebConnection newConnection(final Channel channel) {
     final WebConnection con = new WebConnection(this, channel);
     channel.closeFuture().addListener(f -> {
@@ -107,6 +120,11 @@ public @RequiredArgsConstructor class WebSocketServer extends AbstractIdleServic
     }
   }
 
+  @Override
+  protected Executor executor() {
+    return MoreExecutors.directExecutor();
+  }
+  
   @Override
   protected void shutDown() throws Exception {
     if (this.serverChannel != null) {

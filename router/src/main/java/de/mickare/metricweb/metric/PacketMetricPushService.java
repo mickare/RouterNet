@@ -37,6 +37,7 @@ public class PacketMetricPushService extends PushService {
       temp = ImmutableList.copyOf(history);
     }
     temp.forEach(p -> con.sendFast(p));
+    con.flush();
   }
 
   @Override

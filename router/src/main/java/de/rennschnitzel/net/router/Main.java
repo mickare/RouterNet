@@ -85,18 +85,20 @@ public class Main {
       } catch (Exception e) {
         logger.log(Level.SEVERE, "Exception in main!", e);
         exitCode = ExitCode.EXCEPTION_COMMAND_PROCESS;
+        System.exit(exitCode.code);
         return;
       }
       // Shutdown
       try {
         router.stopAsync();
-        router.awaitTerminated(5, TimeUnit.SECONDS);
+        router.awaitTerminated(30, TimeUnit.SECONDS);
         if (router.state() == Service.State.FAILED) {
           throw router.failureCause();
         }
       } catch (Throwable t) {
         logger.log(Level.SEVERE, "Exception while shutdown!", t);
         exitCode = ExitCode.EXCEPTION_SHUTDOWN;
+        System.exit(exitCode.code);
         return;
       }
 
@@ -110,7 +112,7 @@ public class Main {
           System.exit(exitCode.code);
         }
       }
-    }
+    }    
   }
 
 }
