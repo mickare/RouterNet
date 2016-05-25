@@ -5,6 +5,7 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
   <link type="text/css" rel="stylesheet" href="css/rickshaw.min.css">
   <script src="d3.v3.js"></script>
+  <script src="d3.byte.js"></script>
   <script src="rickshaw.js"></script>
 
   <style>
@@ -13,6 +14,10 @@ body {
         font-family: Arial, Helvetica, sans-serif;
         padding:0;
 }
+
+.div {
+  overflow: show;
+}
   
 .metric_container {
         display: inline-block;
@@ -20,44 +25,34 @@ body {
         font-family: Arial, Helvetica, sans-serif;
         background-color: #EEE;
         padding:10px;
+        padding-top:20px;
         width:670px;
-        margin:0;
+        margin:5px;
 }
 
-#packetMetric {
-}
-.chart {
+.metric_container > .chart {
         display: inline-block;
-        margin-left: 44px;
+        margin-left: 74px;
 }
-.y_axis {
+.metric_container > .y_axis {
         position: absolute;
-        top: 10px;
+        top: 20px;
         bottom: 0;
-        width: 40px;
+        width: 70px;
 }
-.x_axis {
+.metric_container > .x_axis {
         margin:0;
-        margin-left: 44px;
+        margin-left: 74px;
         height:20px;
 }
 
-.metric_box {
-  padding: 1px;
-  margin:5px;
-  padding-left:25px;
-  position:relative;
-  display: inline-block;
-  background-color: #DDD;
-}
-
-.metric_box > .label {
-        width: 70px;
+.metric_container > .label {
+        width: 150px;
         height:30px;
         padding:2px;        
         position: absolute;
-        top:22px;
-        left:-18px;
+        top:95px;
+        left:-26px;
         text-align: right;
         moz-transform: rotate(-90deg);
         -ms-transform: rotate(-90deg);
@@ -65,7 +60,8 @@ body {
         -webkit-transform: rotate(-90deg);
 
         transform: rotate(-90deg);
-        
+        text-transform: uppercase;
+        color: #999;
 }
 
 #socket-status {
@@ -100,115 +96,132 @@ body {
 
 <div id="socket-status" class="disconnected"></div>
 
-<div class="metric_box">
-<div class="label">Packets</div>
-<div class="metric_container" id="packetMetric">
-<div class="y_axis"></div>
-<div class="chart"></div>
-<div class="x_axis"></div>
-</div>
-</div>
+<div id="cpuMetric"></div>
+<div id="ramMetric"></div>
 
-<div class="metric_box">
-<div class="label">Bytes</div>
-<div class="metric_container" id="trafficMetric">
-<div class="y_axis"></div>
-<div class="chart"></div>
-<div class="x_axis"></div>
-</div>
-</div>
+<div id="packetMetric"></div>
+<div id="trafficMetric"></div>
 
 <script>
 
-var graphPacketMetric = new Rickshaw.Graph( {
-        element: document.querySelector("#packetMetric > div.chart"),
+var GraphMetric = function($container, seriesData, label, scale) {
+
+  var self = this;
+
+  $container.addClass("metric_container");
+  var $label = $("<div></div>").text(label).addClass("label");
+  var $y_axis = $("<div></div>").addClass("y_axis");
+  var $chart = $("<div></div>").addClass("chart");
+  var $x_axis = $("<div></div>").addClass("x_axis");
+  $container.append($label, $y_axis, $chart, $x_axis);
+  
+  this.graph = new Rickshaw.Graph( {
+        element: $chart.get(0),
         width: 600,
         height: 250,
-        renderer: 'area',
+        renderer: 'multi',
         stack: false,        
-        series: new Rickshaw.Series.FixedDuration([
-                  { name: 'read' },
-                  { name: 'write'}
-                ],
+        series: new Rickshaw.Series.FixedDuration(seriesData,
                 undefined, {
                   timeInterval: 1000,
                   maxDataPoints: 100,
                   timeBase: new Date().getTime()
         })
-} );
+  });
 
-var graphPacketMetric_axis_x = new Rickshaw.Graph.Axis.X({
-  graph: graphPacketMetric,
-  orientation: 'bottom',
-  element: document.querySelector("#packetMetric > div.x_axis"),
-  tickFormat: function(x) {
-    var date = new Date(x);
-    return date.getMinutes() + ":" + date.getSeconds();
-  }
-  
-});
+  this.graph_axis_x = new Rickshaw.Graph.Axis.X({
+        graph: self.graph,
+        orientation: 'bottom',
+        element: $x_axis.get(0),
+        tickFormat: function(x) {
+          var date = new Date(x);
+          return date.getMinutes() + ":" + date.getSeconds();
+        }    
+  });
 
-var graphPacketMetric_axis_y = new Rickshaw.Graph.Axis.Y( {
-        graph: graphPacketMetric,
+  this.graph_axis_y = new Rickshaw.Graph.Axis.Y.Scaled( {
+        graph: self.graph,
         orientation: 'left',
-        tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
-        element: document.querySelector("#packetMetric > div.y_axis")
-} );
+        element: $y_axis.get(0),
+        scale: scale
+  } );
+  
+  this.render = function() {
+    self.graph.render();
+  };
+  
+  this.addData = function(data, x) {
+    self.graph.series.addData(data, x);
+  };
+  
+  this.identity = 0;
+  this.addIdentity = function(time) {
+    if(!time) {
+      time = new Date().getTime();
+    }
+    var data = {};
+    self.graph.series.forEach(function(s) {
+      data[s.name] = self.identity;
+    });
+    self.addData(data, time);
+  };
+  
+};
 
-var graphPacketMetric_smoother = new Rickshaw.Graph.Smoother({
-        graph: graphPacketMetric
-});
+var linearscale = d3.scale.linear().nice();
+var bytescale = d3.byte.scale();
+
+var palette = new Rickshaw.Color.Palette( { scheme: 'spectrum2001', interpolatedStopCount: 3 } );
+var cpu = new GraphMetric($("#cpuMetric"), [
+                  { name: 'load', renderer: 'area', color: "#9ED11F" }
+                ], "CPU", linearscale);
+cpu.graph.configure({min:0, max:100});
+cpu.graph_axis_y.tickFormat = function(y) { return y + "%"; };
+
+var ram = new GraphMetric($("#ramMetric"), [
+                  { name: 'maxMemory', renderer: 'line', color: "red" },
+                  { name: 'allocatedMemory', renderer: 'area', color: "#9ED11F" },
+                  { name: 'freeMemory', renderer: 'line', color: "#263E97"}
+                ], "RAM", bytescale);
+ram.graph_axis_y.tickFormat = function(y) {
+  return Rickshaw.Fixtures.Number.formatBase1024KMGTP(y) + "B";
+};
+  
+var packet = new GraphMetric($("#packetMetric"), [
+                  { name: 'read', renderer: 'bar', color: "#9ED11F" },
+                  { name: 'write', renderer: 'bar', color: "#263E97" }
+                ], "Net-Packets", linearscale);
+packet.graph.gapSize = 0;
+
+var traffic = new GraphMetric($("#trafficMetric"), [
+                  { name: 'read', renderer: 'area', color: "#9ED11F" },
+                  { name: 'write', renderer: 'line', color: "#263E97"}
+                ], "Traffic", bytescale);
+traffic.graph_axis_y.tickFormat = function(y) {
+  return Rickshaw.Fixtures.Number.formatBase1024KMGTP(y) + "B";
+};
+
+
 
 // *********************************************
 
-var graphTrafficMetric = new Rickshaw.Graph( {
-        element: document.querySelector("#trafficMetric > div.chart"),
-        width: 600,
-        height: 250,
-        renderer: 'area',
-        stack: false,          
-        series: new Rickshaw.Series.FixedDuration([
-                  { name: 'read' },
-                  { name: 'write'}
-                ],
-                undefined, {
-                  timeInterval: 1000,
-                  maxDataPoints: 100,
-                  timeBase: new Date().getTime()
-        })
-} );
-
-var graphTrafficMetric_axis_x = new Rickshaw.Graph.Axis.X({
-  graph: graphTrafficMetric,
-  orientation: 'bottom',
-  element: document.querySelector("#trafficMetric > div.x_axis"),
-  tickFormat: function(x) {
-    var date = new Date(x);
-    return date.getMinutes() + ":" + date.getSeconds();
-  }
-  
-});
-
-var graphTrafficMetric_axis_y = new Rickshaw.Graph.Axis.Y( {
-        graph: graphTrafficMetric,
-        orientation: 'left',
-        tickFormat: function(y) {
-          return Rickshaw.Fixtures.Number.formatKMBT(y) + "B";
-        },
-        element: document.querySelector("#trafficMetric > div.y_axis")
-} );
-
-
-graphPacketMetric.render();
+function metricsAddIdentity() {
+  packet.addIdentity();
+  traffic.addIdentity();
+  cpu.addIdentity();
+  ram.addIdentity();
+}
 
 function connect() {
 
   var socket = new WebSocket('ws://localhost:5546/ws');
   socket.onopen = function() {
     $("#socket-status").removeClass("disconnected", false).addClass("connected", false);
-
+    metricsAddIdentity();
     socket.send(JSON.stringify({name:"subscribe", data:{service:"packetMetric"}}));
     socket.send(JSON.stringify({name:"subscribe", data:{service:"trafficMetric"}}));
+    socket.send(JSON.stringify({name:"subscribe", data:{service:"cpuMetric"}}));
+    socket.send(JSON.stringify({name:"subscribe", data:{service:"ramMetric"}}));
   };
   socket.onmessage = function(evt) {
     var msg = JSON.parse(evt.data);
@@ -216,22 +229,37 @@ function connect() {
     //console.log(msg.data);
     
     if(msg.name == "packetMetric") {
-    graphPacketMetric.series.addData({read: msg.data.read, write: msg.data.write}, msg.data.timestamp);  
-    graphPacketMetric.render();
+      packet.addData({read: Math.max(0,msg.data.read), write: Math.max(0,msg.data.write)}, msg.data.timestamp);  
+      packet.render();
     } else if(msg.name == "trafficMetric") {  
-    graphTrafficMetric.series.addData({read: msg.data.read, write: msg.data.write}, msg.data.timestamp);  
-    graphTrafficMetric.render();
+      traffic.addData({read: msg.data.read, write: msg.data.write}, msg.data.timestamp);  
+      traffic.render();
+    } else if(msg.name == "cpuMetric") {
+      cpu.addData({load: msg.data.load}, msg.data.timestamp);  
+      cpu.render();
+    } else if(msg.name == "ramMetric") {  
+      ram.addData({
+          maxMemory: msg.data.maxMemory,
+          allocatedMemory: msg.data.allocatedMemory,
+          freeMemory: msg.data.freeMemory
+        }, msg.data.timestamp);  
+      ram.render();
     }
   };
   socket.onclose = function() {
     $("#socket-status").removeClass("connected", false).addClass("disconnected", false);
     setTimeout(function(){connect()}, 5000);
+    metricsAddIdentity();
   }
-
+  
 }
 
-connect();
+cpu.render();
+ram.render();
+packet.render();
+traffic.render();
 
+setTimeout(connect, 200);
 
 </script>
 

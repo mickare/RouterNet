@@ -3260,7 +3260,7 @@ Rickshaw.Graph.Renderer.Bar = Rickshaw.Class.create( Rickshaw.Graph.Renderer, {
 		var frequentInterval = this._frequentInterval(series.stack);
 		var barWidth = this.graph.x.magnitude(frequentInterval.magnitude) * (1 - this.gapSize);
 
-		return barWidth;
+		return Math.max(0, barWidth);
 	},
 
 	render: function(args) {
