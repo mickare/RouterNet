@@ -51,10 +51,11 @@ public class WebSocketServer extends AbstractIdleService {
   private final Map<String, PushService> streamServices = Maps.newConcurrentMap();
 
   private @Getter final WebProtocol protocol;
-  
+
   private @Getter @Setter boolean doesInfluenceMetrics = true;
 
-  public WebSocketServer(Logger logger, EventLoopGroup group, int port, boolean SSL,  WebProtocol protocol) {
+  public WebSocketServer(Logger logger, EventLoopGroup group, int port, boolean SSL,
+      WebProtocol protocol) {
     Preconditions.checkNotNull(logger);
     Preconditions.checkNotNull(group);
     Preconditions.checkNotNull(protocol);
@@ -65,7 +66,7 @@ public class WebSocketServer extends AbstractIdleService {
     this.protocol = protocol;
     group.terminationFuture().addListener(f -> this.stopAsync());
   }
-  
+
   WebConnection newConnection(final Channel channel) {
     final WebConnection con = new WebConnection(this, channel);
     channel.closeFuture().addListener(f -> {
@@ -102,6 +103,12 @@ public class WebSocketServer extends AbstractIdleService {
         @Override
         protected void initChannel(SocketChannel ch) throws Exception {
           final ChannelPipeline pipeline = ch.pipeline();
+
+          if (WebSocketServer.this.doesInfluenceMetrics) {
+            pipeline.addLast("trafficMetric",
+                Router.getInstance().getMetric().getChannelTrafficHandler());
+          }
+
           if (sslCtx != null) {
             pipeline.addLast(sslCtx.newHandler(ch.alloc()));
           }
@@ -109,12 +116,7 @@ public class WebSocketServer extends AbstractIdleService {
           pipeline.addLast(new HttpObjectAggregator(65536));
           pipeline.addLast(new WebSocketServerCompressionHandler());
           pipeline.addLast(new WebSocketServerProtocolHandler("/ws", null, true));
-          
-          if(WebSocketServer.this.doesInfluenceMetrics) {
-            pipeline.addFirst("trafficMetric", Router.getInstance().getMetric().getChannelTrafficHandler());
-            pipeline.addLast("packetMetric", Router.getInstance().getMetric().getPacketTrafficHandler());
-          }
-          
+
           pipeline.addLast(new WebProtocolDecoder(protocol));
           pipeline.addLast(new WebProtocolEncoder(protocol));
           pipeline.addLast(new WebSocketConnectionHandler(WebSocketServer.this));
@@ -133,7 +135,7 @@ public class WebSocketServer extends AbstractIdleService {
   protected Executor executor() {
     return MoreExecutors.directExecutor();
   }
-  
+
   @Override
   protected void shutDown() throws Exception {
     if (this.serverChannel != null) {
