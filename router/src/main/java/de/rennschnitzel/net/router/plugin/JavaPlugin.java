@@ -23,18 +23,18 @@ public abstract class JavaPlugin {
   public JavaPlugin() {
   }
 
-  final void init(Router router) {
+  final void init(Router router, Class<? extends JavaPlugin> pluginClass) {
     this.router = router;
-    this.logger = new PluginLogger(this);
-    Plugin plugin = this.getClass().getDeclaredAnnotation(Plugin.class);
+    Plugin plugin = pluginClass.getAnnotation(Plugin.class);
     if (plugin != null) {
       this.name = plugin.name();
       this.version = plugin.version();
       this.author = plugin.author();
     }
     if (this.name == null) {
-      this.name = this.getClass().getName();
+      this.name = this.getClass().getSimpleName();
     }
+    this.logger = new PluginLogger(this);
   }
 
   protected synchronized final void enable() {

@@ -3,6 +3,7 @@ package de.mickare.metricweb.websocket;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.google.common.collect.Maps;
@@ -26,8 +27,6 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketServerCompressionHandler;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
@@ -54,9 +53,11 @@ public @RequiredArgsConstructor class WebSocketServer extends AbstractIdleServic
     final WebConnection con = new WebConnection(this, channel);
     channel.closeFuture().addListener(f -> {
       connections.remove(con);
+      logger.log(Level.INFO, "WebSocket getrennt: " + channel.remoteAddress().toString());
       Router.getInstance().getEventBus().post(new ClosedWebConnectionEvent(con));
     });
     this.connections.add(con);
+    logger.log(Level.INFO, "WebSocket verbunden: " + channel.remoteAddress().toString());
     Router.getInstance().getEventBus().post(new OpenedWebConnectionEvent(con));
     return con;
   }
@@ -80,7 +81,7 @@ public @RequiredArgsConstructor class WebSocketServer extends AbstractIdleServic
       ServerBootstrap b = new ServerBootstrap();
       b.group(group);
       b.channel(PipelineUtils.getServerChannelClass());
-      b.handler(new LoggingHandler(LogLevel.INFO));
+      //b.handler(new LoggingHandler(LogLevel.INFO));
 
       b.childHandler(new ChannelInitializer<SocketChannel>() {
         @Override

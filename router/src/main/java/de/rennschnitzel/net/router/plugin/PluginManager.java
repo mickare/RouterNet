@@ -48,7 +48,7 @@ public class PluginManager {
     for (Class<? extends JavaPlugin> c : plugins) {
       try {
         JavaPlugin plugin = c.newInstance();
-        plugin.init(router);
+        plugin.init(router, c);
         plugin.onLoad();
         this.plugins.add(plugin);
       } catch (InstantiationException | IllegalAccessException e) {
