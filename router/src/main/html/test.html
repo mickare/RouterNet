@@ -180,8 +180,8 @@ cpu.graph_axis_y.tickFormat = function(y) { return y + "%"; };
 
 var ram = new GraphMetric($("#ramMetric"), [
                   { name: 'maxMemory', renderer: 'line', color: "red" },
-                  { name: 'allocatedMemory', renderer: 'area', color: "#9ED11F" },
-                  { name: 'freeMemory', renderer: 'line', color: "#263E97"}
+                  { name: 'freeMemory', renderer: 'line', color: "#263E97"},
+                  { name: 'allocatedMemory', renderer: 'area', color: "#9ED11F" }
                 ], "RAM", bytescale);
 ram.graph_axis_y.tickFormat = function(y) {
   return Rickshaw.Fixtures.Number.formatBase1024KMGTP(y) + "B";
@@ -241,7 +241,7 @@ function connect() {
       ram.addData({
           maxMemory: msg.data.maxMemory,
           allocatedMemory: msg.data.allocatedMemory,
-          freeMemory: msg.data.freeMemory
+          freeMemory: msg.data.allocatedMemory + msg.data.freeMemory
         }, msg.data.timestamp);  
       ram.render();
     }
