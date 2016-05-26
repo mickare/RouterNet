@@ -22,7 +22,7 @@ public @Getter class Target {
 	}
 	
 	public static Target to( UUID nodeId ) {
-		return Builder.builder().include( nodeId ).build();
+		return new Builder().include( nodeId ).build();
 	}
 	
 	public static Target to( Node node ) {
@@ -30,11 +30,15 @@ public @Getter class Target {
 	}
 	
 	public static Target to( String namespace ) {
-		return Builder.builder().include( namespace ).build();
+		return  new Builder().include( namespace ).build();
 	}
 	
 	public static Target to( Collection<Node> nodes ) {
-		return Builder.builder().includeAllNodes( nodes ).build();
+		return  new Builder().includeAllNodes( nodes ).build();
+	}
+	
+	public static Builder newBuilder() {
+		return new Builder();
 	}
 	
 	private final boolean toAll;
@@ -162,9 +166,7 @@ public @Getter class Target {
 			return new Builder().setToAll( true );
 		}
 		
-		public static Builder builder() {
-			return new Builder();
-		}
+		protected Builder() {}
 		
 		private boolean toAll = false;
 		private final Set<UUID> nodesInclude = Sets.newHashSet();
