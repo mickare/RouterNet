@@ -18,7 +18,7 @@ public class PluginManager {
 
   @Getter
   private final Router router;
-  private final List<JavaPlugin> plugins = Lists.newArrayList();
+  private final List<Plugin> plugins = Lists.newArrayList();
 
   private boolean loaded = false;
 
@@ -27,9 +27,9 @@ public class PluginManager {
     this.router = router;
   }
 
-  private static String getName(Class<? extends JavaPlugin> c) {
+  private static String getName(Class<? extends Plugin> c) {
     String name = null;
-    Plugin a = c.getAnnotation(Plugin.class);
+    RouterPlugin a = c.getAnnotation(RouterPlugin.class);
     if (a != null) {
       name = a.name();
     }
@@ -42,12 +42,12 @@ public class PluginManager {
 
     this.plugins.clear();
 
-    List<Class<? extends JavaPlugin>> plugins = Lists.newArrayList();
+    List<Class<? extends Plugin>> plugins = Lists.newArrayList();
     Plugins.loadPlugins(plugins);
 
-    for (Class<? extends JavaPlugin> c : plugins) {
+    for (Class<? extends Plugin> c : plugins) {
       try {
-        JavaPlugin plugin = c.newInstance();
+        Plugin plugin = c.newInstance();
         plugin.init(router, c);
         plugin.onLoad();
         this.plugins.add(plugin);
@@ -62,7 +62,7 @@ public class PluginManager {
 
   }
 
-  synchronized void add(JavaPlugin plugin) {
+  synchronized void add(Plugin plugin) {
     if (this.plugins.contains(plugin)) {
       return;
     }
@@ -72,20 +72,20 @@ public class PluginManager {
 
   public synchronized void enablePlugins() {
     Preconditions.checkState(router.state() == State.STARTING || router.state() == State.RUNNING);
-    for (JavaPlugin plugin : plugins) {
+    for (Plugin plugin : plugins) {
       plugin.enable();
     }
   }
 
   public synchronized void disablePlugins() {
     Preconditions.checkState(router.state() == State.STOPPING);
-    for (JavaPlugin plugin : Lists.reverse(Lists.newArrayList(plugins))) {
+    for (Plugin plugin : Lists.reverse(Lists.newArrayList(plugins))) {
       plugin.disable();
     }
   }
 
-  public synchronized JavaPlugin getPlugin(String name) {
-    for (JavaPlugin plugin : plugins) {
+  public synchronized Plugin getPlugin(String name) {
+    for (Plugin plugin : plugins) {
       if (plugin.getName().equalsIgnoreCase(name)) {
         return plugin;
       }
@@ -93,7 +93,7 @@ public class PluginManager {
     return null;
   }
 
-  public Set<JavaPlugin> getPlugins() {
+  public Set<Plugin> getPlugins() {
     return Collections.unmodifiableSet(Sets.newHashSet(this.plugins));
   }
 

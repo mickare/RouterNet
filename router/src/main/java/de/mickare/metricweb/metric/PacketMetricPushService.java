@@ -22,10 +22,6 @@ public class PacketMetricPushService extends PushService {
   public PacketMetricPushService(MetricWebPlugin plugin) {
     super("packetMetric");
     this.plugin = plugin;
-  }
-
-  public void register() {
-    plugin.getPushServiceManager().register(this);
     plugin.getRouter().getMetric().getPacketTrafficHandler().registerListener(plugin,
         this::onMetric);
   }

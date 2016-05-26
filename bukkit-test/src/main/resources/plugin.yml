@@ -12,4 +12,7 @@ commands:
   m:
     description: Sendet eine private Nachricht im Netzwerk
     usage: /<command> <player> <text>
-    
+  stresstest:
+    description: Stresstest
+    usage: /<command> <times>
+  

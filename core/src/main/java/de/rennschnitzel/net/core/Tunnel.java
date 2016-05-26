@@ -122,7 +122,7 @@ public class Tunnel {
 	}
 	
 	public final void receive( final TunnelMessage cmsg ) {
-		if ( this.listeners.size() > 0 ) {
+		if ( this.listeners.size() > 0 ) {			
 			this.executor.orElseGet( this.network::getExecutor ).execute( () -> {
 				this.listeners.forEach( c -> c.accept( cmsg ) );
 			} );

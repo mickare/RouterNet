@@ -30,9 +30,9 @@ public class Packer {
 	
 	private static <V> Packet pack( final BiConsumer<Packet.Builder, V> setter, final V value ) {
 		final Packet.Builder builder = PACKET_BUILDER.get();
+		builder.clear();
 		setter.accept( builder, value );
 		final Packet packet = builder.build();
-		builder.clear();
 		return packet;
 	}
 	

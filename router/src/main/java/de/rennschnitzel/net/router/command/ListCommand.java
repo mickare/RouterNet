@@ -6,9 +6,6 @@ import com.google.common.base.Strings;
 
 import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.router.Router;
-import de.rennschnitzel.net.router.metric.ChannelTrafficHandler;
-import io.netty.handler.traffic.CustomGlobalChannelTrafficShapingHandler;
-import io.netty.handler.traffic.TrafficCounter;
 
 public class ListCommand extends AbstractCommand {
 
@@ -29,8 +26,6 @@ public class ListCommand extends AbstractCommand {
 
     maxIdLength += 2;
     maxNameLength += 2;
-
-    ChannelTrafficHandler traffic = Router.getInstance().getMetric().getChannelTrafficHandler();
 
     StringBuilder sb = new StringBuilder();
     sb.append("Connections:\n");

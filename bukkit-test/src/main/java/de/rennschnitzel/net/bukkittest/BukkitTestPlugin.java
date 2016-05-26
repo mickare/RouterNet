@@ -1,6 +1,10 @@
 package de.rennschnitzel.net.bukkittest;
 
 import java.util.Arrays;
+import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -13,6 +17,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import de.rennschnitzel.net.Net;
 import de.rennschnitzel.net.Owner;
@@ -34,6 +39,8 @@ public class BukkitTestPlugin extends JavaPlugin implements Owner, Listener {
 	
 	private CallableRegisteredProcedure<Void, DataPlayerList> online_players;
 	private CallableRegisteredProcedure<DataPrivateMessage, Boolean> private_message;
+	
+	private ConcurrentHashMap<UUID, AtomicLong> stresstestCounter = new ConcurrentHashMap<>();
 	
 	@Override
 	public void onLoad() {
@@ -60,9 +67,33 @@ public class BukkitTestPlugin extends JavaPlugin implements Owner, Listener {
 		
 		} );
 		
+		Net.getTunnel( "stresstest" ).registerListener( this, ( msg ) -> {
+			
+			getLogger().info( "Stresstest: " + stresstestCounter.computeIfAbsent( msg.getSenderId(), k -> new AtomicLong( 0 ) ).incrementAndGet() );
+			
+		} );
+		
 		Bukkit.getPluginManager().registerEvents( this, this );
 		
 		getLogger().info( getName() + " enabled!" );
+	}
+	
+	public boolean stressTest( final int times ) {
+		
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				Target target = Target.newBuilder().include( "bukkittest" ).exclude( Net.getNetwork().getHome() ).build();
+				byte buffer[] = new byte[1024];
+				Random ran = new Random();
+				for ( int i = 0; i < times; ++i ) {
+					ran.nextBytes( buffer );
+					Net.getTunnel( "stresstest" ).send( target, buffer );
+				}
+			}
+		}.runTaskAsynchronously( this );
+		
+		return true;
 	}
 	
 	public void broadcast( String msg ) {
@@ -110,6 +141,12 @@ public class BukkitTestPlugin extends JavaPlugin implements Owner, Listener {
 		} else if ( cmd.getName().equalsIgnoreCase( "m" ) ) {
 			return sendPrivateMessage( sender, args );
 			
+		} else if ( cmd.getName().equalsIgnoreCase( "stresstest" ) ) {
+			int times = 100;
+			if ( args.length > 0 ) {
+				times = Integer.parseInt( args[0] );
+			}
+			return stressTest( times );
 		}
 		return false;
 	}
