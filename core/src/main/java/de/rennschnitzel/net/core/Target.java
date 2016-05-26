@@ -89,9 +89,10 @@ public @Getter class Target {
 		return false;
 	}
 	
-	public boolean contains( Node node ) {
+	public boolean contains(final Node node ) {
+		final UUID id = node.getId();
 		if ( toAll ) {
-			if ( nodesExclude.contains( node.getId() ) ) {
+			if ( nodesExclude.contains( id ) ) {
 				return false;
 			}
 			if ( overlaps( this.namespacesExclude, node.getNamespaces() ) ) {
@@ -99,11 +100,11 @@ public @Getter class Target {
 			}
 			return true;
 		}
-		if ( nodesInclude.contains( node.getId() ) ) {
+		if ( nodesInclude.contains( id ) ) {
 			return true;
 		}
 		if ( overlaps( this.namespacesInclude, node.getNamespaces() ) ) {
-			return true;
+			return !nodesExclude.contains( id );
 		}
 		return false;
 	}
@@ -264,8 +265,8 @@ public @Getter class Target {
 		}
 		
 		public Target build() {
-			this.nodesInclude.removeAll( this.nodesExclude );
-			this.namespacesInclude.removeAll( this.namespacesExclude );
+			//this.nodesInclude.removeAll( this.nodesExclude );
+			//this.namespacesInclude.removeAll( this.namespacesExclude );
 			return new Target( this.toAll, this.nodesInclude, this.nodesExclude, this.namespacesInclude, this.namespacesExclude );
 		}
 		

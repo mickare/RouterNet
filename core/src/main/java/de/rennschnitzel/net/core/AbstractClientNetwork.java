@@ -205,7 +205,7 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
 	
 	private boolean send( final Packet packet ) {
 		try ( CloseableLock l = connectionLock.readLock().open() ) {
-			if ( connection != null ) {
+			if ( connection != null && connection.isActive() ) {
 				connection.writeAndFlushFast( packet );
 				return true;
 			}
