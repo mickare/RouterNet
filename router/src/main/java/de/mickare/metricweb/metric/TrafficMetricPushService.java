@@ -46,7 +46,8 @@ public class TrafficMetricPushService extends PushService {
 
     public TrafficMetric(String channel, TrafficCounter counter) {
       this.channel = channel;
-      this.timestamp = counter.lastTime();
+     //this.timestamp = counter.lastTime(); wrong time
+      this.timestamp = System.currentTimeMillis();
       this.writeThroughput = counter.lastWriteThroughput();
       this.readThroughput = counter.lastReadThroughput();
       this.writtenBytes = counter.lastWrittenBytes();

@@ -71,11 +71,11 @@ public class WebSocketServer extends AbstractIdleService {
     final WebConnection con = new WebConnection(this, channel);
     channel.closeFuture().addListener(f -> {
       connections.remove(con);
-      logger.log(Level.INFO, "WebSocket getrennt: " + channel.remoteAddress().toString());
+      logger.log(Level.INFO, "WebSocket disconnected: " + channel.remoteAddress().toString());
       Router.getInstance().getEventBus().post(new ClosedWebConnectionEvent(con));
     });
     this.connections.add(con);
-    logger.log(Level.INFO, "WebSocket verbunden: " + channel.remoteAddress().toString());
+    logger.log(Level.INFO, "WebSocket connected: " + channel.remoteAddress().toString());
     Router.getInstance().getEventBus().post(new OpenedWebConnectionEvent(con));
     return con;
   }

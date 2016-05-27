@@ -2,15 +2,16 @@ package de.mickare.metricweb.protocol;
 
 import lombok.Data;
 
-public class MetricWebProtocol extends WebProtocol {
+public class RouterWebProtocol extends WebProtocol {
 
-  public MetricWebProtocol() {
+  public RouterWebProtocol() {
     init();
   }
 
   @Override
   protected void init() {
     register(Subscribe.class);
+    register(Unsubscribe.class);
   }
     
   // *************************
@@ -20,4 +21,9 @@ public class MetricWebProtocol extends WebProtocol {
     private String service;
   }
 
+  @Packet(name = "unsubscribe")
+  public static @Data class Unsubscribe implements PacketData {
+    private String service;
+  }
+  
 }

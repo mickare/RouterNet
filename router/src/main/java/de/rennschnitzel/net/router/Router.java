@@ -42,6 +42,7 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.WriteBufferWaterMark;
 import jline.console.ConsoleReader;
 import lombok.Getter;
 
@@ -151,6 +152,7 @@ public class Router extends AbstractIdleService implements Owner {
     b.group(eventLoop);
     b.channel(PipelineUtils.getServerChannelClass());
     b.option(ChannelOption.SO_REUSEADDR, true);
+    b.childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(16 * 1024, 32 * 1024));
 
     b.childHandler(PipelineUtils.baseInitAnd(ch -> {
       final ChannelPipeline p = ch.pipeline();
@@ -176,11 +178,11 @@ public class Router extends AbstractIdleService implements Owner {
     });
   }
 
-  
+
   @Override
   protected void shutDown() throws Exception {
     logger.info("Stopping...");
-    
+
     // Close main server socket
     getLogger().log(Level.INFO, "Closing listener {0}", listener);
     try {
@@ -192,7 +194,7 @@ public class Router extends AbstractIdleService implements Owner {
     // Disable plugins
     getLogger().info("Disabling plugins");
     this.pluginManager.disablePlugins();
-    
+
     // Close EventLoopGroup
     getLogger().info("Closing IO threads");
     eventLoop.shutdownGracefully();
@@ -200,7 +202,7 @@ public class Router extends AbstractIdleService implements Owner {
       eventLoop.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
     } catch (InterruptedException ex) {
     }
-        
+
     scheduler.shutdown();
     try {
       scheduler.awaitTermination(5, TimeUnit.SECONDS);

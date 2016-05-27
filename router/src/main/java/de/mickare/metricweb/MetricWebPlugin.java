@@ -11,7 +11,7 @@ import de.mickare.metricweb.metric.PacketMetricPushService;
 import de.mickare.metricweb.metric.RAMMetricPushService;
 import de.mickare.metricweb.metric.Stoppable;
 import de.mickare.metricweb.metric.TrafficMetricPushService;
-import de.mickare.metricweb.protocol.MetricWebProtocol;
+import de.mickare.metricweb.protocol.RouterWebProtocol;
 import de.mickare.metricweb.websocket.WebSocketServer;
 import de.rennschnitzel.net.router.plugin.Plugin;
 import de.rennschnitzel.net.router.plugin.RouterPlugin;
@@ -39,7 +39,7 @@ public class MetricWebPlugin extends Plugin {
     this.getRouter().getEventBus().register(pushServiceManager);
 
     this.socketServer = new WebSocketServer(getLogger(), getRouter().getEventLoop(), 5546, false,
-        new MetricWebProtocol());
+        new RouterWebProtocol());
     this.socketServer.startAsync();
 
     pushServiceManager.register(new PacketMetricPushService(this));

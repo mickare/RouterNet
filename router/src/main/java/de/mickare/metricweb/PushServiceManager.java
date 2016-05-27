@@ -7,7 +7,7 @@ import com.google.common.collect.Maps;
 import com.google.common.eventbus.Subscribe;
 
 import de.mickare.metricweb.event.OpenedWebConnectionEvent;
-import de.mickare.metricweb.protocol.MetricWebProtocol;
+import de.mickare.metricweb.protocol.RouterWebProtocol;
 import de.mickare.metricweb.websocket.WebConnection;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ public @RequiredArgsConstructor class PushServiceManager {
   }
 
   private void handleSubscribeMessage(WebConnection connection, String packetName,
-      MetricWebProtocol.Subscribe packetData) throws Exception {
+      RouterWebProtocol.Subscribe packetData) throws Exception {
 
     PushService service = getService(packetData.getService());
     if (service != null) {
@@ -41,7 +41,7 @@ public @RequiredArgsConstructor class PushServiceManager {
   @Subscribe
   public void on(OpenedWebConnectionEvent event) {
     try {
-      event.getConnection().registerMessageHandler(MetricWebProtocol.Subscribe.class,
+      event.getConnection().registerMessageHandler(RouterWebProtocol.Subscribe.class,
           this::handleSubscribeMessage);
     } catch (Exception e) {
       plugin.getLogger().log(Level.SEVERE, "Could not register message handler!", e);
