@@ -78,7 +78,7 @@
     extent[0] = Math.ceil(extent[0] / step) * step;
     extent[1] = Math.floor(extent[1] / step) * step + step * 0.5;
     extent[2] = step;
-
+    
     return extent;
   }
 

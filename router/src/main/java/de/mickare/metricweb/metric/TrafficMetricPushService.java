@@ -41,17 +41,20 @@ public class TrafficMetricPushService extends PushService {
   public static @Data @AllArgsConstructor class TrafficMetric implements PacketData {
     private String channel;
     private long timestamp;
-    private long writeThroughput, readThroughput;
-    private long writtenBytes, readBytes;
+    private long intervall;
+    private long lastWriteThroughput, lastReadThroughput;
+    private long lastWrittenBytes, lastReadBytes;
+    private long realWriteThroughput;
 
     public TrafficMetric(String channel, TrafficCounter counter) {
       this.channel = channel;
      //this.timestamp = counter.lastTime(); wrong time
       this.timestamp = System.currentTimeMillis();
-      this.writeThroughput = counter.lastWriteThroughput();
-      this.readThroughput = counter.lastReadThroughput();
-      this.writtenBytes = counter.lastWrittenBytes();
-      this.readBytes = counter.lastReadBytes();
+      this.lastWriteThroughput = counter.lastWriteThroughput();
+      this.lastReadThroughput = counter.lastReadThroughput();
+      this.lastWrittenBytes = counter.lastWrittenBytes();
+      this.lastReadBytes = counter.lastReadBytes();
+      this.realWriteThroughput = counter.getRealWriteThroughput();
     }
 
   }
