@@ -29,5 +29,6 @@ public class Settings {
   
   
   private String restartScript = "start.sh";
-
+  private String pluginFolder = "plugins";
+  
 }

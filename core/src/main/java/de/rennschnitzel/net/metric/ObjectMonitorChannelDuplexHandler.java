@@ -1,4 +1,4 @@
-package de.rennschnitzel.net.router.metric;
+package de.rennschnitzel.net.metric;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;

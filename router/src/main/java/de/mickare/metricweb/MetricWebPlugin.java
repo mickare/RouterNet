@@ -14,10 +14,14 @@ import de.mickare.metricweb.metric.TrafficMetricPushService;
 import de.mickare.metricweb.protocol.RouterWebProtocol;
 import de.mickare.metricweb.websocket.WebSocketServer;
 import de.rennschnitzel.net.router.plugin.Plugin;
-import de.rennschnitzel.net.router.plugin.RouterPlugin;
+import de.rennschnitzel.net.router.plugin.Plugin.Author;
+import de.rennschnitzel.net.router.plugin.Plugin.Name;
+import de.rennschnitzel.net.router.plugin.Plugin.Version;
 import lombok.Getter;
 
-@RouterPlugin(name = "MetricWeb", version = "0.0.1", author = "mickare")
+@Name("MetricWeb")
+@Version("0.0.1")
+@Author( "mickare")
 public class MetricWebPlugin extends Plugin {
 
   private @Getter ServiceManager pushServiceManager;

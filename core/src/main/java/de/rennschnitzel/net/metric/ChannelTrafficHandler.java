@@ -1,4 +1,4 @@
-package de.rennschnitzel.net.router.metric;
+package de.rennschnitzel.net.metric;
 
 import java.util.Collection;
 import java.util.concurrent.ScheduledExecutorService;
@@ -14,6 +14,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import lombok.Getter;
 
+@Deprecated
 public class ChannelTrafficHandler extends ObjectMonitorChannelDuplexHandler<ByteBuf> {
 
   public static interface ByteCount {

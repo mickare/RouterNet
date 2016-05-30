@@ -1,39 +1,66 @@
 package de.rennschnitzel.net.router.plugin;
 
+import java.lang.annotation.Annotation;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.router.Router;
 import lombok.Getter;
 
 public abstract class Plugin {
 
-  @Getter
-  private Router router;
-
-  @Getter
-  private String name, version, author;
-
-  @Getter
-  private Logger logger;
-
-  @Getter
-  private boolean enabled = false;
-
-  public Plugin() {
+  @Target(value = {ElementType.TYPE})
+  @Retention(RetentionPolicy.RUNTIME)
+  public static @interface Name {
+    String value();
+  }
+  @Target(value = {ElementType.TYPE})
+  @Retention(RetentionPolicy.RUNTIME)
+  public static @interface Version {
+    String value();
+  }
+  @Target(value = {ElementType.TYPE})
+  @Retention(RetentionPolicy.RUNTIME)
+  public static @interface Author {
+    String value();
   }
 
-  final void init(Router router, Class<? extends Plugin> pluginClass) {
+  private static <A extends Annotation, V> Optional<V> get(final Object o,
+      final Class<A> annotation, final Function<A, V> mapper) {
+    final A a = o.getClass().getAnnotation(annotation);
+    if (a != null) {
+      return Optional.ofNullable(mapper.apply(a));
+    }
+    return Optional.empty();
+  }
+
+  private @Getter Router router;
+
+  private @Getter final String name = get(this, Name.class, Name::value)//
+      .orElse(this.getClass().getSimpleName());
+  private @Getter final String version = get(this, Version.class, Version::value).orElse(null);
+  private @Getter final String author = get(this, Author.class, Author::value).orElse(null);
+
+  private @Getter Logger logger;
+  private @Getter boolean enabled = false;
+
+  public Plugin() {
+    String name = this.getName();
+    Preconditions.checkArgument(name != null && name.length() > 0,
+        "Plugin (" + this.getClass().getName() + " has an empty name.");
+  }
+
+  final void init(Router router) {
+    Preconditions.checkNotNull(router);
     this.router = router;
-    RouterPlugin plugin = pluginClass.getAnnotation(RouterPlugin.class);
-    if (plugin != null) {
-      this.name = plugin.name();
-      this.version = plugin.version();
-      this.author = plugin.author();
-    }
-    if (this.name == null) {
-      this.name = this.getClass().getSimpleName();
-    }
     this.logger = new PluginLogger(this);
   }
 

@@ -9,7 +9,7 @@ import de.mickare.metricweb.Service;
 import de.mickare.metricweb.protocol.Packet;
 import de.mickare.metricweb.protocol.WebProtocol.PacketData;
 import de.mickare.metricweb.websocket.WebConnection;
-import de.rennschnitzel.net.router.metric.PacketTrafficHandler.PacketCount;
+import de.rennschnitzel.net.metric.PacketTrafficHandler.PacketCount;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

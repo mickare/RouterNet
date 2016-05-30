@@ -1,4 +1,4 @@
-package de.rennschnitzel.net.router.metric;
+package de.rennschnitzel.net.metric;
 
 import de.rennschnitzel.net.protocol.TransportProtocol.Packet;
 import io.netty.channel.EventLoopGroup;
