@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -14,7 +13,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.eventbus.EventBus;
 import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.AbstractIdleService;
-import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import de.rennschnitzel.net.Owner;
@@ -56,7 +54,7 @@ public class Router extends AbstractIdleService implements Owner {
   private final @Getter ConsoleReader console;
   private final @Getter CommandManager commandManager;
   private final @Getter ConfigFile<Settings> configFile;
-  private final @Getter ScheduledExecutorService scheduler;
+  //private final @Getter ScheduledExecutorService scheduler;
   private final @Getter PluginManager pluginManager = new PluginManager(this);
   private @Getter HostAndPort address;
   private final @Getter RouterNetwork network;
@@ -91,16 +89,22 @@ public class Router extends AbstractIdleService implements Owner {
     this.version = this.properties.getProperty("project.version");
     this.builddate = this.properties.getProperty("project.builddate");;
 
+    /*
     this.scheduler = MoreExecutors.getExitingScheduledExecutorService(
         new ScheduledThreadPoolExecutor(0,
             new ThreadFactoryBuilder().setNameFormat("Router Pool Thread #%1$d").build()),
         10, TimeUnit.SECONDS);
+        */
 
     HomeNode home = new HomeNode(this.configFile.getConfig().getRouterSettings().getHome().getId(),
         this.getConfig().getRouterSettings().getHome().getNamespaces());
     home.setType(NodeMessage.Type.ROUTER);
     this.network = new RouterNetwork(this, home);
     home.setName(this.getConfig().getRouterSettings().getHome().getName());
+  }
+  
+  public ScheduledExecutorService getScheduler() {
+    return this.eventLoop;
   }
 
   public Settings getConfig() {
@@ -122,6 +126,10 @@ public class Router extends AbstractIdleService implements Owner {
     sb.append("\n****************************************************");
     logger.info(sb.toString());
 
+    // Init EventLoop
+    this.eventLoop = PipelineUtils.newEventLoopGroup(0,
+        new ThreadFactoryBuilder().setNameFormat("Netty IO Thread #%1$d").build());
+    
     // Load plugins
     this.pluginManager.loadPlugins();
 
@@ -132,10 +140,7 @@ public class Router extends AbstractIdleService implements Owner {
 
     this.authentication = AuthenticationFactory
         .newPasswordForRouter(this.getConfigFile().getConfig().getRouterSettings().getPassword());
-
-    // Init EventLoop
-    this.eventLoop = PipelineUtils.newEventLoopGroup(0,
-        new ThreadFactoryBuilder().setNameFormat("Netty IO Thread #%1$d").build());
+    
     this.metric = new Metric(eventLoop);
 
     // Enable plugins
@@ -201,12 +206,6 @@ public class Router extends AbstractIdleService implements Owner {
     try {
       eventLoop.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
     } catch (InterruptedException ex) {
-    }
-
-    scheduler.shutdown();
-    try {
-      scheduler.awaitTermination(5, TimeUnit.SECONDS);
-    } catch (InterruptedException ie) {
     }
 
     StringBuilder sb = new StringBuilder();
