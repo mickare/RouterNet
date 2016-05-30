@@ -2,6 +2,7 @@ package de.mickare.metricweb.websocket;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.google.common.base.Preconditions;
 
@@ -19,6 +20,9 @@ import lombok.RequiredArgsConstructor;
 
 public @RequiredArgsConstructor class WebConnection {
 
+  private static AtomicLong ID_COUNTER = new AtomicLong(0);
+
+  private @Getter final long id = ID_COUNTER.incrementAndGet();
   private @Getter @NonNull final WebSocketServer server;
   private @Getter @NonNull final Channel channel;
 
@@ -53,9 +57,10 @@ public @RequiredArgsConstructor class WebConnection {
   }
 
   @SuppressWarnings("unchecked")
-  private <T extends PacketData> void callHandler(String name, T data) throws Exception {
-    PacketHandler<T> handler = (PacketHandler<T>) getPacketHandler(data.getClass());
-    if (handler != null) {
+  private <T extends PacketData> void callHandler(final String name, final T data)
+      throws Exception {
+    final PacketHandler<T> handler = (PacketHandler<T>) getPacketHandler(data.getClass());
+    if (handler != null) {     
       handler.handle(this, name, data);
     }
   }

@@ -4,7 +4,6 @@ import java.util.List;
 
 import de.mickare.metricweb.protocol.WebProtocol;
 import de.mickare.metricweb.protocol.WebProtocol.PacketMessage;
-import de.rennschnitzel.net.router.Router;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageEncoder;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;

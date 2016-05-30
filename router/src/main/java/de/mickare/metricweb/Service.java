@@ -10,12 +10,12 @@ import de.mickare.metricweb.protocol.WebProtocol.PacketMessage;
 import de.mickare.metricweb.websocket.WebConnection;
 import lombok.Getter;
 
-public abstract class PushService {
+public abstract class Service {
 
   private @Getter final String name;
   private final Set<WebConnection> subscribed = Sets.newConcurrentHashSet();
 
-  public PushService(String name) {
+  public Service(String name) {
     Preconditions.checkArgument(!name.isEmpty());
     this.name = name;
   }

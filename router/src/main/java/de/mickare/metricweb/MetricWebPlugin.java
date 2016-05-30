@@ -20,7 +20,7 @@ import lombok.Getter;
 @RouterPlugin(name = "MetricWeb", version = "0.0.1", author = "mickare")
 public class MetricWebPlugin extends Plugin {
 
-  private @Getter PushServiceManager pushServiceManager;
+  private @Getter ServiceManager pushServiceManager;
   private @Getter WebSocketServer socketServer;
 
   private Set<Stoppable> stoppable = Sets.newHashSet();
@@ -34,7 +34,7 @@ public class MetricWebPlugin extends Plugin {
   @Override
   protected void onEnable() throws Exception {
 
-    pushServiceManager = new PushServiceManager(this);
+    pushServiceManager = new ServiceManager(this);
 
     this.getRouter().getEventBus().register(pushServiceManager);
 

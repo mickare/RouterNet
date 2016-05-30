@@ -4,13 +4,13 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-import de.mickare.metricweb.PushService;
+import de.mickare.metricweb.Service;
 import de.rennschnitzel.net.router.plugin.Plugin;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-public abstract class TimedPushService extends PushService implements Stoppable {
+public abstract class TimedPushService extends Service implements Stoppable {
 
   private static @RequiredArgsConstructor class TimerTask implements Runnable {
     private @NonNull final TimedPushService service;

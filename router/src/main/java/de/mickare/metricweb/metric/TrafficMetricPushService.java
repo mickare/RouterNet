@@ -5,7 +5,7 @@ import java.util.List;
 import com.google.common.collect.ImmutableList;
 
 import de.mickare.metricweb.MetricWebPlugin;
-import de.mickare.metricweb.PushService;
+import de.mickare.metricweb.Service;
 import de.mickare.metricweb.protocol.Packet;
 import de.mickare.metricweb.protocol.WebProtocol.PacketData;
 import de.mickare.metricweb.websocket.WebConnection;
@@ -14,7 +14,7 @@ import io.netty.handler.traffic.TrafficCounter;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-public class TrafficMetricPushService extends PushService {
+public class TrafficMetricPushService extends Service {
 
   private final List<TrafficMetric> history = new EvictingLinkedList<>(100);
 

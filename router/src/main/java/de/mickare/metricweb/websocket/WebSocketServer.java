@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -12,8 +13,9 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import de.mickare.metricweb.PushService;
+import de.mickare.metricweb.Service;
 import de.mickare.metricweb.event.ClosedWebConnectionEvent;
 import de.mickare.metricweb.event.OpenedWebConnectionEvent;
 import de.mickare.metricweb.protocol.WebProtocol;
@@ -40,7 +42,8 @@ import lombok.Setter;
 public class WebSocketServer extends AbstractIdleService {
 
   private @Getter final Logger logger;
-  private final EventLoopGroup group;
+  private final boolean remoteEventLoop;
+  private final EventLoopGroup eventLoop;
 
   private @Getter final int port;
   private @Getter final boolean SSL;
@@ -48,23 +51,41 @@ public class WebSocketServer extends AbstractIdleService {
   private Channel serverChannel;
 
   private final Set<WebConnection> connections = Sets.newConcurrentHashSet();
-  private final Map<String, PushService> streamServices = Maps.newConcurrentMap();
+  private final Map<String, Service> streamServices = Maps.newConcurrentMap();
 
   private @Getter final WebProtocol protocol;
 
   private @Getter @Setter boolean doesInfluenceMetrics = true;
 
-  public WebSocketServer(Logger logger, EventLoopGroup group, int port, boolean SSL,
+  public WebSocketServer(Logger logger, int port, boolean SSL, WebProtocol protocol) {
+    this(logger, false, null, port, SSL, protocol);
+  }
+
+  public WebSocketServer(Logger logger, EventLoopGroup eventLoop, int port, boolean SSL,
       WebProtocol protocol) {
+    this(logger, true, eventLoop, port, SSL, protocol);
+  }
+
+  private WebSocketServer(Logger logger, boolean remoteEventLoop, EventLoopGroup eventLoop, int port,
+      boolean SSL, WebProtocol protocol) {
     Preconditions.checkNotNull(logger);
-    Preconditions.checkNotNull(group);
-    Preconditions.checkNotNull(protocol);
     this.logger = logger;
-    this.group = group;
+
+    Preconditions.checkNotNull(protocol);
+    this.protocol = protocol;
+
+    if (remoteEventLoop) {
+      Preconditions.checkNotNull(eventLoop);
+      this.remoteEventLoop = true;
+      this.eventLoop = eventLoop;
+    } else {
+      this.remoteEventLoop = false;
+      this.eventLoop = PipelineUtils.newEventLoopGroup(0,
+          new ThreadFactoryBuilder().setNameFormat("WebSocket IO Thread #%1$d").build());
+    }
     this.port = port;
     this.SSL = SSL;
-    this.protocol = protocol;
-    group.terminationFuture().addListener(f -> this.stopAsync());
+    eventLoop.terminationFuture().addListener(f -> this.stopAsync());
   }
 
   WebConnection newConnection(final Channel channel) {
@@ -94,7 +115,7 @@ public class WebSocketServer extends AbstractIdleService {
 
     try {
       ServerBootstrap b = new ServerBootstrap();
-      b.group(group);
+      b.group(eventLoop);
       b.channel(PipelineUtils.getServerChannelClass());
       b.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
       // b.handler(new LoggingHandler(LogLevel.INFO));
@@ -139,7 +160,15 @@ public class WebSocketServer extends AbstractIdleService {
   @Override
   protected void shutDown() throws Exception {
     if (this.serverChannel != null) {
-      serverChannel.close().sync();
+      serverChannel.close();
+    }
+    if(this.remoteEventLoop) { // Close EventLoopGroup
+      getLogger().info("Closing IO threads");
+      eventLoop.shutdownGracefully();
+      try {
+        eventLoop.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+      } catch (InterruptedException ex) {
+      }
     }
   }
 
@@ -147,7 +176,7 @@ public class WebSocketServer extends AbstractIdleService {
     return Collections.unmodifiableSet(this.connections);
   }
 
-  public void register(PushService service) {
+  public void register(Service service) {
     if (this.streamServices.putIfAbsent(service.getName(), service) != null) {
       throw new IllegalStateException(service.getName() + " already registered");
     }
