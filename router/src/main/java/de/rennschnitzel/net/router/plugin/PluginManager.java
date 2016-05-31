@@ -60,7 +60,7 @@ public class PluginManager {
   public void enablePlugins() {
     for (Plugin plugin : plugins.values()) {
       try {
-        plugin.onEnable();
+        plugin.enable();
         router.getLogger().log(Level.INFO, "Enabled plugin {0} version {1} by {2}",
             new Object[] {plugin.getDescription().getName(), plugin.getDescription().getVersion(),
                 plugin.getDescription().getAuthor()});

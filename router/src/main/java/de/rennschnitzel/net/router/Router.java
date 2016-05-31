@@ -3,7 +3,6 @@ package de.rennschnitzel.net.router;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -119,10 +118,6 @@ public class Router extends AbstractIdleService implements Owner {
     return this.buildInfo.getBuildVersion();
   }
 
-  public ScheduledExecutorService getScheduler() {
-    return this.eventLoop;
-  }
-
   public Settings getConfig() {
     return this.getConfigFile().getConfig();
   }
@@ -217,14 +212,12 @@ public class Router extends AbstractIdleService implements Owner {
     getLogger().info("Disabling plugins");
     for (Plugin plugin : this.pluginManager.getPlugins()) {
       try {
-        plugin.onDisable();
-        for (java.util.logging.Handler handler : plugin.getLogger().getHandlers()) {
-          handler.close();
-        }
+        plugin.disable();
       } catch (Throwable t) {
         getLogger().log(Level.SEVERE,
             "Exception disabling plugin " + plugin.getDescription().getName(), t);
       }
+      plugin.getExecutorService().shutdown();
     }
 
     // Close EventLoopGroup

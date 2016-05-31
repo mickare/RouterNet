@@ -36,6 +36,10 @@ public class LazyCache<T> implements CheckedSupplier<T> {
 		return cache.get();
 	}
 	
+	public T getIfPresent() {
+		return cache.getIfPresent();
+	}
+	
 	public void invalidate() {
 		reset();
 	}
@@ -65,6 +69,10 @@ public class LazyCache<T> implements CheckedSupplier<T> {
 					}
 				}
 			}
+			return value;
+		}
+		
+		public T getIfPresent() {
 			return value;
 		}
 	}

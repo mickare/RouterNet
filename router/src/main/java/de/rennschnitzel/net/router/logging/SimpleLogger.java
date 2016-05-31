@@ -15,7 +15,7 @@ import jline.console.ConsoleReader;
 
 public class SimpleLogger extends Logger {
 
-  private static final int FILE_LIMIT = 1 << 12; // 1 << 24
+  private static final int FILE_LIMIT = 1 << 24;
   
   private static class ConsoleWriter extends Handler {
     private final ConsoleReader console;
