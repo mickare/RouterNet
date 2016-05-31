@@ -3,7 +3,6 @@ package de.rennschnitzel.net.router;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -32,6 +31,7 @@ import de.rennschnitzel.net.router.config.Settings;
 import de.rennschnitzel.net.router.packet.RouterPacketHandler;
 import de.rennschnitzel.net.router.plugin.Plugin;
 import de.rennschnitzel.net.router.plugin.PluginManager;
+import de.rennschnitzel.net.util.BuildInfo;
 import de.rennschnitzel.net.util.FutureUtils;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -50,8 +50,8 @@ public class Router extends AbstractIdleService implements Owner {
   private static @Getter Router instance = null;
 
   private final @Getter Logger logger;
-  private final @Getter Properties properties;
-  private final @Getter String name, version, builddate;
+  private final @Getter BuildInfo buildInfo;
+
   private final @Getter ConsoleReader console;
   private final @Getter CommandManager commandManager;
   private final @Getter ConfigFile<Settings> configFile;
@@ -88,12 +88,9 @@ public class Router extends AbstractIdleService implements Owner {
 
     this.commandManager = new CommandManager(this);
 
-    this.properties = new Properties();
-    this.properties.load(Router.class.getClassLoader().getResourceAsStream("project.properties"));
-
-    this.name = this.properties.getProperty("project.name");
-    this.version = this.properties.getProperty("project.version");
-    this.builddate = this.properties.getProperty("project.builddate");;
+    this.buildInfo = new BuildInfo(Router.class.getClassLoader(), "build.properties");
+    Preconditions.checkNotNull(buildInfo.getName(),
+        "build properties does not contain name of build");
 
     this.pluginManager = new PluginManager(this);
 
@@ -114,6 +111,14 @@ public class Router extends AbstractIdleService implements Owner {
     home.setName(this.getConfig().getRouterSettings().getHome().getName());
   }
 
+  public String getName() {
+    return this.buildInfo.getName();
+  }
+
+  public String getVersion() {
+    return this.buildInfo.getBuildVersion();
+  }
+
   public ScheduledExecutorService getScheduler() {
     return this.eventLoop;
   }
@@ -132,8 +137,11 @@ public class Router extends AbstractIdleService implements Owner {
     StringBuilder sb = new StringBuilder();
     sb.append("Starting...");
     sb.append("\n****************************************************");
-    sb.append("\n").append(this.name).append(" ").append(this.version);
-    sb.append("\nBuild-Datum ").append(this.builddate);
+    sb.append("\n").append(this.getName()).append(" ").append(this.getVersion());
+    sb.append("\nBuild: ").append(this.buildInfo.getBuildDate())//
+        .append(" ").append(this.buildInfo.getJDK());
+    sb.append("\n       ").append(this.buildInfo.getBuildOs()).append(" by ")//
+        .append(this.buildInfo.getBuildUser());
     sb.append("\n****************************************************");
     logger.info(sb.toString());
 
