@@ -138,6 +138,7 @@ public class Router extends AbstractIdleService implements Owner {
     logger.info(sb.toString());
 
     // Load plugins
+    this.pluginManager.detectPlugins(this.pluginsFolder);
     this.pluginManager.loadPlugins();
 
     // Start Socket Server
@@ -225,7 +226,7 @@ public class Router extends AbstractIdleService implements Owner {
       eventLoop.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
     } catch (InterruptedException ex) {
     }
-    
+
     StringBuilder sb = new StringBuilder();
     sb.append("\n****************************************************");
     sb.append("\nStop");

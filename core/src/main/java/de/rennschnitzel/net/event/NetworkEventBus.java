@@ -1,18 +1,17 @@
-package de.rennschnitzel.net.util;
+package de.rennschnitzel.net.event;
 
-import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.google.common.eventbus.AsyncEventBus;
+import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.SubscriberExceptionContext;
 import com.google.common.eventbus.SubscriberExceptionHandler;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-public class NetworkEventBus extends AsyncEventBus {
+public class NetworkEventBus extends EventBus {
 	
 	@RequiredArgsConstructor
 	private static class ExceptionHandler implements SubscriberExceptionHandler {
@@ -26,8 +25,8 @@ public class NetworkEventBus extends AsyncEventBus {
 		
 	}
 	
-	public NetworkEventBus( Executor executor, Supplier<Logger> logger ) {
-		super( executor, new ExceptionHandler( logger ) );
+	public NetworkEventBus( Supplier<Logger> logger ) {
+		super( new ExceptionHandler( logger ) );
 	}
 	
 }

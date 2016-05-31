@@ -35,18 +35,9 @@ public class PluginManager {
   private final Map<String, Plugin> plugins = new LinkedHashMap<>();
   private Map<String, PluginDescription> toLoad = new HashMap<>();
 
-  private boolean loaded = false;
-
-  private @Getter final File pluginDir;
-
   public PluginManager(Router router) {
     Preconditions.checkNotNull(router);
     this.router = router;
-
-    this.pluginDir = new File(router.getConfig().getPluginFolder());
-    if (!pluginDir.isDirectory()) {
-      pluginDir.mkdirs();
-    }
   }
 
   public Collection<Plugin> getPlugins() {

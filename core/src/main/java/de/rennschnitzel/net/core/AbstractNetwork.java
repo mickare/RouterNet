@@ -29,6 +29,7 @@ import de.rennschnitzel.net.core.tunnel.SubTunnelDescriptor;
 import de.rennschnitzel.net.core.tunnel.TunnelDescriptors;
 import de.rennschnitzel.net.core.tunnel.TunnelMessage;
 import de.rennschnitzel.net.core.tunnel.object.ObjectTunnel;
+import de.rennschnitzel.net.event.NetworkEventBus;
 import de.rennschnitzel.net.event.NodeEvent;
 import de.rennschnitzel.net.exception.ConnectionException;
 import de.rennschnitzel.net.exception.ProtocolException;
@@ -37,7 +38,6 @@ import de.rennschnitzel.net.protocol.NetworkProtocol.NodeTopologyMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
-import de.rennschnitzel.net.util.NetworkEventBus;
 import de.rennschnitzel.net.util.concurrent.CloseableLock;
 import de.rennschnitzel.net.util.concurrent.CloseableReadWriteLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableLock;
@@ -76,7 +76,7 @@ public abstract class AbstractNetwork {
 		Preconditions.checkNotNull( home );
 		Preconditions.checkNotNull( executor );
 		this.logger = logger;
-		this.eventBus = new NetworkEventBus( executor, () -> this.logger );
+		this.eventBus = new NetworkEventBus( () -> this.logger );
 		home.setNetwork( this );
 		this.home = home;
 		this.nodes.put( home.getId(), home );
@@ -494,9 +494,9 @@ public abstract class AbstractNetwork {
 		}
 		return b.build();
 	}
-
+	
 	public void syncExecuteIfPossible( Runnable command ) {
 		this.executor.execute( command );
 	}
-		
+	
 }
