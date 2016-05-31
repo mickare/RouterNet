@@ -1,11 +1,12 @@
 package de.rennschnitzel.net.core.procedure;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.function.BiConsumer;
 
 import com.google.protobuf.ByteString;
 
-import de.rennschnitzel.net.core.AbstractNetwork;
+import de.rennschnitzel.net.core.Serialization;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureCallMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
 import de.rennschnitzel.net.util.function.CheckedFunction;
@@ -20,7 +21,7 @@ public class ProcedureUtils {
 		} else if ( byte[].class.equals( resultClass ) ) {
 			return ( p ) -> ( R ) p.getBytes().toByteArray();
 		} else if ( Serializable.class.isAssignableFrom( resultClass ) ) {
-			return ( p ) -> ( R ) AbstractNetwork.SERIALIZATION.getObjectInput( p.getObject().toByteArray() ).readObject( resultClass );
+			return ( p ) -> ( R ) Serialization.asObject( resultClass, p.getObject() );
 		} else {
 			throw new IllegalArgumentException( "Unsupported response type (" + resultClass.getName() + ")!" );
 		}
@@ -34,7 +35,13 @@ public class ProcedureUtils {
 		} else if ( byte[].class.equals( resultClass ) ) {
 			return ( p, r ) -> p.setBytes( ByteString.copyFrom( ( byte[] ) r ) );
 		} else if ( Serializable.class.isAssignableFrom( resultClass ) ) {
-			return ( p, r ) -> p.setObject( ByteString.copyFrom( AbstractNetwork.SERIALIZATION.asByteArray( r ) ) );
+			return ( p, r ) -> {
+				try {
+					p.setObject( Serialization.asByteString( resultClass, r ) );
+				} catch ( IOException e ) {
+					throw new RuntimeException( e );
+				}
+			};
 		} else {
 			throw new IllegalArgumentException( "Unsupported response type (" + resultClass.getName() + ")!" );
 		}
@@ -49,7 +56,7 @@ public class ProcedureUtils {
 		} else if ( byte[].class.equals( argClass ) ) {
 			return ( p ) -> ( A ) p.getBytes().toByteArray();
 		} else if ( Serializable.class.isAssignableFrom( argClass ) ) {
-			return ( p ) -> ( A ) AbstractNetwork.SERIALIZATION.getObjectInput( p.getObject().toByteArray() ).readObject( argClass );
+			return ( p ) -> ( A ) Serialization.asObject( argClass, p.getObject() );
 		} else {
 			throw new IllegalArgumentException( "Unsupported call type (" + argClass.getName() + ")!" );
 		}
@@ -63,7 +70,13 @@ public class ProcedureUtils {
 		} else if ( byte[].class.equals( argClass ) ) {
 			return ( p, r ) -> p.setBytes( ByteString.copyFrom( ( byte[] ) r ) );
 		} else if ( Serializable.class.isAssignableFrom( argClass ) ) {
-			return ( p, r ) -> p.setObject( ByteString.copyFrom( AbstractNetwork.SERIALIZATION.asByteArray( r ) ) );
+			return ( p, r ) -> {
+				try {
+					p.setObject( Serialization.asByteString( argClass, r ) );
+				} catch ( IOException e ) {
+					throw new RuntimeException( e );
+				}
+			};
 		} else {
 			throw new IllegalArgumentException( "Unsupported call type (" + argClass.getName() + ")!" );
 		}

@@ -1,18 +1,12 @@
 package de.rennschnitzel.net.core.tunnel.object;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.InvalidClassException;
 import java.io.Serializable;
 
-import org.nustaq.serialization.FSTObjectInput;
-import org.nustaq.serialization.FSTObjectOutput;
-
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.ByteString.Output;
 
-import de.rennschnitzel.net.core.AbstractNetwork;
+import de.rennschnitzel.net.core.Serialization;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -79,23 +73,19 @@ public class ObjectConverters {
 		
 		@Override
 		public final ByteString asByteString( final T obj ) throws ConvertObjectTunnelException {
-			try ( final Output stream = ByteString.newOutput() ) {
-				final FSTObjectOutput out = AbstractNetwork.SERIALIZATION.getObjectOutput( stream );
-				out.writeObject( obj, this.dataClass );
-				out.flush();
-				return stream.toByteString();
-			} catch ( final IOException e ) {
+			try {
+				return Serialization.asByteString( this.dataClass, obj );
+			} catch(Exception e) {
 				throw new ConvertObjectTunnelException( e );
 			}
 		}
 		
 		@SuppressWarnings( "unchecked" )
 		@Override
-		public final T asObject( final ByteString byteData ) throws ConvertObjectTunnelException {
-			try ( final InputStream stream = byteData.newInput() ) {
-				final FSTObjectInput in = AbstractNetwork.SERIALIZATION.getObjectInput( stream );
-				return ( T ) in.readObject( this.dataClass );
-			} catch ( final Exception e ) {
+		public final T asObject( final ByteString byteData ) throws ConvertObjectTunnelException {			
+			try {
+				return ( T ) Serialization.asObject( this.dataClass, byteData );
+			} catch(Exception e) {
 				throw new ConvertObjectTunnelException( e );
 			}
 		}

@@ -13,8 +13,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Logger;
 
-import org.nustaq.serialization.FSTConfiguration;
-
 import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -47,9 +45,7 @@ import lombok.Getter;
 import lombok.NonNull;
 
 public abstract class AbstractNetwork {
-	
-	public static FSTConfiguration SERIALIZATION = FSTConfiguration.createDefaultConfiguration();
-	
+		
 	private static @Getter @NonNull AbstractNetwork instance = null;
 	
 	// static end
