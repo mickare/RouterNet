@@ -54,8 +54,8 @@ public class Router extends AbstractIdleService implements Owner {
   private final @Getter ConsoleReader console;
   private final @Getter CommandManager commandManager;
   private final @Getter ConfigFile<Settings> configFile;
-  //private final @Getter ScheduledExecutorService scheduler;
-  private final @Getter PluginManager pluginManager = new PluginManager(this);
+  // private final @Getter ScheduledExecutorService scheduler;
+  private final @Getter PluginManager pluginManager;
   private @Getter HostAndPort address;
   private final @Getter RouterNetwork network;
 
@@ -89,12 +89,17 @@ public class Router extends AbstractIdleService implements Owner {
     this.version = this.properties.getProperty("project.version");
     this.builddate = this.properties.getProperty("project.builddate");;
 
+    this.pluginManager = new PluginManager(this);
+
     /*
-    this.scheduler = MoreExecutors.getExitingScheduledExecutorService(
-        new ScheduledThreadPoolExecutor(0,
-            new ThreadFactoryBuilder().setNameFormat("Router Pool Thread #%1$d").build()),
-        10, TimeUnit.SECONDS);
-        */
+     * this.scheduler = MoreExecutors.getExitingScheduledExecutorService( new
+     * ScheduledThreadPoolExecutor(0, new ThreadFactoryBuilder().setNameFormat(
+     * "Router Pool Thread #%1$d").build()), 10, TimeUnit.SECONDS);
+     */
+
+    // Init EventLoop
+    this.eventLoop = PipelineUtils.newEventLoopGroup(0,
+        new ThreadFactoryBuilder().setNameFormat("Netty IO Thread #%1$d").build());
 
     HomeNode home = new HomeNode(this.configFile.getConfig().getRouterSettings().getHome().getId(),
         this.getConfig().getRouterSettings().getHome().getNamespaces());
@@ -102,7 +107,7 @@ public class Router extends AbstractIdleService implements Owner {
     this.network = new RouterNetwork(this, home);
     home.setName(this.getConfig().getRouterSettings().getHome().getName());
   }
-  
+
   public ScheduledExecutorService getScheduler() {
     return this.eventLoop;
   }
@@ -126,10 +131,6 @@ public class Router extends AbstractIdleService implements Owner {
     sb.append("\n****************************************************");
     logger.info(sb.toString());
 
-    // Init EventLoop
-    this.eventLoop = PipelineUtils.newEventLoopGroup(0,
-        new ThreadFactoryBuilder().setNameFormat("Netty IO Thread #%1$d").build());
-    
     // Load plugins
     this.pluginManager.loadPlugins();
 
@@ -140,7 +141,7 @@ public class Router extends AbstractIdleService implements Owner {
 
     this.authentication = AuthenticationFactory
         .newPasswordForRouter(this.getConfigFile().getConfig().getRouterSettings().getPassword());
-    
+
     this.metric = new Metric(eventLoop);
 
     // Enable plugins
@@ -157,7 +158,8 @@ public class Router extends AbstractIdleService implements Owner {
     b.group(eventLoop);
     b.channel(PipelineUtils.getServerChannelClass());
     b.option(ChannelOption.SO_REUSEADDR, true);
-    b.childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(16 * 1024, 32 * 1024));
+    b.childOption(ChannelOption.WRITE_BUFFER_WATER_MARK,
+        new WriteBufferWaterMark(16 * 1024, 32 * 1024));
 
     b.childHandler(PipelineUtils.baseInitAnd(ch -> {
       final ChannelPipeline p = ch.pipeline();
