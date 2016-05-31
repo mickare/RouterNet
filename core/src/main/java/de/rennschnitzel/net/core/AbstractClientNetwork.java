@@ -1,5 +1,7 @@
 package de.rennschnitzel.net.core;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
@@ -39,6 +41,49 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
 	private final Condition connectedCondition = connectionLock.writeLock().newCondition();
 	private Connection connection = null;
 	private final Map<Callback<AbstractClientNetwork>, ExecutorService> connectCallbacks = Maps.newIdentityHashMap();
+	
+	// ***************************************************************************
+	// Connection Getter
+	
+	/**
+	 * Gets the connection object.
+	 * 
+	 * @deprecated unsafe to use
+	 * @return Connection that can be in a unsafe state, or null
+	 */
+	@Deprecated
+	public Connection getConnection() {
+		try ( CloseableLock l = connectionLock.readLock().open() ) {
+			return connection;
+		}
+	}
+	
+	/**
+	 * Gets the connection object.
+	 * 
+	 * @deprecated unsafe to use
+	 * @return Connection that can be in a unsafe state, or null
+	 */
+	@Deprecated
+	public Connection getConnection( final UUID peerId ) {
+		final Connection con = this.getConnection();
+		return con != null ? ( peerId.equals( con.getPeerId() ) ? con : null ) : null;
+	}
+	
+	/**
+	 * Gets the connection object.
+	 * 
+	 * @deprecated unsafe to use
+	 * @return Connection that can be in a unsafe state, or null
+	 */
+	@Deprecated
+	public List<Connection> getConnections() {
+		final Connection con = getConnection();
+		return con != null ? Collections.singletonList( con ) : Collections.emptyList();
+	}
+	
+	// ***************************************************************************
+	// Connection State
 	
 	/**
 	 * When the client is connected and ready to send messages this method returns true.
@@ -85,6 +130,9 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
 			return isConnected();
 		}
 	}
+	
+	// ***************************************************************************
+	// Callback
 	
 	private static final ExecutorService DIRECT_EXECUTOR = MoreExecutors.newDirectExecutorService();
 	
@@ -134,6 +182,9 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
 		}
 		
 	}
+	
+	// ***************************************************************************
+	// Connect
 	
 	@Override
 	protected void addConnection( final Connection connection ) {

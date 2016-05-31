@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -88,6 +89,36 @@ public abstract class AbstractNetwork {
 	}
 	
 	public abstract Logger getLogger();
+	
+	// ***************************************************************************
+	// Connection Getter
+	
+	/**
+	 * Gets the connection with the id.
+	 * 
+	 * @param peerId
+	 *            of peer
+	 * 			
+	 * @deprecated unsafe to use
+	 * @return Connection that can be in a unsafe state, or null
+	 */
+	
+	/**
+	 * 
+	 * @param peerId
+	 * @return
+	 */
+	@Deprecated
+	public abstract Connection getConnection( final UUID peerId );
+	
+	/**
+	 * Gets a list of connections.
+	 * 
+	 * @deprecated unsafe to use
+	 * @return List of connections that can be in an unsafe state
+	 */
+	@Deprecated
+	public abstract List<Connection> getConnections();
 	
 	// ***************************************************************************
 	// Sending

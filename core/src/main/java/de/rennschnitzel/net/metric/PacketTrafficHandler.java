@@ -15,7 +15,7 @@ import lombok.Getter;
 
 public class PacketTrafficHandler<T> extends ObjectMonitorChannelDuplexHandler<T> {
 
-  public static interface PacketCount {
+  public static interface PacketCounter {
     long getTimestamp();
     
     long getLastPacketsWrite();
@@ -23,7 +23,7 @@ public class PacketTrafficHandler<T> extends ObjectMonitorChannelDuplexHandler<T
     long getLastPacketsRead();
   }
 
-  private static class PacketCounter implements PacketCount {
+  private static class SinglePacketCounter implements PacketCounter {
     private final LongAdder write = new LongAdder();
     private final LongAdder read = new LongAdder();
     private @Getter volatile long timestamp = 0;
@@ -41,12 +41,12 @@ public class PacketTrafficHandler<T> extends ObjectMonitorChannelDuplexHandler<T
     }
   }
 
-  private static class GlobalPacketCount implements PacketCount {
+  private static class GlobalPacketCount implements PacketCounter {
     private @Getter volatile long timestamp = 0;
     private @Getter volatile long lastPacketsWrite = 0;
     private @Getter volatile long lastPacketsRead = 0;
 
-    private void update(Collection<PacketCounter> c) {
+    private void update(Collection<SinglePacketCounter> c) {
       lastPacketsWrite = c.stream().mapToLong(p -> p.lastPacketsWrite).sum();
       lastPacketsRead = c.stream().mapToLong(p -> p.lastPacketsRead).sum();
       timestamp = System.currentTimeMillis();
@@ -61,8 +61,8 @@ public class PacketTrafficHandler<T> extends ObjectMonitorChannelDuplexHandler<T
   // *****************************
 
   private final GlobalPacketCount globalCount = new GlobalPacketCount();
-  private final LoadingCache<Channel, PacketCounter> counter =
-      CacheBuilder.newBuilder().weakKeys().build(CacheLoader.from(() -> new PacketCounter()));
+  private final LoadingCache<Channel, SinglePacketCounter> counter =
+      CacheBuilder.newBuilder().weakKeys().build(CacheLoader.from(() -> new SinglePacketCounter()));
 
   private @Getter final boolean sharable = true;
 
@@ -76,11 +76,11 @@ public class PacketTrafficHandler<T> extends ObjectMonitorChannelDuplexHandler<T
     this.setCheckIntervall(checkInterval);
   }
 
-  public PacketCount getGlobal() {
+  public PacketCounter getGlobal() {
     return this.globalCount;
   }
 
-  public PacketCount get(Channel channel) {
+  public PacketCounter get(Channel channel) {
     return counter.getIfPresent(channel);
   }
 
