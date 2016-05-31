@@ -149,7 +149,11 @@ public class PluginManager {
     Preconditions.checkNotNull(folder, "folder");
     Preconditions.checkArgument(folder.isDirectory(), "Must load from a directory");
 
-    for (File file : folder.listFiles()) {
+    File[] files = folder.listFiles();
+    if(files == null) {
+      throw new IllegalStateException("folder should be a directory but listFiles returned null");
+    }
+    for (File file : files) {
       if (file.isFile() && file.getName().endsWith(".jar")) {
         try (JarFile jar = new JarFile(file)) {
           JarEntry pdf = jar.getJarEntry("plugin.json");
