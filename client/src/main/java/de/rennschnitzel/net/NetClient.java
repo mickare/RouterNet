@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -59,7 +58,7 @@ public @Getter @RequiredArgsConstructor class NetClient {
 	private @Setter @NonNull Runnable restartFunction = () -> {
 		throw new UnsupportedOperationException( "Restart not supported" );
 	};
-	private @Setter @NonNull Consumer<Runnable> syncExecutor = null;
+	private @Setter @NonNull Consumer<Runnable> syncExecutorOnlyIfNeeded = (cmd) -> this.getExecutor().execute( cmd );;
 	
 	public synchronized void init( Logger logger, File directory, ScheduledExecutorService executor ) {
 		Preconditions.checkState( initialized == false, "NetClient already initialized" );
@@ -70,9 +69,6 @@ public @Getter @RequiredArgsConstructor class NetClient {
 		this.logger = logger;
 		this.directory = directory;
 		this.executor = executor;
-		if ( this.syncExecutor == null ) {
-			this.syncExecutor = executor::execute;
-		}
 		this.configFile = ConfigFile.create( new File( directory, "settings.json" ), ClientSettings.class );
 		saveConfigDefault();
 		initialized = true;
@@ -196,8 +192,8 @@ public @Getter @RequiredArgsConstructor class NetClient {
 		}
 	}
 	
-	protected void syncExecute( Runnable command ) {
-		this.syncExecutor.accept( command );
+	protected void syncExecuteIfPossible( Runnable command ) {
+		this.syncExecutorOnlyIfNeeded.accept( command );
 	}
 	
 }

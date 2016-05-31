@@ -16,6 +16,7 @@ import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 
 import de.rennschnitzel.net.core.Tunnel;
+import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.core.tunnel.AbstractSubTunnel;
 import de.rennschnitzel.net.core.tunnel.AbstractSubTunnelDescriptor;
@@ -135,7 +136,7 @@ public class StreamTunnel extends AbstractSubTunnel<StreamTunnel, StreamTunnel.D
 	}
 	
 	@Override
-	public synchronized void receive( final TunnelMessage cmsg ) throws IOException {
+	public synchronized void receive( final Connection con, final TunnelMessage cmsg ) throws IOException {
 		if ( !isClosed() && this.inputBuffers.size() > 0 ) {
 			
 			final byte[] data = cmsg.getData().toByteArray();

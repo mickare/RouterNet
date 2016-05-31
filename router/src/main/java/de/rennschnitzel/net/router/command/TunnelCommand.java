@@ -5,6 +5,7 @@ import java.util.Set;
 import com.google.common.base.Strings;
 
 import de.rennschnitzel.net.core.Tunnel;
+import de.rennschnitzel.net.protocol.TransportProtocol.TunnelRegister;
 import de.rennschnitzel.net.router.Router;
 
 public class TunnelCommand extends AbstractCommand {
@@ -48,7 +49,9 @@ public class TunnelCommand extends AbstractCommand {
         sb.append("\n");
         sb.append(Strings.padEnd(Integer.toHexString(tunnel.getId()), maxIdLength, ' '));
         sb.append(Strings.padEnd(tunnel.getName(), maxNameLength, ' '));
-        sb.append(tunnel.getType().name());
+        
+        TunnelRegister.Type type = tunnel.getType();        
+        sb.append(type.name());
       }
 
       this.getLogger().info(sb.toString());

@@ -10,6 +10,7 @@ import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.Owner;
 import de.rennschnitzel.net.core.Tunnel;
+import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.core.tunnel.AbstractSubTunnel;
 import de.rennschnitzel.net.core.tunnel.AbstractSubTunnelDescriptor;
@@ -22,9 +23,9 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-public class ObjectTunnel<T> extends AbstractSubTunnel<ObjectTunnel<T>, ObjectTunnel.Descriptor<T>> implements TunnelHandler, SubTunnel {
+public class ObjectTunnel<T> extends AbstractSubTunnel<ObjectTunnel<T>, ObjectTunnel.Descriptor<T>>implements TunnelHandler, SubTunnel {
 	
-	public static class Descriptor<T> extends AbstractSubTunnelDescriptor<Descriptor<T>, ObjectTunnel<T>> implements SubTunnelDescriptor<ObjectTunnel<T>> {
+	public static class Descriptor<T> extends AbstractSubTunnelDescriptor<Descriptor<T>, ObjectTunnel<T>>implements SubTunnelDescriptor<ObjectTunnel<T>> {
 		
 		private @Getter final Class<T> dataClass;
 		private @Getter final ObjectConverter<T> converter;
@@ -98,11 +99,15 @@ public class ObjectTunnel<T> extends AbstractSubTunnel<ObjectTunnel<T>, ObjectTu
 	}
 	
 	@Override
-	public void receive( final TunnelMessage cmsg ) throws ConvertObjectTunnelException {
+	public void receive( final Connection con, final TunnelMessage cmsg ) throws ConvertObjectTunnelException {
 		if ( this.listeners.size() > 0 ) {
-			this.getExectutor().orElseGet( this.getNetwork()::getExecutor ).execute( () -> {
+			if ( con != null ) {
+				this.getExectutor().orElseGet( con.getChannel().getChannel()::eventLoop ).execute( () -> {
+					this.receive( new ObjectTunnelMessage<T>( this, cmsg ) );
+				} );
+			} else {
 				this.receive( new ObjectTunnelMessage<T>( this, cmsg ) );
-			} );
+			}
 		}
 	}
 	

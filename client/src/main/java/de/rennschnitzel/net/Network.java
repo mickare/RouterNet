@@ -10,7 +10,7 @@ public class Network extends AbstractClientNetwork {
 	private final @Getter NetClient client;
 	
 	public Network( NetClient client ) {
-		super( client.getExecutor(), client.getHome() );
+		super( client.getLogger(), client.getExecutor(), client.getHome() );
 		this.client = client;
 	}
 	
@@ -24,8 +24,8 @@ public class Network extends AbstractClientNetwork {
 	}
 	
 	@Override
-	public void syncExecute( Runnable command ) {
-		client.syncExecute( command );
+	public void syncExecuteIfPossible( Runnable command ) {
+		client.syncExecuteIfPossible( command );
 	}
 	
 }

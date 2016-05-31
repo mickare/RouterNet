@@ -37,19 +37,24 @@ import de.rennschnitzel.net.protocol.NetworkProtocol.NodeTopologyMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol;
 import de.rennschnitzel.net.protocol.TransportProtocol.ErrorMessage;
 import de.rennschnitzel.net.protocol.TransportProtocol.ProcedureResponseMessage;
+import de.rennschnitzel.net.util.NetworkEventBus;
 import de.rennschnitzel.net.util.concurrent.CloseableLock;
 import de.rennschnitzel.net.util.concurrent.CloseableReadWriteLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableLock;
 import de.rennschnitzel.net.util.concurrent.ReentrantCloseableReadWriteLock;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 public abstract class AbstractNetwork {
-		
+	
 	private static @Getter @NonNull AbstractNetwork instance = null;
 	
 	// static end
 	// ******************************************************************************************
+	
+	private @Getter @NonNull @Setter( AccessLevel.PROTECTED ) Logger logger;
 	
 	private final @Getter HomeNode home;
 	private final LoadingCache<UUID, Node> nodesCache = CacheBuilder.newBuilder().weakValues().build( CacheLoader.from( Node::new ) );
@@ -63,18 +68,21 @@ public abstract class AbstractNetwork {
 	private final ConcurrentMap<Integer, Tunnel> tunnelsById = new ConcurrentHashMap<>();
 	private final ConcurrentMap<SubTunnelDescriptor<?>, SubTunnel> subTunnels = new ConcurrentHashMap<>();
 	
-	private final @Getter EventBus eventBus = new EventBus();
-	private @Getter final ScheduledExecutorService executor;
+	private final @Getter EventBus eventBus;
+	private @Getter( AccessLevel.PACKAGE ) final ScheduledExecutorService executor;
 	
-	protected AbstractNetwork( ScheduledExecutorService executor, HomeNode home ) {
+	protected AbstractNetwork( Logger logger, ScheduledExecutorService executor, HomeNode home ) {
+		Preconditions.checkNotNull( logger );
 		Preconditions.checkNotNull( home );
 		Preconditions.checkNotNull( executor );
+		this.logger = logger;
+		this.eventBus = new NetworkEventBus( executor, () -> this.logger );
 		home.setNetwork( this );
 		this.home = home;
 		this.nodes.put( home.getId(), home );
 		this.executor = executor;
 		
-		this.procedureManager = new ProcedureManager( this );
+		this.procedureManager = new ProcedureManager( this, executor );
 		
 		AbstractNetwork.instance = this;
 	}
@@ -83,8 +91,6 @@ public abstract class AbstractNetwork {
 		Preconditions.checkNotNull( instance );
 		AbstractNetwork.instance = instance;
 	}
-	
-	public abstract Logger getLogger();
 	
 	// ***************************************************************************
 	// Connection Getter
@@ -488,9 +494,9 @@ public abstract class AbstractNetwork {
 		}
 		return b.build();
 	}
-	
-	public void syncExecute( Runnable command ) {
+
+	public void syncExecuteIfPossible( Runnable command ) {
 		this.executor.execute( command );
 	}
-	
+		
 }

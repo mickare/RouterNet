@@ -101,7 +101,7 @@ public class BasePacketHandler implements PacketHandler<Connection> {
 		}
 		Tunnel tunnel = con.getNetwork().getTunnelById( msg.getTunnelId() );
 		if ( tunnel != null && !tunnel.isClosed() ) {
-			tunnel.receiveProto( msg );
+			tunnel.receiveProto(con, msg );
 		}
 	}
 	

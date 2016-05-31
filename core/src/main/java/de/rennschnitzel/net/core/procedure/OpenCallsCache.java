@@ -2,6 +2,7 @@ package de.rennschnitzel.net.core.procedure;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Preconditions;
@@ -17,13 +18,15 @@ import lombok.NonNull;
 public class OpenCallsCache {
 	
 	private final @NonNull AbstractNetwork network;
-	
+	private final @NonNull ScheduledExecutorService executor;
 	private final Cache<Integer, Entry> openCalls;
 	
-	public OpenCallsCache( AbstractNetwork network, long max_timeout ) {
+	public OpenCallsCache( AbstractNetwork network, ScheduledExecutorService executor, long max_timeout ) {
 		Preconditions.checkNotNull( network );
+		Preconditions.checkNotNull( executor );
 		Preconditions.checkArgument( max_timeout > 0 );
 		this.network = network;
+		this.executor = executor;
 		
 		openCalls = CacheBuilder.newBuilder()//
 				.expireAfterWrite( max_timeout, TimeUnit.MILLISECONDS )//
@@ -49,7 +52,7 @@ public class OpenCallsCache {
 			call.checkTimeout();
 			return CompletableFuture.completedFuture( call );
 		}
-		return this.network.getExecutor().schedule( () -> call.checkTimeout(), call.getRemainingTimeout() + 1, TimeUnit.MILLISECONDS );
+		return executor.schedule( () -> call.checkTimeout(), call.getRemainingTimeout() + 1, TimeUnit.MILLISECONDS );
 	}
 	
 	public void put( ProcedureCall<?, ?> call ) {

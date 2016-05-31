@@ -50,7 +50,7 @@ public abstract class AbstractSubTunnel<SELF extends AbstractSubTunnel<SELF, D>,
 		return this.descriptor.getType();
 	}
 	
-	public abstract void receive( TunnelMessage cmsg ) throws IOException;
+	public abstract void receive( Connection con, TunnelMessage cmsg ) throws IOException;
 	
 	@Override
 	public AbstractNetwork getNetwork() {

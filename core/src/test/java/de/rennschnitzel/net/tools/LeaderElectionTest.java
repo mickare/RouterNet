@@ -18,6 +18,7 @@ import de.rennschnitzel.net.core.Node;
 import de.rennschnitzel.net.dummy.DummClientNetwork;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
 import de.rennschnitzel.net.service.LeaderElection;
+import de.rennschnitzel.net.util.concurrent.DirectScheduledExecutorService;
 import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoopGroup;
 
@@ -42,7 +43,7 @@ public class LeaderElectionTest {
 		
 		System.out.println( new UUID( 0, 10 ).compareTo( new UUID( 0, 9 ) ) >0 );
 		
-		DummClientNetwork network = new DummClientNetwork( group, new UUID( 0, 10 ) );
+		DummClientNetwork network = new DummClientNetwork( new DirectScheduledExecutorService(), new UUID( 0, 10 ) );
 		
 		LeaderElection elect = new LeaderElection( network, "test", 10 );
 		assertNull( elect.getLeader() );

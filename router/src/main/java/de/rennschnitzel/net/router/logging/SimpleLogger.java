@@ -15,6 +15,8 @@ import jline.console.ConsoleReader;
 
 public class SimpleLogger extends Logger {
 
+  private static final int FILE_LIMIT = 1 << 12; // 1 << 24
+  
   private static class ConsoleWriter extends Handler {
     private final ConsoleReader console;
 
@@ -55,7 +57,7 @@ public class SimpleLogger extends Logger {
 
     new File("logs/").mkdir();
 
-    fileHandler = new FileHandler("logs/log%g.log", 1 << 24, 4, true);
+    fileHandler = new FileHandler("logs/log%g.log", FILE_LIMIT, 4, true);
     fileHandler.setFormatter(formatter);
     addHandler(fileHandler);
 

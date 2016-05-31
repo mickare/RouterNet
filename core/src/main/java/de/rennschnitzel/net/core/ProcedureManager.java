@@ -2,6 +2,7 @@ package de.rennschnitzel.net.core;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -46,10 +47,10 @@ public class ProcedureManager {
 	
 	private final OpenCallsCache openCalls;
 	
-	public ProcedureManager( AbstractNetwork network ) {
+	public ProcedureManager( AbstractNetwork network, ScheduledExecutorService executor ) {
 		Preconditions.checkNotNull( network );
 		this.network = network;
-		this.openCalls = new OpenCallsCache( network, MAX_TIMEOUT );
+		this.openCalls = new OpenCallsCache( network, executor, MAX_TIMEOUT );
 	}
 	
 	public <T, R> CallableRegisteredProcedure<T, R> register( String name, Function<T, R> function ) {
@@ -70,7 +71,7 @@ public class ProcedureManager {
 		return register( name, ( t ) -> {
 			consumer.accept( t );
 			return null;
-		}, ( Class<T> ) TypeUtils.resolveArgumentClass( consumer ), Void.class, synchronization );
+		} , ( Class<T> ) TypeUtils.resolveArgumentClass( consumer ), Void.class, synchronization );
 	}
 	
 	public <R> CallableRegisteredProcedure<Void, R> register( final String name, final Supplier<R> supplier ) {
@@ -89,7 +90,7 @@ public class ProcedureManager {
 		return register( name, ( t ) -> {
 			run.run();
 			return null;
-		}, Void.class, Void.class, synchronization );
+		} , Void.class, Void.class, synchronization );
 	}
 	
 	public <T, R> CallableRegisteredProcedure<T, R> register( final String name, final Function<T, R> function, final Class<T> argClass, final Class<R> resultClass ) {
@@ -303,7 +304,7 @@ public class ProcedureManager {
 		};
 		
 		if ( proc.isSynchronization() ) {
-			this.getNetwork().syncExecute( run );
+			this.getNetwork().syncExecuteIfPossible( run );
 		} else {
 			this.getNetwork().getExecutor().execute( run );
 		}

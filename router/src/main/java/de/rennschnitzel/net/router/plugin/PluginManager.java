@@ -1,30 +1,39 @@
 package de.rennschnitzel.net.router.plugin;
 
 import java.io.File;
-import java.net.MalformedURLException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Iterator;
-import java.util.ServiceConfigurationError;
-import java.util.ServiceLoader;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.logging.Level;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ClassToInstanceMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
-import com.google.common.collect.MutableClassToInstanceMap;
-import com.google.common.util.concurrent.Service.State;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import de.rennschnitzel.net.router.Router;
 import lombok.Getter;
 
 public class PluginManager {
 
+  private static Gson GSON = new GsonBuilder().create();
+
   @Getter
   private final Router router;
-  private final ClassToInstanceMap<Plugin> plugins = MutableClassToInstanceMap.create();
+
+  private final Map<String, Plugin> plugins = new LinkedHashMap<>();
+  private Map<String, PluginDescription> toLoad = new HashMap<>();
 
   private boolean loaded = false;
 
@@ -40,100 +49,137 @@ public class PluginManager {
     }
   }
 
-  private static String getName(Class<? extends Plugin> c) {
-    String name = null;
-    Plugin.Name a = c.getAnnotation(Plugin.Name.class);
-    if (a != null) {
-      name = a.value();
-    }
-    return name != null ? name : c.getName();
+  public Collection<Plugin> getPlugins() {
+    return Collections.unmodifiableCollection(this.plugins.values());
   }
 
-  public synchronized void loadPlugins() {
-    Preconditions.checkState(this.loaded == false, "already loaded");
-    Preconditions.checkState(router.state() == State.STARTING);
 
-    if (this.pluginDir.isDirectory()) {
+  public void loadPlugins() {
+    Map<PluginDescription, Boolean> pluginStatuses = new HashMap<>();
+    for (Map.Entry<String, PluginDescription> entry : toLoad.entrySet()) {
+      PluginDescription plugin = entry.getValue();
+      if (!enablePlugin(pluginStatuses, new Stack<PluginDescription>(), plugin)) {
+        router.getLogger().log(Level.WARNING, "Failed to enable {0}", entry.getKey());
+      }
+    }
+    toLoad.clear();
+    toLoad = null;
+  }
 
+  public void enablePlugins() {
+    for (Plugin plugin : plugins.values()) {
       try {
-        File[] files =
-            this.pluginDir.listFiles(file -> file.getPath().toLowerCase().endsWith(".jar"));
-        URL[] urls = new URL[files.length];
-        for (int i = 0; i < files.length; ++i) {
-          urls[i] = files[i].toURI().toURL();
-        }
-        URLClassLoader ucl = new URLClassLoader(urls);
+        plugin.onEnable();
+        router.getLogger().log(Level.INFO, "Enabled plugin {0} version {1} by {2}",
+            new Object[] {plugin.getDescription().getName(), plugin.getDescription().getVersion(),
+                plugin.getDescription().getAuthor()});
+      } catch (Throwable t) {
+        router.getLogger().log(Level.WARNING,
+            "Exception encountered when loading plugin: " + plugin.getDescription().getName(), t);
+      }
+    }
+  }
 
+  private boolean enablePlugin(Map<PluginDescription, Boolean> pluginStatuses,
+      Stack<PluginDescription> dependStack, PluginDescription plugin) {
+    if (pluginStatuses.containsKey(plugin)) {
+      return pluginStatuses.get(plugin);
+    }
 
-        ServiceLoader<Plugin> loader = ServiceLoader.load(Plugin.class, ucl);
-        loader.forEach(this::loadPlugin);
+    // combine all dependencies for 'for loop'
+    Set<String> dependencies = new HashSet<>();
+    dependencies.addAll(plugin.getDepends());
+    dependencies.addAll(plugin.getSoftDepends());
 
-        Iterator<Plugin> it = loader.iterator();
-        while (it.hasNext()) {
+    // success status
+    boolean status = true;
 
-          try {
-            loadPlugin(it.next());
-          } catch (ServiceConfigurationError sce) {
-            router.getLogger().log(Level.SEVERE, "Failed to load plugin: ", sce);
+    // try to load dependencies first
+    for (String dependName : dependencies) {
+      PluginDescription depend = toLoad.get(dependName);
+      Boolean dependStatus = (depend != null) ? pluginStatuses.get(depend) : Boolean.FALSE;
+
+      if (dependStatus == null) {
+        if (dependStack.contains(depend)) {
+          StringBuilder dependencyGraph = new StringBuilder();
+          for (PluginDescription element : dependStack) {
+            dependencyGraph.append(element.getName()).append(" -> ");
           }
-
+          dependencyGraph.append(plugin.getName()).append(" -> ").append(dependName);
+          router.getLogger().log(Level.WARNING, "Circular dependency detected: {0}",
+              dependencyGraph);
+          status = false;
+        } else {
+          dependStack.push(plugin);
+          dependStatus = this.enablePlugin(pluginStatuses, dependStack, depend);
+          dependStack.pop();
         }
-
-      } catch (MalformedURLException e) {
-        throw new RuntimeException(e);
       }
 
-    }
-
-  }
-
-  private void loadPlugin(final Plugin plugin) {
-    final Class<? extends Plugin> pluginClass = plugin.getClass();
-    try {
-      if (this.plugins.containsKey(plugin.getClass())) {
-        router.getLogger().warning("Plugin \"" + getName(pluginClass) + "\" already loaded!");
-        return;
+      // only fail if this wasn't a soft dependency
+      if (dependStatus == Boolean.FALSE && plugin.getDepends().contains(dependName)) {
+        router.getLogger().log(Level.WARNING, "{0} (required by {1}) is unavailable",
+            new Object[] {String.valueOf(dependName), plugin.getName()});
+        status = false;
       }
-      plugin.init(router);
-      plugin.onLoad();
-      this.plugins.put(pluginClass, plugin);
-    } catch (Exception e) {
-      router.getLogger().log(Level.SEVERE,
-          "Failed to load plugin: \"" + getName(pluginClass) + "\"", e);
-    }
-  }
 
-
-
-  public synchronized void enablePlugins() {
-    Preconditions.checkState(router.state() == State.STARTING || router.state() == State.RUNNING);
-    for (Plugin plugin : plugins.values()) {
-      plugin.enable();
-    }
-  }
-
-  public synchronized void disablePlugins() {
-    Preconditions.checkState(router.state() == State.STOPPING);
-    for (Plugin plugin : Lists.reverse(Lists.newArrayList(plugins.values()))) {
-      plugin.disable();
-    }
-  }
-
-  public synchronized Plugin getPlugin(String name) {
-    for (Plugin plugin : plugins.values()) {
-      if (plugin.getName().equalsIgnoreCase(name)) {
-        return plugin;
+      if (!status) {
+        break;
       }
     }
-    return null;
+
+    // do actual loading
+    if (status) {
+      try {
+        URLClassLoader loader = new PluginClassloader(new URL[] {plugin.getFile().toURI().toURL()});
+        Class<?> main = loader.loadClass(plugin.getMain());
+        Plugin clazz = (Plugin) main.getDeclaredConstructor().newInstance();
+
+        clazz.init(router, plugin);
+        plugins.put(plugin.getName(), clazz);
+        clazz.onLoad();
+        router.getLogger().log(Level.INFO, "Loaded plugin {0} version {1} by {2}",
+            new Object[] {plugin.getName(), plugin.getVersion(), plugin.getAuthor()});
+      } catch (Throwable t) {
+        router.getLogger().log(Level.WARNING, "Error enabling plugin " + plugin.getName(), t);
+      }
+    }
+
+    pluginStatuses.put(plugin, status);
+    return status;
   }
 
-  public <P extends Plugin> P getPlugin(Class<P> pluginClass) {
-    return this.plugins.getInstance(pluginClass);
+  /**
+   * Load all plugins from the specified folder.
+   *
+   * @param folder the folder to search for plugins in
+   */
+  public void detectPlugins(File folder) {
+    Preconditions.checkNotNull(folder, "folder");
+    Preconditions.checkArgument(folder.isDirectory(), "Must load from a directory");
+
+    for (File file : folder.listFiles()) {
+      if (file.isFile() && file.getName().endsWith(".jar")) {
+        try (JarFile jar = new JarFile(file)) {
+          JarEntry pdf = jar.getJarEntry("plugin.json");
+
+          Preconditions.checkNotNull(pdf, "Plugin must have a plugin.json");
+
+          try (InputStream in = jar.getInputStream(pdf);
+              Reader reader = new InputStreamReader(in)) {
+            PluginDescription desc = GSON.fromJson(reader, PluginDescription.class);
+            Preconditions.checkNotNull(desc.getName(), "Plugin from %s has no name", file);
+            Preconditions.checkNotNull(desc.getMain(), "Plugin from %s has no main", file);
+
+            desc.setFile(file);
+            toLoad.put(desc.getName(), desc);
+          }
+        } catch (Exception ex) {
+          router.getLogger().log(Level.WARNING, "Could not load plugin from file " + file, ex);
+        }
+      }
+    }
   }
-  
-  public Set<Plugin> getPlugins() {
-    return ImmutableSet.copyOf(this.plugins.values());
-  }
+
 
 }

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Logger;
 
 import com.google.common.base.Preconditions;
@@ -38,8 +39,8 @@ public class RouterNetwork extends AbstractNetwork {
   private final CloseableReadWriteLock connectionLock = new ReentrantCloseableReadWriteLock(true);
   private final Map<UUID, Connection> connections = new ConcurrentHashMap<>();
 
-  public RouterNetwork(Router router, HomeNode home) {
-    super(router.getScheduler(), home);
+  public RouterNetwork(Router router, ScheduledExecutorService scheduler, HomeNode home) {
+    super(router.getLogger(), scheduler, home);
     Preconditions.checkNotNull(router);
     this.router = router;
     Net.setNetwork(this);

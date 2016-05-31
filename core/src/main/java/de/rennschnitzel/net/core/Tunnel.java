@@ -105,7 +105,7 @@ public class Tunnel {
 			success &= this.sendIgnoreSelf( cmsg );
 		}
 		if ( cmsg.getTarget().contains( getNetwork().getHome() ) ) {
-			this.receive( cmsg );
+			this.receive( null, cmsg );
 		}
 		return success;
 	}
@@ -114,22 +114,26 @@ public class Tunnel {
 		return this.network.sendTunnelMessage( cmsg );
 	}
 	
-	public final void receiveProto( final TransportProtocol.TunnelMessage msg ) {
+	public final void receiveProto( final Connection con, final TransportProtocol.TunnelMessage msg ) {
 		if ( this.listeners.size() > 0 || this.handler != null ) {
 			// Only handle it if there are handlers.
-			this.receive( new TunnelMessage( this, msg ) );
+			this.receive( con, new TunnelMessage( this, msg ) );
 		}
 	}
 	
-	public final void receive( final TunnelMessage cmsg ) {
-		if ( this.listeners.size() > 0 ) {			
-			this.executor.orElseGet( this.network::getExecutor ).execute( () -> {
+	public final void receive( final Connection con, final TunnelMessage cmsg ) {
+		if ( this.listeners.size() > 0 ) {
+			if ( con != null ) {
+				this.executor.orElseGet( con.getChannel().getChannel()::eventLoop ).execute( () -> {
+					this.listeners.forEach( c -> c.accept( cmsg ) );
+				} );
+			} else {
 				this.listeners.forEach( c -> c.accept( cmsg ) );
-			} );
+			}
 		}
 		if ( this.handler != null ) {
 			try {
-				this.handler.receive( cmsg );
+				this.handler.receive( con, cmsg );
 			} catch ( Exception e ) {
 				this.getNetwork().getLogger().log( Level.SEVERE, "Channel handler exception: " + e.getMessage(), e );
 			}
@@ -139,7 +143,7 @@ public class Tunnel {
 	public final void registerListener( final Owner owner, final Consumer<TunnelMessage> dataConsumer ) {
 		listeners.add( new RegisteredMessageListener( owner, dataConsumer ) );
 	}
-
+	
 	public final void unregisterListeners( final Owner owner ) {
 		this.listeners.removeIf( ( l ) -> l.getOwner().equals( owner ) );
 	}

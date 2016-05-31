@@ -30,6 +30,7 @@ import de.rennschnitzel.net.router.command.CommandManager;
 import de.rennschnitzel.net.router.config.ConfigFile;
 import de.rennschnitzel.net.router.config.Settings;
 import de.rennschnitzel.net.router.packet.RouterPacketHandler;
+import de.rennschnitzel.net.router.plugin.Plugin;
 import de.rennschnitzel.net.router.plugin.PluginManager;
 import de.rennschnitzel.net.util.FutureUtils;
 import io.netty.bootstrap.ServerBootstrap;
@@ -64,6 +65,8 @@ public class Router extends AbstractIdleService implements Owner {
   private @Getter RouterAuthentication authentication = null;
   private @Getter Metric metric;
 
+  private @Getter final File pluginsFolder;
+
   protected Router(ConsoleReader console, Logger logger) throws IOException {
     Preconditions.checkNotNull(console);
     Preconditions.checkNotNull(logger);
@@ -79,6 +82,9 @@ public class Router extends AbstractIdleService implements Owner {
 
     this.configFile = ConfigFile.create(new File("settings.json"), Settings.class);
     this.configFile.saveDefault();
+    String pluginsFolderPath = this.configFile.getConfig().getPluginFolder();
+    Preconditions.checkNotNull(pluginsFolderPath);
+    this.pluginsFolder = new File(pluginsFolderPath);
 
     this.commandManager = new CommandManager(this);
 
@@ -104,7 +110,7 @@ public class Router extends AbstractIdleService implements Owner {
     HomeNode home = new HomeNode(this.configFile.getConfig().getRouterSettings().getHome().getId(),
         this.getConfig().getRouterSettings().getHome().getNamespaces());
     home.setType(NodeMessage.Type.ROUTER);
-    this.network = new RouterNetwork(this, home);
+    this.network = new RouterNetwork(this, this.eventLoop, home);
     home.setName(this.getConfig().getRouterSettings().getHome().getName());
   }
 
@@ -200,16 +206,26 @@ public class Router extends AbstractIdleService implements Owner {
 
     // Disable plugins
     getLogger().info("Disabling plugins");
-    this.pluginManager.disablePlugins();
+    for (Plugin plugin : this.pluginManager.getPlugins()) {
+      try {
+        plugin.onDisable();
+        for (java.util.logging.Handler handler : plugin.getLogger().getHandlers()) {
+          handler.close();
+        }
+      } catch (Throwable t) {
+        getLogger().log(Level.SEVERE,
+            "Exception disabling plugin " + plugin.getDescription().getName(), t);
+      }
+    }
 
     // Close EventLoopGroup
-    getLogger().info("Closing IO threads");
+    getLogger().info("Closing EventLoop threads");
     eventLoop.shutdownGracefully();
     try {
       eventLoop.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
     } catch (InterruptedException ex) {
     }
-
+    
     StringBuilder sb = new StringBuilder();
     sb.append("\n****************************************************");
     sb.append("\nStop");

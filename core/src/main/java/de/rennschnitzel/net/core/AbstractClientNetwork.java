@@ -10,6 +10,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
@@ -33,8 +34,8 @@ import de.rennschnitzel.net.util.function.Callback;
 
 public abstract class AbstractClientNetwork extends AbstractNetwork {
 	
-	public AbstractClientNetwork( ScheduledExecutorService executor, HomeNode home ) {
-		super( executor, home );
+	public AbstractClientNetwork( Logger logger, ScheduledExecutorService executor, HomeNode home ) {
+		super( logger, executor, home );
 	}
 	
 	private final CloseableReadWriteLock connectionLock = new ReentrantCloseableReadWriteLock();

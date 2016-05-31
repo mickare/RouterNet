@@ -132,7 +132,7 @@ public class RouterPacketHandler extends BasePacketHandler {
     if (home.isPart(target)) {
       Tunnel tunnel = net.getTunnelById(msg.getTunnelId());
       if (tunnel != null && !tunnel.isClosed()) {
-        tunnel.receiveProto(msg);
+        tunnel.receiveProto(in, msg);
       }
     }
 

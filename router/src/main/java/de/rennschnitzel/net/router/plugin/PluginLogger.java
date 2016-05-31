@@ -20,7 +20,7 @@ public class PluginLogger extends Logger {
    */
   public PluginLogger(Plugin context) {
     super(context.getClass().getCanonicalName(), null);
-    pluginName = "[" + context.getName() + "] ";
+    pluginName = "[" + context.getDescription().getName() + "] ";
     setParent(context.getRouter().getLogger());
     setLevel(Level.ALL);
   }

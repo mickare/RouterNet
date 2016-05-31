@@ -24,7 +24,7 @@ public class NetPlugin extends JavaPlugin {
 		
 		client.setRestartFunction( Bukkit.spigot()::restart );
 		client.setShutdownFunction( Bukkit::shutdown );
-		client.setSyncExecutor( task -> Bukkit.getScheduler().runTask( this, task ) );
+		client.setSyncExecutorOnlyIfNeeded( task -> Bukkit.getScheduler().runTask( this, task ) );
 	}
 	
 	@Override
