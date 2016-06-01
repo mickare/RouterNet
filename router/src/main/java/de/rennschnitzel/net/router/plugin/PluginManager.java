@@ -123,6 +123,7 @@ public class PluginManager {
     if (status) {
       try {
         URLClassLoader loader = new PluginClassloader(new URL[] {plugin.getFile().toURI().toURL()});
+                
         Class<?> main = loader.loadClass(plugin.getMain());
         Plugin clazz = (Plugin) main.getDeclaredConstructor().newInstance();
 

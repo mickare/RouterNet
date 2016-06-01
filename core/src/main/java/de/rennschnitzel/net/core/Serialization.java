@@ -1,13 +1,13 @@
 package de.rennschnitzel.net.core;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.io.ObjectStreamClass;
 
 import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.FSTObjectInput;
@@ -27,22 +27,34 @@ public class Serialization {
 	
 	private static boolean USE_FST = false;
 	
-	public static byte[] asByteArray( Object obj ) {
-		if ( USE_FST ) {
-			return FST.asByteArray( obj );
-		} else {
-			try ( ByteArrayOutputStream bos = new ByteArrayOutputStream(); ObjectOutput out = new ObjectOutputStream( bos ) ) {
-				out.writeObject( obj );
-				return bos.toByteArray();
-			} catch ( IOException e ) {
-				throw new RuntimeException( e );
-			}
+	public static class ClassLoaderObjectInputStream extends ObjectInputStream {
+		
+		private final ClassLoader loader;
+		
+		public ClassLoaderObjectInputStream( InputStream in, Class<?> c ) throws IOException {
+			this( in, c.getClassLoader() );
 		}
+		
+		public ClassLoaderObjectInputStream( InputStream in, ClassLoader loader ) throws IOException {
+			super( in );
+			this.loader = loader;
+		}
+		
+		protected Class<?> resolveClass( ObjectStreamClass desc ) throws ClassNotFoundException {
+			if ( loader == null ) {
+				return Class.forName( desc.getName() );
+			}
+			return loader.loadClass( desc.getName() );
+		}
+	}
+	
+	public static <V> byte[] asByteArray( Class<V> c, V obj ) throws IOException {
+		return asByteString( c, obj ).toByteArray();
 	}
 	
 	public static <V> ByteString asByteString( Class<V> c, V obj ) throws IOException {
 		if ( USE_FST ) {
-			try ( final Output stream = ByteString.newOutput() ) {
+			try ( final Output stream = ByteString.newOutput(); ) {
 				final FSTObjectOutput out = FST.getObjectOutput( stream );
 				out.writeObject( obj, c );
 				out.flush();
@@ -63,12 +75,12 @@ public class Serialization {
 	
 	public static <V> Object asObject( Class<V> c, ByteString byteData ) throws Exception {
 		if ( USE_FST ) {
-			try ( final InputStream stream = byteData.newInput() ) {
+			try ( final InputStream stream = byteData.newInput(); ) {
 				final FSTObjectInput in = FST.getObjectInput( stream );
 				return in.readObject( c );
 			}
 		} else {
-			try ( final InputStream stream = byteData.newInput(); ObjectInput in = new ObjectInputStream( stream ) ) {
+			try ( final InputStream stream = byteData.newInput(); ObjectInput in = new ClassLoaderObjectInputStream( stream, c ) ) {
 				return in.readObject();
 			}
 		}
@@ -78,7 +90,7 @@ public class Serialization {
 		if ( USE_FST ) {
 			return FST.getObjectInput( byteData ).readObject( c );
 		} else {
-			try ( final InputStream stream = new ByteArrayInputStream( byteData ); ObjectInput in = new ObjectInputStream( stream ) ) {
+			try ( final InputStream stream = new ByteArrayInputStream( byteData ); ObjectInput in = new ClassLoaderObjectInputStream( stream, c ) ) {
 				return in.readObject();
 			}
 		}

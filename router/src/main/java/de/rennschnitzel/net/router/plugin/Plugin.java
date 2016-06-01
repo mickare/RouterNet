@@ -3,7 +3,6 @@ package de.rennschnitzel.net.router.plugin;
 import java.io.File;
 import java.io.InputStream;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.google.common.base.Preconditions;
