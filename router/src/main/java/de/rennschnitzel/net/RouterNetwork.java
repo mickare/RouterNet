@@ -94,6 +94,13 @@ public class RouterNetwork extends AbstractNetwork {
     }
   }
 
+  @Override
+  public boolean isConnected() {
+    // Always connected!
+    return true;
+  }
+
+
   // ********************************************************************
   // PROCEDURE
 
@@ -224,5 +231,6 @@ public class RouterNetwork extends AbstractNetwork {
     }
     return true;
   }
+
 
 }

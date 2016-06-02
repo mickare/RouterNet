@@ -122,6 +122,13 @@ public abstract class AbstractNetwork {
 	@Deprecated
 	public abstract List<Connection> getConnections();
 	
+	/**
+	 * When the client or router is connected and ready to send messages this method returns true.
+	 * 
+	 * @return true if it is possible to send messages.
+	 */
+	public abstract boolean isConnected();
+	
 	// ***************************************************************************
 	// Sending
 	

@@ -86,11 +86,7 @@ public abstract class AbstractClientNetwork extends AbstractNetwork {
 	// ***************************************************************************
 	// Connection State
 	
-	/**
-	 * When the client is connected and ready to send messages this method returns true.
-	 * 
-	 * @return true if it is possible to send messages.
-	 */
+	@Override
 	public boolean isConnected() {
 		try ( CloseableLock l = connectionLock.readLock().open() ) {
 			return connection != null ? connection.isActive() : false;
