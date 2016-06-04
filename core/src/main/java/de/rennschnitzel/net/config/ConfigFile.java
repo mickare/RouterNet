@@ -1,4 +1,4 @@
-package de.rennschnitzel.net.router.config;
+package de.rennschnitzel.net.config;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

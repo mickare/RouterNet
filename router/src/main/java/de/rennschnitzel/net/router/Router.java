@@ -15,6 +15,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import de.rennschnitzel.net.Owner;
 import de.rennschnitzel.net.RouterNetwork;
+import de.rennschnitzel.net.config.ConfigFile;
 import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.login.AuthenticationFactory;
 import de.rennschnitzel.net.core.login.RouterAuthentication;
@@ -25,7 +26,6 @@ import de.rennschnitzel.net.netty.LoginHandler;
 import de.rennschnitzel.net.netty.PipelineUtils;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
 import de.rennschnitzel.net.router.command.CommandManager;
-import de.rennschnitzel.net.router.config.ConfigFile;
 import de.rennschnitzel.net.router.config.Settings;
 import de.rennschnitzel.net.router.packet.RouterPacketHandler;
 import de.rennschnitzel.net.router.plugin.Plugin;

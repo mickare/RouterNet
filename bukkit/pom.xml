@@ -75,6 +75,7 @@
 									<include>org.objenesis:objenesis:*</include>
 									<include>org.projectlombok:*</include>
 									<include>com.google.guava:*</include>
+									<include>com.google.code.gson:*</include>
 									<include>net.jodah:typetools:*</include>
 								</includes>
 							</artifactSet>
@@ -86,6 +87,10 @@
 								<relocation>
 									<pattern>com.google.common</pattern>
 									<shadedPattern>de.rennschnitzel.google.common</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>com.google.code.gson</pattern>
+									<shadedPattern>de.rennschnitzel.google.gson</shadedPattern>
 								</relocation>
 							</relocations>
 						</configuration>
