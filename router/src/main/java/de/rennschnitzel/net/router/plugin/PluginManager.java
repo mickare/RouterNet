@@ -49,7 +49,7 @@ public class PluginManager {
     Map<PluginDescription, Boolean> pluginStatuses = new HashMap<>();
     for (Map.Entry<String, PluginDescription> entry : toLoad.entrySet()) {
       PluginDescription plugin = entry.getValue();
-      if (!enablePlugin(pluginStatuses, new Stack<PluginDescription>(), plugin)) {
+      if (!loadPlugin(pluginStatuses, new Stack<PluginDescription>(), plugin)) {
         router.getLogger().log(Level.WARNING, "Failed to enable {0}", entry.getKey());
       }
     }
@@ -71,7 +71,7 @@ public class PluginManager {
     }
   }
 
-  private boolean enablePlugin(Map<PluginDescription, Boolean> pluginStatuses,
+  private boolean loadPlugin(Map<PluginDescription, Boolean> pluginStatuses,
       Stack<PluginDescription> dependStack, PluginDescription plugin) {
     if (pluginStatuses.containsKey(plugin)) {
       return pluginStatuses.get(plugin);
@@ -102,7 +102,7 @@ public class PluginManager {
           status = false;
         } else {
           dependStack.push(plugin);
-          dependStatus = this.enablePlugin(pluginStatuses, dependStack, depend);
+          dependStatus = this.loadPlugin(pluginStatuses, dependStack, depend);
           dependStack.pop();
         }
       }
@@ -123,13 +123,13 @@ public class PluginManager {
     if (status) {
       try {
         URLClassLoader loader = new PluginClassloader(new URL[] {plugin.getFile().toURI().toURL()});
-                
+
         Class<?> main = loader.loadClass(plugin.getMain());
         Plugin clazz = (Plugin) main.getDeclaredConstructor().newInstance();
 
         clazz.init(router, plugin);
-        plugins.put(plugin.getName(), clazz);
         clazz.onLoad();
+        plugins.put(plugin.getName(), clazz);
         router.getLogger().log(Level.INFO, "Loaded plugin {0} version {1} by {2}",
             new Object[] {plugin.getName(), plugin.getVersion(), plugin.getAuthor()});
       } catch (Throwable t) {
@@ -151,7 +151,7 @@ public class PluginManager {
     Preconditions.checkArgument(folder.isDirectory(), "Must load from a directory");
 
     File[] files = folder.listFiles();
-    if(files == null) {
+    if (files == null) {
       throw new IllegalStateException("folder should be a directory but listFiles returned null");
     }
     for (File file : files) {
