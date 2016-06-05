@@ -29,7 +29,7 @@ public abstract class AbstractConnectService extends AbstractScheduledService im
 	private @Getter final TimeUnit delay_unit;
 	
 	private final CloseableReadWriteLock lock = new ReentrantCloseableReadWriteLock();
-	private @Getter Promise<Connection> currentFuture = null;
+	private @Getter Promise<Connection> currentFuture = FutureUtils.newPromise();
 	private ConnectClient connector = null;
 	private @Getter( AccessLevel.PROTECTED ) EventLoopGroup group;
 	
@@ -59,7 +59,7 @@ public abstract class AbstractConnectService extends AbstractScheduledService im
 		group = PipelineUtils.newEventLoopGroup( 0, new ThreadFactoryBuilder().setNameFormat( "Net-Netty IO Thread #%1$d" ).build() );
 		getLogger().info( "Connect service: Started" );
 		
-		//connectSoft();
+		startConnectClient( currentFuture );
 	}
 	
 	@Override
@@ -106,33 +106,40 @@ public abstract class AbstractConnectService extends AbstractScheduledService im
 				
 			}
 			
-			try ( CloseableLock l = lock.writeLock().open() ) {
-				currentFuture = FutureUtils.newPromise();
-				currentFuture.addListener( f -> {
-					if ( !f.isSuccess() ) {
-						if ( failCounter % 10 == 0 ) {
-							if ( f.cause() != null ) {
-								getLogger().log( Level.INFO, "Failed to connect: " + f.cause().getMessage() );
-							} else {
-								getLogger().log( Level.INFO, "Failed to connect: unknown cause" );
-							}
+			startConnectClient( FutureUtils.newPromise() );
+		}
+		return connector;
+	}
+	
+	private ConnectClient startConnectClient( Promise<Connection> promise ) {
+		Preconditions.checkState( connector == null || connector.isClosed() );
+		Preconditions.checkNotNull( promise );
+		try ( CloseableLock l = lock.writeLock().open() ) {
+			currentFuture = promise;
+			currentFuture.addListener( f -> {
+				if ( !f.isSuccess() ) {
+					if ( failCounter % 10 == 0 ) {
+						if ( f.cause() != null ) {
+							getLogger().log( Level.INFO, "Failed to connect: " + f.cause().getMessage() );
+						} else {
+							getLogger().log( Level.INFO, "Failed to connect: unknown cause" );
 						}
-						failCounter++;
-						handleFailConnect();
-					} else {
-						failCounter = 0;
 					}
-				} );
-				connector = newConnectClient( currentFuture );
-				if ( failCounter % 10 == 0 ) {
-					if ( failCounter > 0 ) {
-						getLogger().info( "Connecting to network... (Retry " + failCounter + ")" );
-					} else {
-						getLogger().info( "Connecting to network..." );
-					}
+					failCounter++;
+					handleFailConnect();
+				} else {
+					failCounter = 0;
 				}
-				connector.connect();
+			} );
+			connector = newConnectClient( currentFuture );
+			if ( failCounter % 10 == 0 ) {
+				if ( failCounter > 0 ) {
+					getLogger().info( "Connecting to network... (Retry " + failCounter + ")" );
+				} else {
+					getLogger().info( "Connecting to network..." );
+				}
 			}
+			connector.connect();
 		}
 		return connector;
 	}
@@ -145,7 +152,7 @@ public abstract class AbstractConnectService extends AbstractScheduledService im
 	
 	@Override
 	protected Scheduler scheduler() {
-		return Scheduler.newFixedDelaySchedule( 0, delay_time, delay_unit );
+		return Scheduler.newFixedDelaySchedule( delay_time, delay_time, delay_unit );
 	}
 	
 }
