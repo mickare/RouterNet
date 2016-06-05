@@ -83,7 +83,7 @@ public class Router extends AbstractIdleService implements Owner {
     this.configFile.saveDefault();
     String pluginsFolderPath = this.configFile.getConfig().getPluginFolder();
     Preconditions.checkNotNull(pluginsFolderPath);
-    this.pluginsFolder = new File(pluginsFolderPath);
+    this.pluginsFolder = new File(pluginsFolderPath).getAbsoluteFile();
 
     this.commandManager = new CommandManager(this);
 

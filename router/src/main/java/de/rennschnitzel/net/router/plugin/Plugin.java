@@ -41,7 +41,7 @@ public abstract class Plugin {
     }
   }
 
-  public final void disable() throws Exception {    
+  public final void disable() throws Exception {
     try {
       this.enabled = false;
       this.onDisable();

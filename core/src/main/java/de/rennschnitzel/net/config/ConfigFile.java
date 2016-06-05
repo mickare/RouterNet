@@ -78,6 +78,7 @@ public class ConfigFile<T> {
 	}
 	
 	private synchronized void _save( final T config ) throws IOException {
+		this.file.getParentFile().mkdirs();
 		final File tmp = File.createTempFile( this.file.getName(), ".tmp", this.file.getParentFile() );
 		try ( final BufferedWriter writer = Files.newWriter( tmp, Charsets.UTF_8 ) ) {
 			GSON.toJson( config, writer );
@@ -91,7 +92,6 @@ public class ConfigFile<T> {
 	
 	public synchronized void saveDefault() {
 		if ( !this.file.exists() ) {
-			this.file.mkdirs();
 			try {
 				this._save( this._createInstance() );
 			} catch ( final IOException e ) {
