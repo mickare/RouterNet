@@ -59,7 +59,7 @@ public abstract class AbstractConnectService extends AbstractScheduledService im
 		group = PipelineUtils.newEventLoopGroup( 0, new ThreadFactoryBuilder().setNameFormat( "Net-Netty IO Thread #%1$d" ).build() );
 		getLogger().info( "Connect service: Started" );
 		
-		connectSoft();
+		//connectSoft();
 	}
 	
 	@Override
@@ -145,7 +145,7 @@ public abstract class AbstractConnectService extends AbstractScheduledService im
 	
 	@Override
 	protected Scheduler scheduler() {
-		return Scheduler.newFixedDelaySchedule( delay_time, delay_time, delay_unit );
+		return Scheduler.newFixedDelaySchedule( 0, delay_time, delay_unit );
 	}
 	
 }
