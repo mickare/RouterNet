@@ -27,7 +27,7 @@ public class Serialization {
 	
 	private static boolean USE_FST = false;
 	
-	public static class ClassLoaderObjectInputStream extends ObjectInputStream {
+	private static class ClassLoaderObjectInputStream extends ObjectInputStream {
 		
 		private final ClassLoader loader;
 		
@@ -40,7 +40,12 @@ public class Serialization {
 			this.loader = loader;
 		}
 		
-		protected Class<?> resolveClass( ObjectStreamClass desc ) throws ClassNotFoundException {
+		protected Class<?> resolveClass( ObjectStreamClass desc ) throws ClassNotFoundException, IOException {
+			try {
+				return super.resolveClass( desc );
+			} catch ( ClassNotFoundException e ) {
+			
+			}
 			if ( loader == null ) {
 				return Class.forName( desc.getName() );
 			}

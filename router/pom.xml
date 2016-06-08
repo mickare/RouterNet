@@ -8,7 +8,7 @@
 		<version>0.0.1-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
-	
+
 	<artifactId>router</artifactId>
 	<name>RS-Net-router</name>
 
@@ -54,6 +54,11 @@
 			<groupId>de.rennschnitzel.net</groupId>
 			<artifactId>core</artifactId>
 			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<version>6.0.2</version>
 		</dependency>
 	</dependencies>
 
@@ -108,8 +113,8 @@
 									<include>com.google.protobuf:*</include>
 									<include>com.google.code.gson:*</include>
 									<include>de.ruedigermoeller:*</include>
-									<include>com.fasterxml.jackson.core:*</include>		
-									<include>org.objenesis:objenesis:*</include>									
+									<include>com.fasterxml.jackson.core:*</include>
+									<include>org.objenesis:objenesis:*</include>
 									<include>com.zaxxer:*</include>
 									<include>jline:*</include>
 									<include>org.slf4j:*</include>
@@ -119,6 +124,7 @@
 									<include>org.jooq:*</include>
 									<include>org.javassist:javassist:*</include>
 									<include>net.jodah:typetools:*</include>
+									<include>mysql:mysql-connector-java:6.0.2</include>
 								</includes>
 							</artifactSet>
 							<transformers>
