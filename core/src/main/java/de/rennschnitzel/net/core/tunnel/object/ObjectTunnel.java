@@ -10,6 +10,7 @@ import com.google.common.base.Preconditions;
 
 import de.rennschnitzel.net.Owner;
 import de.rennschnitzel.net.core.Tunnel;
+import de.rennschnitzel.net.core.Node.HomeNode;
 import de.rennschnitzel.net.core.Connection;
 import de.rennschnitzel.net.core.Target;
 import de.rennschnitzel.net.core.tunnel.AbstractSubTunnel;
@@ -95,7 +96,12 @@ public class ObjectTunnel<T> extends AbstractSubTunnel<ObjectTunnel<T>, ObjectTu
 	}
 	
 	public boolean send( ObjectTunnelMessage<T> ocmsg ) {
-		return this.parentTunnel.send( ocmsg );
+		final HomeNode home = getNetwork().getHome();
+		boolean success = this.parentTunnel.sendIgnoreSelf( ocmsg );
+		if ( ocmsg.getTarget().contains( home ) ) {
+			this.receive( ocmsg );
+		}
+		return success;
 	}
 	
 	@Override
@@ -103,10 +109,10 @@ public class ObjectTunnel<T> extends AbstractSubTunnel<ObjectTunnel<T>, ObjectTu
 		if ( this.listeners.size() > 0 ) {
 			if ( con != null ) {
 				this.getExectutor().orElseGet( con.getChannel().getChannel()::eventLoop ).execute( () -> {
-					this.receive( new ObjectTunnelMessage<T>( this, cmsg ) );
+					this.receive( new ObjectTunnelMessage<>( this, cmsg ) );
 				} );
 			} else {
-				this.receive( new ObjectTunnelMessage<T>( this, cmsg ) );
+				this.receive( new ObjectTunnelMessage<>( this, cmsg ) );
 			}
 		}
 	}

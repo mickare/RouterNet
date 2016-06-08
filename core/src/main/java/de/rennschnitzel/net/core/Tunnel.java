@@ -100,18 +100,22 @@ public class Tunnel {
 	
 	public boolean send( final TunnelMessage cmsg ) {
 		final HomeNode home = getNetwork().getHome();
-		boolean success = true;
-		if ( !cmsg.getTarget().isOnly( home ) ) {
-			success &= this.sendIgnoreSelf( cmsg );
-		}
-		if ( cmsg.getTarget().contains( getNetwork().getHome() ) ) {
+		boolean success = _sendIgnoreSelf( home, cmsg );
+		if ( cmsg.getTarget().contains( home ) ) {
 			this.receive( null, cmsg );
 		}
 		return success;
 	}
+
+	public boolean sendIgnoreSelf( final TunnelMessage cmsg ) {
+		return _sendIgnoreSelf( getNetwork().getHome(), cmsg );
+	}
 	
-	private boolean sendIgnoreSelf( final TunnelMessage cmsg ) {
-		return this.network.sendTunnelMessage( cmsg );
+	private boolean _sendIgnoreSelf( HomeNode home, final TunnelMessage cmsg ) {
+		if ( !cmsg.getTarget().isOnly( home ) ) {
+			return this.network.sendTunnelMessage( cmsg );
+		}
+		return true;
 	}
 	
 	public final void receiveProto( final Connection con, final TransportProtocol.TunnelMessage msg ) {

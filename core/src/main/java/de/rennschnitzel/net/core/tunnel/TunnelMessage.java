@@ -42,7 +42,7 @@ public @Getter class TunnelMessage extends Message {
 		b.setTunnelId( tunnel.getId() );
 		b.setTarget( this.getTarget().getProtocolMessage() );
 		b.setSender( ProtocolUtils.convert( tunnel.getNetwork().getHome().getId() ) );
-		b.setData( this.data );
+		b.setData( this.getData() );
 		return b.build();
 	}
 	
