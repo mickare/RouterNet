@@ -2,13 +2,11 @@ package de.rennschnitzel.net.router.plugin;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.logging.Logger;
 
 import com.google.common.base.Preconditions;
-import com.google.common.util.concurrent.ListeningScheduledExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import de.rennschnitzel.net.router.Router;
@@ -81,7 +79,10 @@ public abstract class Plugin {
 
   private ScheduledExecutorService createExecutorService() {
     String name = (getDescription() == null) ? "unknown" : getDescription().getName();
-    return new ScheduledThreadPoolExecutor(0,
+
+    // return new ScheduledThreadPoolExecutor(1,
+    // new ThreadFactoryBuilder().setNameFormat(name + " Pool Thread #%1$d").build());
+    return Executors.newScheduledThreadPool(1,
         new ThreadFactoryBuilder().setNameFormat(name + " Pool Thread #%1$d").build());
   }
 
