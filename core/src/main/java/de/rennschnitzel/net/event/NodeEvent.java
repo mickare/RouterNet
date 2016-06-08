@@ -17,20 +17,20 @@ public class NodeEvent extends NetworkEvent {
 		this.node = node;
 	}
 	
-	public static class NetworkNodeAddedEvent extends NodeEvent {
-		public NetworkNodeAddedEvent( AbstractNetwork network, Node node ) {
+	public static class NodeAddedEvent extends NodeEvent {
+		public NodeAddedEvent( AbstractNetwork network, Node node ) {
 			super( network, node );
 		}
 	}
 	
-	public static class NetworkNodeUpdatedEvent extends NodeEvent {
-		public NetworkNodeUpdatedEvent( AbstractNetwork network, Node node ) {
+	public static class NodeUpdatedEvent extends NodeEvent {
+		public NodeUpdatedEvent( AbstractNetwork network, Node node ) {
 			super( network, node );
 		}
 	}
 	
-	public static class NetworkNodeRemovedEvent extends NodeEvent {
-		public NetworkNodeRemovedEvent( AbstractNetwork network, Node node ) {
+	public static class NodeRemovedEvent extends NodeEvent {
+		public NodeRemovedEvent( AbstractNetwork network, Node node ) {
 			super( network, node );
 		}
 	}

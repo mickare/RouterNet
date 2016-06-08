@@ -8,7 +8,7 @@ import lombok.Getter;
 
 public @Getter class Namespace {
 	
-	private final AbstractNetwork network;
+	private transient final AbstractNetwork network;
 	private final String name;
 	
 	public Namespace( AbstractNetwork network, String name ) {

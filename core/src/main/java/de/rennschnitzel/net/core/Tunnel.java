@@ -22,15 +22,15 @@ import lombok.RequiredArgsConstructor;
 
 public class Tunnel {
 	
-	private @Getter final AbstractNetwork network;
+	private transient @Getter final AbstractNetwork network;
 	private @Getter final String name;
 	private @Getter final int id;
 	private @Getter volatile boolean closed = false;
-	private @Getter Optional<Executor> executor = Optional.empty();
+	private transient @Getter Optional<Executor> executor = Optional.empty();
 	
 	private Optional<TunnelRegister.Type> type = Optional.empty();
-	private TunnelHandler handler = null;
-	private final CopyOnWriteArraySet<RegisteredMessageListener> listeners = new CopyOnWriteArraySet<>();
+	private transient TunnelHandler handler = null;
+	private transient final CopyOnWriteArraySet<RegisteredMessageListener> listeners = new CopyOnWriteArraySet<>();
 	
 	public Tunnel( final AbstractNetwork network, final String name ) {
 		Preconditions.checkNotNull( network );

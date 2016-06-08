@@ -30,11 +30,11 @@ public @Getter class Target {
 	}
 	
 	public static Target to( String namespace ) {
-		return  new Builder().include( namespace ).build();
+		return new Builder().include( namespace ).build();
 	}
 	
 	public static Target to( Collection<Node> nodes ) {
-		return  new Builder().includeAllNodes( nodes ).build();
+		return new Builder().includeAllNodes( nodes ).build();
 	}
 	
 	public static Builder newBuilder() {
@@ -89,7 +89,7 @@ public @Getter class Target {
 		return false;
 	}
 	
-	public boolean contains(final Node node ) {
+	public boolean contains( final Node node ) {
 		final UUID id = node.getId();
 		if ( toAll ) {
 			if ( nodesExclude.contains( id ) ) {
@@ -167,7 +167,8 @@ public @Getter class Target {
 			return new Builder().setToAll( true );
 		}
 		
-		protected Builder() {}
+		protected Builder() {
+		}
 		
 		private boolean toAll = false;
 		private final Set<UUID> nodesInclude = Sets.newHashSet();
@@ -265,8 +266,8 @@ public @Getter class Target {
 		}
 		
 		public Target build() {
-			//this.nodesInclude.removeAll( this.nodesExclude );
-			//this.namespacesInclude.removeAll( this.namespacesExclude );
+			// this.nodesInclude.removeAll( this.nodesExclude );
+			// this.namespacesInclude.removeAll( this.namespacesExclude );
 			return new Target( this.toAll, this.nodesInclude, this.nodesExclude, this.namespacesInclude, this.namespacesExclude );
 		}
 		

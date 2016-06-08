@@ -20,6 +20,8 @@ import de.rennschnitzel.net.core.Tunnel;
 import de.rennschnitzel.net.core.packet.Packer;
 import de.rennschnitzel.net.core.procedure.ProcedureCall;
 import de.rennschnitzel.net.core.tunnel.TunnelMessage;
+import de.rennschnitzel.net.event.ConnectionAddedEvent;
+import de.rennschnitzel.net.event.ConnectionRemovedEvent;
 import de.rennschnitzel.net.exception.ProtocolException;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeMessage;
 import de.rennschnitzel.net.protocol.NetworkProtocol.NodeRemoveMessage;
@@ -60,10 +62,12 @@ public class RouterNetwork extends AbstractNetwork {
       Connection old = connections.put(connection.getPeerId(), connection);
       if (old != null && old != connection) {
         old.disconnect("replaced");
+        this.getEventBus().post(new ConnectionRemovedEvent(connection));
       }
       String name = connection.getName();
       getLogger()
           .info(connection.getPeerId() + (name != null ? "(" + name + ")" : "") + " connected.");
+      this.getEventBus().post(new ConnectionAddedEvent(connection));
     }
   }
 
@@ -74,6 +78,7 @@ public class RouterNetwork extends AbstractNetwork {
         String name = connection.getName();
         getLogger().info(
             connection.getPeerId() + (name != null ? "(" + name + ")" : "") + " disconnected.");
+        this.getEventBus().post(new ConnectionRemovedEvent(connection));
         this.removeNode(connection.getPeerId());
       }
       if (connection.isActive()) {

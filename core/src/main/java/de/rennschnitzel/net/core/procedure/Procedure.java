@@ -68,8 +68,8 @@ public class Procedure implements Comparable<Procedure> {
 	// ***************************************************************************
 	
 	private @Getter final String name, argumentType, resultType;
-	private final LazyCache<Class<?>> argumentClass;
-	private final LazyCache<Class<?>> resultClass;
+	private transient final LazyCache<Class<?>> argumentClass;
+	private transient final LazyCache<Class<?>> resultClass;
 	
 	public Procedure( final ProcedureDescription msg ) throws IllegalArgumentException, NullPointerException {
 		this( msg.getName(), msg.getArgumentType(), msg.getResultType() );

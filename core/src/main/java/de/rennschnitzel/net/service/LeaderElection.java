@@ -11,9 +11,9 @@ import com.google.common.eventbus.Subscribe;
 import de.rennschnitzel.net.core.AbstractNetwork;
 import de.rennschnitzel.net.core.Namespace;
 import de.rennschnitzel.net.core.Node;
-import de.rennschnitzel.net.event.NodeEvent.NetworkNodeAddedEvent;
-import de.rennschnitzel.net.event.NodeEvent.NetworkNodeRemovedEvent;
-import de.rennschnitzel.net.event.NodeEvent.NetworkNodeUpdatedEvent;
+import de.rennschnitzel.net.event.NodeEvent.NodeAddedEvent;
+import de.rennschnitzel.net.event.NodeEvent.NodeRemovedEvent;
+import de.rennschnitzel.net.event.NodeEvent.NodeUpdatedEvent;
 import lombok.Getter;
 
 public class LeaderElection implements NetworkService {
@@ -130,14 +130,14 @@ public class LeaderElection implements NetworkService {
 	}
 	
 	@Subscribe
-	public void on( NetworkNodeAddedEvent event ) {
+	public void on( NodeAddedEvent event ) {
 		if ( isBetterLeader( event.getNode() ) ) {
 			this.setLeader( event.getNode() );
 		}
 	}
 	
 	@Subscribe
-	public void on( NetworkNodeUpdatedEvent event ) {
+	public void on( NodeUpdatedEvent event ) {
 		if ( isBetterLeader( event.getNode() ) ) {
 			this.setLeader( event.getNode() );
 		} else if ( _isLeader( event.getNode().getId() ) && !event.getNode().hasNamespace( namespace ) ) {
@@ -146,7 +146,7 @@ public class LeaderElection implements NetworkService {
 	}
 	
 	@Subscribe
-	public void on( NetworkNodeRemovedEvent event ) {
+	public void on( NodeRemovedEvent event ) {
 		if ( this._isLeader( event.getNode().getId() ) ) {
 			this.setLeader( this.calculateLeader() );
 		}

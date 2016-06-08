@@ -10,7 +10,7 @@ import lombok.Setter;
 
 public class CallableRegisteredProcedure<T, R> extends BoundProcedure<T, R> {
 	
-	private @Getter @Setter @NonNull Future<?> registerFuture = null;
+	private transient @Getter @Setter @NonNull Future<?> registerFuture = null;
 	private final @Getter boolean synchronization;
 	
 	public CallableRegisteredProcedure( AbstractNetwork network, CallableProcedure<T, R> procedure, Function<T, R> function, boolean synchronization ) {

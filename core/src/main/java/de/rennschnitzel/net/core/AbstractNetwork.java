@@ -457,9 +457,9 @@ public abstract class AbstractNetwork {
 		node.update( msg );
 		Node old = this.nodes.put( id, node );
 		if ( old == null ) {
-			this.eventBus.post( new NodeEvent.NetworkNodeAddedEvent( this, node ) );
+			this.eventBus.post( new NodeEvent.NodeAddedEvent( this, node ) );
 		} else {
-			this.eventBus.post( new NodeEvent.NetworkNodeUpdatedEvent( this, node ) );
+			this.eventBus.post( new NodeEvent.NodeUpdatedEvent( this, node ) );
 		}
 		return node;
 	}
@@ -488,7 +488,7 @@ public abstract class AbstractNetwork {
 		Node node = this.nodes.remove( id );
 		if ( node != null ) {
 			node.disconnected();
-			this.eventBus.post( new NodeEvent.NetworkNodeRemovedEvent( this, node ) );
+			this.eventBus.post( new NodeEvent.NodeRemovedEvent( this, node ) );
 		}
 	}
 	

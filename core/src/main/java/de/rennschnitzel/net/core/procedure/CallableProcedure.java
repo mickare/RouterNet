@@ -17,15 +17,15 @@ import lombok.Getter;
 @Getter
 public class CallableProcedure<T, R> extends Procedure {
 	
-	private @Getter final Class<T> argumentClass;
-	private @Getter final Class<R> resultClass;
+	private transient @Getter final Class<T> argumentClass;
+	private transient @Getter final Class<R> resultClass;
 	
-	private final CheckedFunction<ProcedureCallMessage, T> callReader;
-	private final BiConsumer<ProcedureCallMessage.Builder, T> callWriter;
-	private final CheckedFunction<ProcedureResponseMessage, R> responseReader;
-	private final BiConsumer<ProcedureResponseMessage.Builder, R> responseWriter;
+	private transient final CheckedFunction<ProcedureCallMessage, T> callReader;
+	private transient final BiConsumer<ProcedureCallMessage.Builder, T> callWriter;
+	private transient final CheckedFunction<ProcedureResponseMessage, R> responseReader;
+	private transient final BiConsumer<ProcedureResponseMessage.Builder, R> responseWriter;
 	
-	private final AbstractNetwork network;
+	private transient final AbstractNetwork network;
 	
 	public CallableProcedure( final AbstractNetwork network, final Procedure description, final Class<T> argClass, final Class<R> resultClass ) {
 		this( network, description.getName(), argClass, resultClass );
@@ -89,18 +89,18 @@ public class CallableProcedure<T, R> extends Procedure {
 	
 	@Override
 	public boolean equals( Object object ) {
-		if(!super.equals( object )) {
+		if ( !super.equals( object ) ) {
 			return false;
 		}
-		//if ( this == object ) {
-		//	return true;
-		//}
+		// if ( this == object ) {
+		// return true;
+		// }
 		if ( !( object instanceof CallableProcedure ) ) {
 			return false;
 		}
 		return true;
-		//CallableProcedure<?, ?> o = ( CallableProcedure<?, ?> ) object;
-		//return compareTo( o ) == 0;
+		// CallableProcedure<?, ?> o = ( CallableProcedure<?, ?> ) object;
+		// return compareTo( o ) == 0;
 	}
 	
 	public SingleProcedureCall<T, R> call( Node node, T argument ) {

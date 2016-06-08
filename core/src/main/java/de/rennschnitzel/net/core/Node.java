@@ -48,7 +48,7 @@ public @RequiredArgsConstructor class Node {
 	protected final ConditionSet<Procedure> procedures = ConditionSet.of( Sets.newTreeSet() );
 	private volatile @Getter boolean connected = false;
 	private @Getter Data data = new Data();
-	private final Stack<Consumer<Node>> updateListeners = new Stack<>();
+	private transient final Stack<Consumer<Node>> updateListeners = new Stack<>();
 	
 	public void addUpdateListener( Consumer<Node> listener ) {
 		Preconditions.checkNotNull( listener );
@@ -212,8 +212,8 @@ public @RequiredArgsConstructor class Node {
 	
 	public static class HomeNode extends Node {
 		
-		private volatile @Getter boolean dirty = false;
-		private @Getter @Setter( AccessLevel.PACKAGE ) @NonNull AbstractNetwork network = null;
+		private transient volatile @Getter boolean dirty = false;
+		private transient @Getter @Setter( AccessLevel.PACKAGE ) @NonNull AbstractNetwork network = null;
 		
 		public HomeNode( UUID id ) {
 			super( id );
