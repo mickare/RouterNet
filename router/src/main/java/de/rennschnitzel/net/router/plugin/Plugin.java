@@ -2,6 +2,7 @@ package de.rennschnitzel.net.router.plugin;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.logging.Logger;
 
@@ -20,7 +21,7 @@ public abstract class Plugin {
   private @Getter Router router;
   private @Getter File file;
   private @Getter Logger logger;
-  private final LazyCache<ListeningScheduledExecutorService> service =
+  private final LazyCache<ScheduledExecutorService> service =
       LazyCache.of(this::createExecutorService);
 
   private @Getter boolean enabled = false;
@@ -78,13 +79,13 @@ public abstract class Plugin {
     return this.description.getName();
   }
 
-  private ListeningScheduledExecutorService createExecutorService() {
+  private ScheduledExecutorService createExecutorService() {
     String name = (getDescription() == null) ? "unknown" : getDescription().getName();
-    return MoreExecutors.listeningDecorator(new ScheduledThreadPoolExecutor(0,
-        new ThreadFactoryBuilder().setNameFormat(name + " Pool Thread #%1$d").build()));
+    return new ScheduledThreadPoolExecutor(0,
+        new ThreadFactoryBuilder().setNameFormat(name + " Pool Thread #%1$d").build());
   }
 
-  public ListeningScheduledExecutorService getExecutorService() {
+  public ScheduledExecutorService getExecutorService() {
     return service.getUnchecked();
   }
 
