@@ -184,7 +184,7 @@ public class PluginManager {
       for (File file : files) {
         if (file.isFile() && file.getName().endsWith(".jar")) {
           try {
-            Files.copy(file, new File(folder, file.getName()));
+            Files.move(file, new File(folder, file.getName()));
           } catch (Exception ex) {
             router.getLogger().log(Level.WARNING, "Could not update plugin from file " + file, ex);
           }
