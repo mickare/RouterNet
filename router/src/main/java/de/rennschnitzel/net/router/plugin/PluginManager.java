@@ -19,6 +19,7 @@ import java.util.jar.JarFile;
 import java.util.logging.Level;
 
 import com.google.common.base.Preconditions;
+import com.google.common.io.Files;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -32,8 +33,8 @@ public class PluginManager {
   @Getter
   private final Router router;
 
-  private final Map<String, Plugin> plugins = new LinkedHashMap<>();
-  private Map<String, PluginDescription> toLoad = new HashMap<>();
+  private final Map<String, Plugin>      plugins = new LinkedHashMap<>();
+  private Map<String, PluginDescription> toLoad  = new HashMap<>();
 
   public PluginManager(Router router) {
     Preconditions.checkNotNull(router);
@@ -62,17 +63,14 @@ public class PluginManager {
       try {
         plugin.enable();
         router.getLogger().log(Level.INFO, "Enabled plugin {0} version {1} by {2}",
-            new Object[] {plugin.getDescription().getName(), plugin.getDescription().getVersion(),
-                plugin.getDescription().getAuthor()});
+            new Object[] {plugin.getDescription().getName(), plugin.getDescription().getVersion(), plugin.getDescription().getAuthor()});
       } catch (Throwable t) {
-        router.getLogger().log(Level.WARNING,
-            "Exception encountered when loading plugin: " + plugin.getDescription().getName(), t);
+        router.getLogger().log(Level.WARNING, "Exception encountered when loading plugin: " + plugin.getDescription().getName(), t);
       }
     }
   }
 
-  private boolean loadPlugin(Map<PluginDescription, Boolean> pluginStatuses,
-      Stack<PluginDescription> dependStack, PluginDescription plugin) {
+  private boolean loadPlugin(Map<PluginDescription, Boolean> pluginStatuses, Stack<PluginDescription> dependStack, PluginDescription plugin) {
     if (pluginStatuses.containsKey(plugin)) {
       return pluginStatuses.get(plugin);
     }
@@ -97,8 +95,7 @@ public class PluginManager {
             dependencyGraph.append(element.getName()).append(" -> ");
           }
           dependencyGraph.append(plugin.getName()).append(" -> ").append(dependName);
-          router.getLogger().log(Level.WARNING, "Circular dependency detected: {0}",
-              dependencyGraph);
+          router.getLogger().log(Level.WARNING, "Circular dependency detected: {0}", dependencyGraph);
           status = false;
         } else {
           dependStack.push(plugin);
@@ -109,8 +106,7 @@ public class PluginManager {
 
       // only fail if this wasn't a soft dependency
       if (dependStatus == Boolean.FALSE && plugin.getDepends().contains(dependName)) {
-        router.getLogger().log(Level.WARNING, "{0} (required by {1}) is unavailable",
-            new Object[] {String.valueOf(dependName), plugin.getName()});
+        router.getLogger().log(Level.WARNING, "{0} (required by {1}) is unavailable", new Object[] {String.valueOf(dependName), plugin.getName()});
         status = false;
       }
 
@@ -161,8 +157,7 @@ public class PluginManager {
 
           Preconditions.checkNotNull(pdf, "Plugin must have a plugin.json");
 
-          try (InputStream in = jar.getInputStream(pdf);
-              Reader reader = new InputStreamReader(in)) {
+          try (InputStream in = jar.getInputStream(pdf); Reader reader = new InputStreamReader(in)) {
             PluginDescription desc = GSON.fromJson(reader, PluginDescription.class);
             Preconditions.checkNotNull(desc.getName(), "Plugin from %s has no name", file);
             Preconditions.checkNotNull(desc.getMain(), "Plugin from %s has no main", file);
@@ -172,6 +167,27 @@ public class PluginManager {
           }
         } catch (Exception ex) {
           router.getLogger().log(Level.WARNING, "Could not load plugin from file " + file, ex);
+        }
+      }
+    }
+  }
+
+  public void updatePlugins(File folder, File updateFolder) {
+    Preconditions.checkNotNull(folder, "folder");
+    Preconditions.checkArgument(folder.isDirectory(), "Must load from a directory");
+    Preconditions.checkNotNull(updateFolder, "updateFolder");
+    if (updateFolder.isDirectory()) {
+      File[] files = updateFolder.listFiles();
+      if (files == null) {
+        return;
+      }
+      for (File file : files) {
+        if (file.isFile() && file.getName().endsWith(".jar")) {
+          try {
+            Files.copy(file, new File(folder, file.getName()));
+          } catch (Exception ex) {
+            router.getLogger().log(Level.WARNING, "Could not update plugin from file " + file, ex);
+          }
         }
       }
     }
