@@ -44,7 +44,7 @@ public class ConfigFile<T> {
 		} catch ( final NoSuchMethodException | SecurityException e ) {
 			throw new IllegalArgumentException( "config class has not an empty constructor", e );
 		}
-		this.file = file;
+		this.file = file.getAbsoluteFile();
 		this.configClass = configClass;
 	}
 	
@@ -78,8 +78,11 @@ public class ConfigFile<T> {
 	}
 	
 	private synchronized void _save( final T config ) throws IOException {
-		this.file.getParentFile().mkdirs();
-		final File tmp = File.createTempFile( this.file.getName(), ".tmp", this.file.getParentFile() );
+		File parent = this.file.getParentFile();
+		if(parent != null && !parent.exists()) {
+			parent.mkdirs();
+		}
+		final File tmp = File.createTempFile( this.file.getName(), ".tmp", parent );
 		try ( final BufferedWriter writer = Files.newWriter( tmp, Charsets.UTF_8 ) ) {
 			GSON.toJson( config, writer );
 		}
