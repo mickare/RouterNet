@@ -4,13 +4,13 @@
 	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-		<groupId>de.rennschnitzel.net</groupId>
+		<groupId>de.mickare.net</groupId>
 		<artifactId>parent</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>bukkit</artifactId>
-	<name>RS-Net-bukkit</name>
+	<name>Net-bukkit</name>
 
 	<dependencies>
 		<dependency>
@@ -20,7 +20,7 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>de.rennschnitzel.net</groupId>
+			<groupId>de.mickare.net</groupId>
 			<artifactId>client</artifactId>
 			<version>${project.version}</version>
 		</dependency>
@@ -66,7 +66,7 @@
 						<configuration>
 							<artifactSet>
 								<includes>
-									<include>de.rennschnitzel.net:*</include>
+									<include>de.mickare.net:*</include>
 									<include>io.netty:*</include>
 									<include>com.google.protobuf:*</include>
 									<include>de.ruedigermoeller:fst:*</include>
@@ -82,15 +82,15 @@
 							<relocations>
 								<relocation>
 									<pattern>io.netty</pattern>
-									<shadedPattern>de.rennschnitzel.io.netty</shadedPattern>
+									<shadedPattern>de.mickare.io.netty</shadedPattern>
 								</relocation>
 								<relocation>
 									<pattern>com.google.common</pattern>
-									<shadedPattern>de.rennschnitzel.google.common</shadedPattern>
+									<shadedPattern>de.mickare.google.common</shadedPattern>
 								</relocation>
 								<relocation>
 									<pattern>com.google.code.gson</pattern>
-									<shadedPattern>de.rennschnitzel.google.gson</shadedPattern>
+									<shadedPattern>de.mickare.google.gson</shadedPattern>
 								</relocation>
 							</relocations>
 						</configuration>

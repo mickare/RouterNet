@@ -4,13 +4,13 @@
 	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-		<groupId>de.rennschnitzel.net</groupId>
+		<groupId>de.mickare.net</groupId>
 		<artifactId>parent</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>client</artifactId>
-	<name>RS-Net-client</name>
+	<name>Net-client</name>
 
 
 	<properties>
@@ -30,7 +30,7 @@
 			<version>2.3.1</version>
 		</dependency>
 		<dependency>
-			<groupId>de.rennschnitzel.net</groupId>
+			<groupId>de.mickare.net</groupId>
 			<artifactId>core</artifactId>
 			<version>${project.version}</version>
 		</dependency>

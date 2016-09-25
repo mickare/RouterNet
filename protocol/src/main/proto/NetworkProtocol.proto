@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package de.rennschnitzel.net.protocol;
+package de.mickare.net.protocol;
 
 import "ComponentsProtocol.proto";
 
