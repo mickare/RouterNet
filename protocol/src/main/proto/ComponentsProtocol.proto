@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package de.mickare.net.protocol;
+package de.mickare.routernet.protocol;
 
 // A 128-bit id, transferred as two 64-bit longs
 message UUIDMessage {

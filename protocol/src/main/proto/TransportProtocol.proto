@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package de.mickare.net.protocol;
+package de.mickare.routernet.protocol;
 
 import "NetworkProtocol.proto";
 import "LoginProtocol.proto";

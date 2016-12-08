@@ -3,12 +3,12 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>de.mickare.net</groupId>
+	<groupId>de.mickare.routernet</groupId>
 	<artifactId>parent</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.2</version>
 	<packaging>pom</packaging>
 
-	<name>RS-Net-parent</name>
+	<name>RouterNet-parent</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -19,10 +19,7 @@
 		<module>protocol</module>
 		<module>core</module>
 		<module>client</module>
-		<module>bukkit</module>
-		<module>bungee</module>
-		<module>router</module>
-		
+		<module>router</module>		
 	</modules>
 
 	<distributionManagement>

@@ -3,14 +3,14 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>de.mickare.net</groupId>
+		<groupId>de.mickare.routernet</groupId>
 		<artifactId>parent</artifactId>
-		<version>0.0.1-SNAPSHOT</version>
+		<version>0.0.2</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
 	<artifactId>core</artifactId>
-	<name>Net-core</name>
+	<name>RouterNet-core</name>
 
 	<dependencies>
 		<dependency>
@@ -30,7 +30,7 @@
 			<version>18.0</version>
 		</dependency>
 		<dependency>
-			<groupId>de.mickare.net</groupId>
+			<groupId>de.mickare.routernet</groupId>
 			<artifactId>protocol</artifactId>
 			<version>${project.version}</version>
 		</dependency>

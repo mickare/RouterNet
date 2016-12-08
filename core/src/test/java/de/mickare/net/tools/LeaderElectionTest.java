@@ -13,12 +13,12 @@ import org.junit.Test;
 
 import com.google.common.collect.Sets;
 
-import de.mickare.net.ProtocolUtils;
-import de.mickare.net.core.Node;
-import de.mickare.net.dummy.DummClientNetwork;
-import de.mickare.net.protocol.NetworkProtocol.NodeMessage;
-import de.mickare.net.service.LeaderElection;
-import de.mickare.net.util.concurrent.DirectScheduledExecutorService;
+import de.mickare.routernet.ProtocolUtils;
+import de.mickare.routernet.core.Node;
+import de.mickare.routernet.dummy.DummClientNetwork;
+import de.mickare.routernet.protocol.NetworkProtocol.NodeMessage;
+import de.mickare.routernet.service.LeaderElection;
+import de.mickare.routernet.util.concurrent.DirectScheduledExecutorService;
 import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoopGroup;
 

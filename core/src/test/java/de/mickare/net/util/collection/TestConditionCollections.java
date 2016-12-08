@@ -13,8 +13,8 @@ import org.junit.Test;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import de.mickare.net.util.collection.ConditionCollection;
-import de.mickare.net.util.collection.ConditionMap;
+import de.mickare.routernet.util.collection.ConditionCollection;
+import de.mickare.routernet.util.collection.ConditionMap;
 
 public class TestConditionCollections {
 	
