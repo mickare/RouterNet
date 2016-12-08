@@ -1,6 +1,7 @@
 RouterNet
 =========
 [![Build Status](https://travis-ci.org/mickare/RouterNet.svg?branch=master)](https://travis-ci.org/mickare/RouterNet)
+[![License](http://img.shields.io/:license-apache-brightgreen.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 
 RouterNet is a Java 8 software packet that provides a simple router network based on Netty. Messages are forwarded by the router to recipients through virtual tunnels. Besides byte streams also simple object serialization and RPC (Remote Procedure Calls) allow a free, easy and dynamic development of network based applications.
 
