@@ -12,6 +12,7 @@
 
 	<artifactId>client</artifactId>
 	<name>RouterNet-client</name>
+	<url>https://github.com/mickare/RouterNet</url>
 
 
 	<properties>

@@ -11,6 +11,7 @@
 
 	<artifactId>router</artifactId>
 	<name>RouterNet-router</name>
+	<url>https://github.com/mickare/RouterNet</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

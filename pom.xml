@@ -9,6 +9,7 @@
 	<packaging>pom</packaging>
 
 	<name>RouterNet-parent</name>
+	<url>https://github.com/mickare/RouterNet</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

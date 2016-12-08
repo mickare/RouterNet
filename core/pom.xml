@@ -11,6 +11,7 @@
 
 	<artifactId>core</artifactId>
 	<name>RouterNet-core</name>
+	<url>https://github.com/mickare/RouterNet</url>
 
 	<dependencies>
 		<dependency>
