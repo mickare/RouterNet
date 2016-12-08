@@ -145,30 +145,20 @@
 
 	<distributionManagement>
 		<repository>
-			<id>rs-private</id>
-			<name>Rennschnitzel Private Repository</name>
-			<url>http://nexus.spacier.de/content/repositories/rs-private/</url>
+			<id>rs-release</id>
+			<name>Rennschnitzel Release Repository</name>
+			<url>http://nexus.spacier.de/content/repositories/rs-release/</url>
 		</repository>
 		<snapshotRepository>
-			<id>rs-private</id>
-			<name>Rennschnitzel Private Repository</name>
-			<url>http://nexus.spacier.de/content/repositories/rs-private/</url>
+			<id>rs-release</id>
+			<name>Rennschnitzel Release Repository</name>
+			<url>http://nexus.spacier.de/content/repositories/rs-release/</url>
 		</snapshotRepository>
 	</distributionManagement>
 
 	<repositories>
 		<repository>
-			<id>rs-protected</id>
-			<name>Rennschnitzel Protected Repository</name>
-			<url>http://nexus.spacier.de/content/repositories/rs-protected/</url>
-		</repository>
-		<repository>
-			<id>rs-private</id>
-			<name>Rennschnitzel Private Repository</name>
-			<url>http://nexus.spacier.de/content/repositories/rs-private/</url>
-		</repository>
-		<repository>
-			<id>public</id>
+			<id>rs-public</id>
 			<name>Rennschnitzel Public Group</name>
 			<url>http://nexus.spacier.de/content/groups/public/</url>
 		</repository>
