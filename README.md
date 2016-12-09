@@ -32,8 +32,8 @@ Custom Client
 Add the dependency of the client library to your maven project.
 ```xml
 <dependency>
-	<groupId>de.mickare.net</groupId>
-	<artifactId>client</artifactId>
+	<groupId>de.mickare.routernet</groupId>
+	<artifactId>routernet-client</artifactId>
 	<version>0.0.1</version>
 </dependency>
 ```
