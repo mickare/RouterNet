@@ -9,13 +9,22 @@ import de.mickare.routernet.protocol.ComponentsProtocol.UUIDMessage;
 
 public class ProtocolUtils {
 	
+	/**
+	 * Converts the UUID from protocol to java object
+	 * @param uuid protocol message
+	 * @return uuid as java object
+	 */
 	public static UUID convert( final UUIDMessage uuid ) {
 		if ( uuid == null ) {
 			return null;
 		}
 		return new UUID( uuid.getMostSignificantBits(), uuid.getLeastSignificantBits() );
 	}
-	
+	/**
+	 * Converts UUID from java object to protocol
+	 * @param uuid java object
+	 * @return uuid as protocol message
+	 */
 	public static UUIDMessage convert( final UUID uuid ) {
 		if ( uuid == null ) {
 			return null;
@@ -23,31 +32,12 @@ public class ProtocolUtils {
 		return UUIDMessage.newBuilder().setMostSignificantBits( uuid.getMostSignificantBits() ).setLeastSignificantBits( uuid.getLeastSignificantBits() ).build();
 	}
 	
-	public static List<UUID> convertProto( final List<UUIDMessage> c ) {
-		if ( c == null ) {
-			return null;
-		}
-		final List<UUID> result = new ArrayList<>( c.size() );
-		for ( int i = 0; i < c.size(); ++i ) {
-			result.add( convert( c.get( i ) ) );
-		}
-		return result;
-	}
-	
-	public static List<UUIDMessage> convert( final List<UUID> c ) {
-		if ( c == null ) {
-			return null;
-		}
-		final List<UUIDMessage> result = new ArrayList<>( c.size() );
-		for ( int i = 0; i < c.size(); ++i ) {
-			result.add( convert( c.get( i ) ) );
-		}
-		return result;
-	}
-	
-	// private static final Function<UUID, ComponentUUID.UUID> toProtConv
-	
-	public static Collection<UUID> convertProto( Collection<UUIDMessage> c ) {
+	/**
+	 * Converts a list of protocol UUIDs to java objects
+	 * @param c list of uuid protocol messages
+	 * @return  list of java uuid objects
+	 */
+	public static List<UUID> convertAllMessages( Collection<UUIDMessage> c ) {
 		if ( c == null ) {
 			return null;
 		}
@@ -55,8 +45,13 @@ public class ProtocolUtils {
 		c.forEach( old -> result.add( convert( old ) ) );
 		return result;
 	}
-	
-	public static Collection<UUIDMessage> convert( Collection<UUID> c ) {
+
+	/**
+	 * Converts a list of java UUID objects to protocol messages
+	 * @param c list of java uuid objects
+	 * @return  list of uuid protocol messages
+	 */
+	public static List<UUIDMessage> convertAll( Collection<UUID> c ) {
 		if ( c == null ) {
 			return null;
 		}

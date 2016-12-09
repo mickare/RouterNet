@@ -4,12 +4,12 @@
 
 	<parent>
 		<groupId>de.mickare.routernet</groupId>
-		<artifactId>parent</artifactId>
+		<artifactId>routernet-parent</artifactId>
 		<version>0.0.2</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
-	<artifactId>router</artifactId>
+	<artifactId>routernet-router</artifactId>
 	<name>RouterNet-router</name>
 	<url>https://github.com/mickare/RouterNet</url>
 
@@ -54,7 +54,7 @@
 		</dependency>
 		<dependency>
 			<groupId>de.mickare.routernet</groupId>
-			<artifactId>core</artifactId>
+			<artifactId>routernet-core</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>

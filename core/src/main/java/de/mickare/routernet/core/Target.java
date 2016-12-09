@@ -69,15 +69,15 @@ public @Getter class Target {
 	private TransportProtocol.TargetMessage createProtocolMessage() {
 		TransportProtocol.TargetMessage.Builder b = TransportProtocol.TargetMessage.newBuilder();
 		b.setToAll( toAll );
-		b.addAllNodesInclude( ProtocolUtils.convert( this.nodesInclude ) );
-		b.addAllNodesExclude( ProtocolUtils.convert( this.nodesExclude ) );
+		b.addAllNodesInclude( ProtocolUtils.convertAll( this.nodesInclude ) );
+		b.addAllNodesExclude( ProtocolUtils.convertAll( this.nodesExclude ) );
 		b.addAllNamespacesInclude( this.namespacesInclude );
 		b.addAllNamespacesExclude( this.namespacesExclude );
 		return b.build();
 	}
 	
 	public Target( TransportProtocol.TargetMessage t ) {
-		this( t.getToAll(), ProtocolUtils.convertProto( t.getNodesIncludeList() ), ProtocolUtils.convertProto( t.getNodesExcludeList() ), t.getNamespacesIncludeList(), t.getNamespacesExcludeList() );
+		this( t.getToAll(), ProtocolUtils.convertAllMessages( t.getNodesIncludeList() ), ProtocolUtils.convertAllMessages( t.getNodesExcludeList() ), t.getNamespacesIncludeList(), t.getNamespacesExcludeList() );
 	}
 	
 	public static boolean overlaps( Collection<?> c, Collection<?> b ) {
