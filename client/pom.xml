@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>de.mickare.routernet</groupId>
 		<artifactId>routernet-parent</artifactId>
-		<version>0.0.2</version>
+		<version>0.0.3</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
