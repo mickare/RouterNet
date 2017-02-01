@@ -11,7 +11,7 @@ public @Data @NoArgsConstructor class ClientSettings {
 	
 	public static @Data @NoArgsConstructor class Connection {
 		private boolean testingMode = true;
-		private String address = "localhost:1010";
+		private String address = "localhost:2020";
 		private String password = "Wkn2Z[uBYT]x1T/hY1Ac";
 		
 		private ConnectFailHandler failHandler = ConnectFailHandler.RETRY;

@@ -61,7 +61,7 @@ public class Main {
         }
       } catch (Throwable t) {
         logger.log(Level.SEVERE, "Exception while starting!", t);
-        if (router.state() == Service.State.FAILED) {
+        if(router.failureCause() != null || router.state() == Service.State.FAILED) {
           logger.log(Level.SEVERE, "Service failed!", router.failureCause());
         }
         System.exit(ExitCode.EXCEPTION_STARTUP.code);

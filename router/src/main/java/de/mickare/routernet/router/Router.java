@@ -141,7 +141,12 @@ public class Router extends AbstractIdleService implements Owner {
     logger.info(sb.toString());
 
     // Load plugins
-    this.pluginManager.updatePlugins(this.pluginsFolder, new File(this.pluginsFolder, "update"));
+    File updateFolder = new File(this.pluginsFolder, "update");
+    if(updateFolder.isDirectory()) {
+    	this.pluginManager.updatePlugins(this.pluginsFolder, updateFolder);
+    } else {
+    	updateFolder.mkdirs(); // makes plugin folder
+    }
     this.pluginManager.detectPlugins(this.pluginsFolder);
     this.pluginManager.loadPlugins();
 
