@@ -237,7 +237,7 @@ public class Router extends AbstractIdleService implements Owner {
     StringBuilder sb = new StringBuilder();
     sb.append("\n****************************************************");
     sb.append("\nStop");
-    sb.append("\n****************************************************");
+    sb.append("\n****************************************************\n");
     logger.info(sb.toString());
   }
 
