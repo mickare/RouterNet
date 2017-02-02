@@ -187,8 +187,8 @@ public class Router extends AbstractIdleService implements Owner {
       p.addLast(new ConnectionHandler(Router.this.getNetwork(), new RouterPacketHandler()));
     }));
 
-    //b.localAddress(new InetSocketAddress(this.address.getHostText(), this.address.getPort()));
-    b.bind(this.address.getPort()).addListener(new ChannelFutureListener() {
+    b.localAddress(new InetSocketAddress(this.address.getHostText(), this.address.getPort()));
+    b.bind().addListener(new ChannelFutureListener() {
       @Override
       public void operationComplete(ChannelFuture future) throws Exception {
         if (future.isSuccess()) {
