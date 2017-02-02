@@ -67,11 +67,13 @@ public class InfoCommand extends AbstractCommand {
       } else {
         sb.append("\nConnected: " + con.isActive());
 
-        sb.append("\nRemote Tunnels:");
+        sb.append("\n\tAddress: ").append(con.getChannel().getRemoteAddress().toString());
+
+        sb.append("\n\tRemote Tunnels:");
         if (con.hasRemoteTunnels()) {
           sb.append(" none");
         } else {
-          con.getRemoteTunnels().values().stream().forEach(t -> sb.append("\n - ").append(t));
+          con.getRemoteTunnels().values().stream().forEach(t -> sb.append("\n\t - ").append(t));
         }
 
       }

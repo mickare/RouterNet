@@ -14,7 +14,7 @@ public class Settings {
 
   public static @Data @NoArgsConstructor class RouterConfig {
     private NodeSettings home = new NodeSettings();
-    private String address = "localhost:2020";
+    private String address = "0.0.0.0:2020";
     private String password = "Wkn2Z[uBYT]x1T/hY1Ac";
   }
 
